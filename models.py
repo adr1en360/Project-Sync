@@ -18,6 +18,10 @@ Two rules control how these models move between the nodes:
 The framework changes a model that a node returns to a dictionary, and puts the
 dictionary in `Event.output`. The next node changes it back to the model in its
 annotation. So each node can use a typed model, but the data on the edge is JSON.
+
+The last section of this file holds the request body of each endpoint. Those
+models are not part of the graph, but they are the same kind of contract, and one
+file for all of them is easier to read than two.
 """
 
 from __future__ import annotations
@@ -73,30 +77,6 @@ class RuleSource(StrEnum):
 
     USER = "USER"
     CURATOR = "CURATOR"
-
-
-# --------------------------------------------------------------------------
-# Workflow input
-# --------------------------------------------------------------------------
-
-
-class SyncRequest(BaseModel):
-    """What a person sends to `POST /api/v1/trigger-sync`.
-
-    The three fields go into the state of the run, with the `state_delta` argument
-    of `run_async`. The first code node then reads each field from the state by its
-    name. This model is not the input on the first edge: the START node gives user
-    content of the type `types.Content`, and that type does not change into a
-    model.
-    """
-
-    repo_url: str = Field(description="The full URL of the GitHub repository.")
-    user_id: str = Field("default", description="The owner of the style rules.")
-    commit_sha: str | None = Field(
-        None,
-        description="Read this commit and not the head of the branch. The demo uses "
-        "this field to scan an early, incomplete commit.",
-    )
 
 
 # --------------------------------------------------------------------------
@@ -311,3 +291,54 @@ class Transaction(BaseModel):
     error_message: str | None = None
     created_at: str | None = None
     completed_at: str | None = None
+
+
+# --------------------------------------------------------------------------
+# The request body of each endpoint
+# --------------------------------------------------------------------------
+
+
+class SyncRequest(BaseModel):
+    """What a person sends to `POST /api/v1/trigger-sync`.
+
+    The three fields go into the state of the run, with the `state_delta` argument
+    of `run_async`. The first code node then reads each field from the state by its
+    name. This model is not the input on the first edge: the START node gives user
+    content of the type `types.Content`, and that type does not change into a
+    model.
+    """
+
+    repo_url: str = Field(description="The full URL of the GitHub repository.")
+    user_id: str = Field("default", description="The owner of the style rules.")
+    commit_sha: str | None = Field(
+        None,
+        description="Read this commit and not the head of the branch. The demo uses "
+        "this field to scan an early, incomplete commit.",
+    )
+
+
+class RegenerateRequest(BaseModel):
+    """What a client sends to make the assets of one transaction again."""
+
+    transaction_id: str
+
+
+class ApprovalRequest(BaseModel):
+    """What the approve action and the discard action send."""
+
+    transaction_id: str
+    approved: bool = True
+    edited_assets: GeneratedAssets | None = None
+
+
+class RuleStateRequest(BaseModel):
+    """What the change of one rule sends."""
+
+    state: RuleState
+
+
+class NewRuleRequest(BaseModel):
+    """What a person sends to write a rule by hand."""
+
+    user_id: str = "default"
+    text: str
