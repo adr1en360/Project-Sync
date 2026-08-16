@@ -10,7 +10,7 @@ Last updated: Aug 15, 2026 (all open decisions resolved) · Deadline: Aug 31, 20
 > |---|---|---|---|
 > | 3 | `SequentialAgent` runs three `LlmAgent`s | ADK 2.0 graph `Workflow`, built by a factory function | `[L1.2]` |
 > | 4 | "ADK has no built-in agent type for a human decision that may arrive hours or days later" | `RequestInput` **does exist.** The reason Phase 2 stays outside the agent run is different — see the note | `[L1.10, L1.11]` |
-> | 5 | rules read into `{style_rules}` | `{AssetGenInput.style_rules}` — a bare state key renders as literal text | `[L1.22]` |
+> | 5 | rules read into `{style_rules}` | No template field at all — the rules ride the node's input JSON. A dotted `{Model.field}` renders as literal text | `[L1.22, L1.28]` |
 >
 > Nothing else in this file changed. Where a *product* decision here conflicts with any
 > document under `docs/`, this file wins. Where an *ADK API* claim here conflicts with
@@ -100,20 +100,37 @@ Two memory types.
 
 **Semantic memory (style rules)** — one Firestore document per user. Holds a list of short rules: `{rule_text, source_transaction_id, created_at}`. Read into `{style_rules}` and injected into the `AssetGeneratorAgent` instruction on every run.
 
-> ⚠️ **Corrected 2026-08-16 — a bare `{style_rules}` does not resolve in a graph agent node**
-> `[L1.22]`. It renders in the prompt as the literal seven characters, the model never sees a
-> rule, and every visible part of this system still works: rules save, display, and toggle. The
-> feature becomes a prop that demos correctly. That form is real, but it belongs to the
-> prebuilt-agent `output_key` path, not to a graph.
+> ⚠️ **Corrected 2026-08-16, and corrected again after reading the installed package. The
+> design below is right; the templating mechanism named in the first correction was not**
+> `[L1.22, L1.28]`.
 >
-> **The build.** A code node `attach_style_rules` queries the `ACTIVE` rules and returns an
-> `AssetGenInput` — `ExtractedMetadata` plus `style_rules: list[str]`. The generator instruction
-> then uses `{AssetGenInput.style_rules}`, which is the supported template form. No language
-> model is ever asked to copy a list of rules forward.
+> **What the engine actually does.** `google/adk/utils/instructions_utils.py` substitutes a
+> `{name}` only when `name` is a valid Python identifier, or an identifier behind the prefix
+> `app:`, `user:`, or `temp:` (`_is_valid_state_name`). A dot is allowed in exactly one case:
+> `{artifact.filename}`. Everything else is returned unchanged. So:
 >
-> **The test that catches it** — `tests/test_style_rules_change_output.py`. Toggle a rule,
-> regenerate, assert the draft *changed*. A test that only asserts generation succeeded cannot
-> tell a working memory system from a demonstration of one.
+> | Form | What happens |
+> |---|---|
+> | `{style_rules}` | Resolves **if** `style_rules` is a key in session state. Renders via `str()`, so a list arrives as a Python repr. |
+> | `{AssetGenInput.style_rules}` | **Does not resolve.** Not an identifier, so the braces reach the model as literal text. This was the first correction's advice, and it is wrong. |
+>
+> Either way a silent failure is possible, and no exception is raised. That is the real hazard:
+> the rules save, display, and toggle correctly while the model never reads one.
+>
+> **The build — unchanged, and it needs no template at all.** A code node
+> `attach_style_rules` queries the `ACTIVE` rules and returns an `AssetGenInput` —
+> `ExtractedMetadata` plus `style_rules: list[str]`. An agent node receives its predecessor's
+> output as user content: the framework calls `model_dump_json()` on the model and appends it as
+> a user event (`to_user_content`), and `_get_current_turn_contents` puts that event in the
+> request `[L1.21]`. The generator therefore reads every rule out of its own input JSON, and its
+> instruction carries **no template field**. No language model is ever asked to copy a list of
+> rules forward.
+>
+> **Two tests, because one is not enough.** `tests/test_nodes.py` calls the framework's own
+> `_is_valid_state_name` against every instruction in the project, so a dotted template field can
+> never come back. `tests/test_style_rules_change_output.py` activates a rule that bans an opening
+> line, generates twice, and fails if the line survives. A test that only asserts generation
+> succeeded cannot tell a working memory system from a demonstration of one.
 
 **Rule states — three values, all user-visible and user-toggleable:**
 
