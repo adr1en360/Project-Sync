@@ -1,0 +1,35 @@
+# Secrets. This block is first because a leaked token cannot be un-leaked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+gcp-credentials*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# uv keeps the lock file in the repository. Do not ignore uv.lock.
+
+# Editors and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local run artifacts
+*.log
+.firestore-emulator/
+scratch/
