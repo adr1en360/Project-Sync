@@ -193,6 +193,38 @@ class AssetGenInput(BaseModel):
 # --------------------------------------------------------------------------
 
 
+class PortfolioCard(BaseModel):
+    """One portfolio card. The `portfolio-data` repository holds one file of this
+    shape for each project.
+
+    The fields are explicit, and this model is not a free dictionary. There are two
+    reasons for that.
+
+    The first reason is the Gemini Developer API. A free dictionary puts
+    `additionalProperties` in the JSON schema, and that API refuses a schema with
+    that key: "additionalProperties is only supported in Gemini Enterprise Agent
+    Platform mode". Vertex AI accepts it, but the README tells a person to use an
+    API key, so a free dictionary stopped the generator on the route that the
+    README gives.
+
+    The second reason is the instruction of the generator. That instruction already
+    names these five keys, so a type here only makes the promise exact.
+
+    Each field has a default value. A card with one field absent is still valid,
+    because a card with four good fields is better than a failed run.
+
+    A person can change each of these five values on the review desk. A key that is
+    not in this list does not survive the approval, because the portfolio site reads
+    only these five names.
+    """
+
+    title: str = ""
+    tagline: str = ""
+    stack: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
+    repo_url: str = ""
+
+
 class GeneratedAssets(BaseModel):
     """The output of `asset_generator_agent`.
 
@@ -201,8 +233,8 @@ class GeneratedAssets(BaseModel):
     """
 
     doc_sheet_md: str = Field(description="The documentation sheet, in markdown.")
-    portfolio_card: dict = Field(
-        default_factory=dict, description="The portfolio card, as JSON."
+    portfolio_card: PortfolioCard = Field(
+        default_factory=PortfolioCard, description="The portfolio card, as JSON."
     )
     resume_bullets: list[str] = Field(default_factory=list)
     social_draft: str = ""

@@ -102,8 +102,11 @@ async def test_a_style_rule_changes_the_social_draft():
     )
 
     # Every run must still give all four assets. A rule must not remove one.
+    # The card is a model and not a dictionary, so a model instance is always true.
+    # The test looks at a field of the card, and not at the card.
     for assets in (without_rule, with_rule):
         assert assets.doc_sheet_md.strip()
-        assert assets.portfolio_card
+        assert assets.portfolio_card.title.strip()
+        assert assets.portfolio_card.stack
         assert assets.resume_bullets
         assert assets.social_draft.strip()

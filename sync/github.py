@@ -153,8 +153,12 @@ def commit_assets(
         results.card_error = "PORTFOLIO_DATA_REPO is not set."
     else:
         try:
-            card = dict(assets.portfolio_card)
-            card.setdefault("repo_url", repo_url)
+            card = assets.portfolio_card.model_dump(mode="json")
+            # `PortfolioCard.repo_url` has the default value `""`, so the key is
+            # always in the dictionary. A test for the value is necessary here.
+            # `setdefault` would look at the key, find it, and keep the empty text.
+            if not card["repo_url"]:
+                card["repo_url"] = repo_url
             results.card_commit_sha = upsert_file(
                 client,
                 config.PORTFOLIO_DATA_REPO,

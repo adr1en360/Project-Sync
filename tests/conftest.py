@@ -22,7 +22,16 @@ if str(ROOT) not in sys.path:
 # result on every machine.
 os.environ.setdefault("MODEL_ID", "gemini-3.7-flash")
 os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "False")
-os.environ.setdefault("GOOGLE_API_KEY", "test-key-not-real")
 os.environ.setdefault("GOOGLE_CLOUD_PROJECT", "test-project")
 os.environ.setdefault("GITHUB_TOKEN", "test-token-not-real")
 os.environ.setdefault("PORTFOLIO_DATA_REPO", "test-owner/portfolio-data")
+
+# The live test in `test_style_rules_change_output.py` makes a real model call, and
+# it needs the real key from `.env`. A fake key here would hide that key, because
+# `load_dotenv()` does not write over a variable that is already set. So the fake
+# key goes in only when the live tests are off.
+#
+# The other names above stay fake in each case. The live test makes no Firestore
+# call and no GitHub call, so it needs no other real value.
+if os.environ.get("RUN_LIVE_TESTS") != "1":
+    os.environ.setdefault("GOOGLE_API_KEY", "test-key-not-real")
