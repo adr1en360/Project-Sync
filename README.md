@@ -1,0 +1,204 @@
+# ProjectSync
+
+Paste a GitHub URL. Get a documentation sheet, a portfolio card, resume bullets, and a social post — reviewed by you before anything is committed.
+
+Most finished projects never get a portfolio entry, because writing one by hand is
+tedious enough to skip. ProjectSync does that work in one pass, asks for a single
+approval, then commits the results to your repositories. It also learns how you
+write: every edit you make feeds a rule that changes the next draft.
+
+Built for the Taskmaster track of the All Things Agentic Hackathon on a
+six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
+
+## Features
+
+- **One trigger, four assets.** A single request produces a markdown doc sheet, a
+  JSON portfolio card, resume bullets, and a post draft — from one model call, so
+  the four never disagree about the same project.
+- **A publish gate that can say no.** A zero-temperature evaluator checks for a
+  real README, tests, a licence, and leftover secrets or TODOs. A working repo can
+  still fail. `FULL_PUBLISH` or `PRIVATE_ONLY`, with reasons.
+- **Nothing is committed without you.** The run stops at `PENDING_APPROVAL` and
+  writes to Firestore. Approval arrives as a separate request, minutes or days
+  later.
+- **A memory you can audit.** Style rules live in Firestore, are read fresh on
+  every run, and start as `PROPOSED` — a rule only takes effect after you turn it
+  on. Each transaction records which rules produced its draft.
+- **Deterministic steps stay deterministic.** Three of the six nodes are plain
+  Python: the repository scan, the rule lookup, and the Firestore write. No model
+  is asked to do exact work.
+
+## Installation
+
+Requires [Python 3.12](https://www.python.org/downloads/) and
+[uv](https://docs.astral.sh/uv/getting-started/installation/).
+
+```bash
+git clone https://github.com/<owner>/projectsync.git
+cd projectsync
+uv sync
+```
+
+Then create your `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set two values to start:
+
+| Variable | Where to get it |
+|---|---|
+| `GOOGLE_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| `GITHUB_TOKEN` | [github.com/settings/tokens](https://github.com/settings/tokens) — needs the `repo` scope |
+
+`GOOGLE_CLOUD_PROJECT` and `PORTFOLIO_DATA_REPO` are needed before the first real
+run, but not before the checks below.
+
+## Quickstart
+
+Run the offline checks. These need no API key and make no model call:
+
+```bash
+uv run pytest tests/test_nodes.py -q
+```
+
+Start the API:
+
+```bash
+uv run uvicorn main:app --reload --port 8080
+```
+
+Confirm it is up. The reply tells you which settings are still missing:
+
+```
+$ curl -s localhost:8080/healthz
+{"status":"ok","model":"gemini-3.7-flash","use_vertex_ai":false,"missing_config":["PORTFOLIO_DATA_REPO"]}
+```
+
+Now run the pipeline on a repository:
+
+```bash
+curl -X POST localhost:8080/api/v1/trigger-sync \
+  -H 'Content-Type: application/json' \
+  -d '{"repo_url":"https://github.com/tiangolo/fastapi","user_id":"me"}'
+```
+
+You get a transaction id back at once. The graph keeps running behind the
+request, so poll for the result:
+
+```bash
+curl -s localhost:8080/api/v1/transactions/<transaction_id>
+```
+
+When `status` is `PENDING_APPROVAL`, read the drafts in `assets` and the verdict in
+`recommendation`. Approve to write both commits:
+
+```bash
+curl -X POST localhost:8080/api/v1/approval-callback \
+  -H 'Content-Type: application/json' \
+  -d '{"transaction_id":"<transaction_id>","approved":true}'
+```
+
+The doc sheet lands in the scanned repository under `docs/synced/`, and the
+portfolio card lands in `PORTFOLIO_DATA_REPO` under `cards/`. The two commits are
+independent: if one fails, the row records that and stays open for a retry.
+
+### Teaching it your voice
+
+Rules start as `PROPOSED` and do nothing until you activate one:
+
+```bash
+curl -X POST localhost:8080/api/v1/rules \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"me","text":"Never open a post with Excited to share."}'
+
+curl -X POST localhost:8080/api/v1/rules/<rule_id> \
+  -H 'Content-Type: application/json' -d '{"state":"ACTIVE"}'
+```
+
+Then regenerate an open transaction to see the rule take effect — no rescan, no
+new extraction call, and no restart:
+
+```bash
+curl -X POST localhost:8080/api/v1/regenerate-asset \
+  -H 'Content-Type: application/json' \
+  -d '{"transaction_id":"<transaction_id>"}'
+```
+
+## API reference
+
+| Method | Path | Does |
+|---|---|---|
+| `POST` | `/api/v1/trigger-sync` | Starts Phase 1. Returns a transaction id at once. |
+| `GET` | `/api/v1/transactions/{id}` | The state of one transaction. Poll this. |
+| `POST` | `/api/v1/regenerate-asset` | Rewrites the four assets with the rules that are active now. |
+| `POST` | `/api/v1/approval-callback` | Writes the two commits, then looks for a new rule. |
+| `GET` `POST` | `/api/v1/rules` | Lists rules, or adds one by hand. |
+| `POST` | `/api/v1/rules/{id}` | Sets a rule to `ACTIVE`, `INACTIVE`, or `PROPOSED`. |
+| `GET` | `/healthz` | Liveness, the pinned model, and any missing settings. |
+
+Interactive docs are at `/docs` once the server is running.
+
+## Configuration
+
+Every setting is an environment variable, listed in
+[`.env.example`](.env.example). Four names are fixed by the Google GenAI SDK and
+must be spelled exactly: `GOOGLE_GENAI_USE_VERTEXAI`, `GOOGLE_API_KEY`,
+`GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION`. A near miss such as
+`GEMINI_API_KEY` is ignored without an error.
+
+`MODEL_ID` defaults to `gemini-3.7-flash`. The application refuses to start on a
+model below Gemini 3.5, because the hackathon floor is a pass-or-fail gate.
+
+## Development
+
+```bash
+uv run pytest tests/ -q          # offline tests
+uv run ruff check .              # lint
+```
+
+One test makes a real model call and is skipped by default. It is the test that
+proves the memory is not a prop — it generates the same project twice, once with a
+rule that bans an opening line, and fails if the line survives:
+
+```bash
+RUN_LIVE_TESTS=1 uv run pytest tests/test_style_rules_change_output.py -v
+```
+
+To build the container:
+
+```bash
+docker build -t projectsync .
+```
+
+Design documents live in [`docs/`](docs/). Start with
+[`docs/AGENT.md`](docs/AGENT.md) for the routing table, and
+[`docs/VERIFICATION_LEDGER.md`](docs/VERIFICATION_LEDGER.md) for every API claim
+with the source that confirms it. The product spec is
+[`projectsync_full_spec.md`](projectsync_full_spec.md).
+
+## Status
+
+Phase 1 (the graph) and Phase 2 (the commits and the rule curator) are
+implemented. **The web interface is not built yet, and its framework is not
+chosen** — the API above is the whole surface for now, and the JSON is designed to
+be driven by anything.
+
+## Contributing
+
+Two rules for code in this repository:
+
+- All comments and docstrings use
+  [ASD-STE100](https://asd-ste100.org/) Simplified Technical English.
+- Any claim about the ADK API needs an entry in
+  [`docs/VERIFICATION_LEDGER.md`](docs/VERIFICATION_LEDGER.md) citing where it was
+  confirmed. Several published examples are wrong; the ledger exists because of it.
+
+Open an issue before a large change.
+
+## License
+
+Not chosen yet, and there is no `LICENSE` file. Until one is added, ProjectSync's
+own publish gate marks this repository `PRIVATE_ONLY` — which is the check working
+as intended.
