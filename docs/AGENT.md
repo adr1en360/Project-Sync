@@ -28,6 +28,7 @@ Spec of record: [projectsync_full_spec.md](../projectsync_full_spec.md) (Aug 15,
 | System logic, memory, failure fallbacks | build/ | [PROJECTSYNC_MASTER_BUILD_BLUEPRINT.md](build/PROJECTSYNC_MASTER_BUILD_BLUEPRINT.md), [CONTEXT.md](build/CONTEXT.md) | — |
 | Day plan, data contracts, verify commands | build/ | [stack_and_timeline_engineering.md](build/stack_and_timeline_engineering.md) | — |
 | Scaffolding the agent project | build/ | [CONTEXT.md](build/CONTEXT.md), blueprint §5 + §7 | — |
+| Restyling the review desk | build/ | ⭐ [ui_revamp_spec.md](build/ui_revamp_spec.md) — corrected palette, the DOM contract the harness holds, nine steps, what the tests cannot see | `frontend-design` |
 | Demo video, storyboard, submission | demo/ | [CONTEXT.md](demo/CONTEXT.md), [demo_storyboard_and_mistakes.md](demo/demo_storyboard_and_mistakes.md) | — |
 | Risk register, rubric alignment | research/ | [strategic_risk_and_win_analysis.md](research/strategic_risk_and_win_analysis.md) | — |
 | What to read and when | research/ | [resource_roadmap.md](research/resource_roadmap.md) | — |
@@ -41,7 +42,8 @@ Spec of record: [projectsync_full_spec.md](../projectsync_full_spec.md) (Aug 15,
 
 ## Hard Rules
 - Model is `gemini-3.7-flash`. Never below Gemini 3.5 — that is a **pass/fail** submission gate. A 404 means fix `GOOGLE_CLOUD_LOCATION`, not the model name.
-- Exactly 2 GCP services: Cloud Run + Firestore. No Pub/Sub, no Gmail API.
+- Exactly 2 GCP services: Cloud Run + Firestore. No Pub/Sub, no Gmail API. **The `gcloud services enable` list in the build docs disagrees with this rule** — it names Vertex AI and Secret Manager, and it misses Cloud Build and Artifact Registry, which `--source` needs. Do not run that list. Read ledger rows 4.11 and 4.12 first `[L4.11]`.
+- **The deploy is blocked, and not by code.** Payment is off on `project-sync-505710` and all nine billing accounts are closed, so Cloud Run cannot come on. Firestore `(default)` is live in `nam5` `[L4.13, L4.14]`.
 - Style rules reach the model **inside the node's input JSON**, not through a template field. `{AssetGenInput.style_rules}` renders as literal text — a dot fails the engine's identifier check `[L1.28]`. Instructions in this project carry no `{...}` at all; `tests/test_nodes.py` enforces that.
 - `Edge(from_node=START, ...)` takes the **imported `START` object**, never the string `"START"` `[L1.29]`.
 - A code node keeps the default `parameter_binding="state"`: a parameter named `node_input` gets the predecessor's output, every other name is read from `ctx.state` `[L1.30]`.
