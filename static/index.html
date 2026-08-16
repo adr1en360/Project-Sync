@@ -269,6 +269,9 @@
 <!-- Slips carry a receipt or an error. They stack at the corner of the desk. -->
 <div class="slips" id="slips" aria-live="polite" aria-atomic="false"></div>
 
-<script type="module" src="/static/app.js"></script>
+<!-- The browser reads the modules itself, because of `type="module"`. There is no
+     build step. `js/main.js` is the map of the page: it names each module and
+     connects each listener. -->
+<script type="module" src="/static/js/main.js"></script>
 </body>
 </html>
