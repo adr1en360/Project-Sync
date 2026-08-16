@@ -18,6 +18,7 @@ from google.adk.workflow import START, Edge, FunctionNode
 from pydantic import ValidationError
 
 import config
+import store
 from graph import build_phase1_workflow
 from models import ExtractedMetadata, TransactionStatus
 from nodes import evaluator, extraction, generator, scanner, style_rules
@@ -332,6 +333,103 @@ def test_a_failure_of_the_rule_store_does_not_stop_the_run(monkeypatch):
 
     assert payload.style_rules == []
     assert payload.metadata.project_name == "ProjectSync"
+
+
+class _FakeSnapshot:
+    """What a read of the fake client gives."""
+
+    def __init__(self, doc_id: str, data: dict | None):
+        self.id = doc_id
+        self.exists = data is not None
+        self._data = data
+
+    def to_dict(self) -> dict:
+        """Give the fields of the document."""
+        return dict(self._data or {})
+
+
+class _FakeDocument:
+    """A handle for one document of the fake client."""
+
+    def __init__(self, documents: dict[str, dict], doc_id: str):
+        self._documents = documents
+        self._id = doc_id
+
+    def set(self, payload: dict) -> None:
+        """Write every field of the document."""
+        self._documents[self._id] = dict(payload)
+
+    def update(self, fields: dict) -> None:
+        """Change some fields of the document."""
+        self._documents[self._id].update(fields)
+
+    def get(self) -> _FakeSnapshot:
+        """Read the document."""
+        return _FakeSnapshot(self._id, self._documents.get(self._id))
+
+
+class _FakeCollection:
+    """One collection of the fake client. It is also a query with no filter yet."""
+
+    def __init__(self, documents: dict[str, dict], tests: tuple = ()):
+        self._documents = documents
+        self._tests = tests
+
+    def document(self, doc_id: str) -> _FakeDocument:
+        """Give a handle for one document."""
+        return _FakeDocument(self._documents, doc_id)
+
+    def where(self, filter) -> _FakeCollection:
+        """Add one equality test. `store` uses no other kind of filter."""
+        test = (filter.field_path, filter.value)
+        return _FakeCollection(self._documents, (*self._tests, test))
+
+    def stream(self):
+        """Give a snapshot of each document that passes every test."""
+        for doc_id, data in self._documents.items():
+            if all(data.get(field) == value for field, value in self._tests):
+                yield _FakeSnapshot(doc_id, data)
+
+
+class _FakeFirestore:
+    """A small stand-in for the Firestore client. Dictionaries hold the documents.
+
+    The fake answers only the calls that `store` makes: a collection, a document,
+    an equality filter, and a stream. It keeps no order, because `store` sorts
+    the rules in Python.
+    """
+
+    def __init__(self):
+        self.collections: dict[str, dict[str, dict]] = {}
+
+    def collection(self, name: str) -> _FakeCollection:
+        """Give one collection. A name that is new gives an empty collection."""
+        return _FakeCollection(self.collections.setdefault(name, {}))
+
+
+def test_a_rule_that_a_person_deletes_leaves_the_list_and_stays_in_the_database(monkeypatch):
+    """A delete hides the rule, and it keeps the document.
+
+    The list must not show the rule, because the person deleted it. The document
+    must stay, because a transaction row names the rules that made its draft, and
+    the curator learns the voice of the person from the rules of the past.
+    """
+    from models import RuleState
+
+    fake = _FakeFirestore()
+    monkeypatch.setattr(store, "client", lambda: fake)
+
+    kept = store.write_style_rule(user_id="u1", text="Do not use an em dash.")
+    gone = store.write_style_rule(user_id="u1", text="Name the stack in the first line.")
+
+    store.delete_style_rule(gone.rule_id)
+
+    assert [rule.rule_id for rule in store.all_style_rules("u1")] == [kept.rule_id]
+
+    doc = fake.collection(config.FIRESTORE_STYLE_RULES).document(gone.rule_id).get()
+    assert doc.exists
+    assert doc.to_dict()["state"] == RuleState.DELETED.value
+    assert doc.to_dict()["text"] == "Name the stack in the first line."
 
 
 # --------------------------------------------------------------------------

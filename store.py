@@ -84,7 +84,14 @@ def active_style_rules(user_id: str) -> list[StyleRule]:
 
 
 def all_style_rules(user_id: str) -> list[StyleRule]:
-    """Read every rule of one person, in each of the three states."""
+    """Read the rules of one person, except the rules that the person deleted.
+
+    The test of the state is in Python, and not in the query. A `!=` test in
+    Firestore is an inequality filter. Such a filter must be first in the order,
+    and it can need a composite index. It also removes a document that has no
+    `state` field. A test in Python has none of those costs, and the sort of this
+    function is already in Python.
+    """
     docs = (
         client()
         .collection(config.FIRESTORE_STYLE_RULES)
@@ -92,6 +99,7 @@ def all_style_rules(user_id: str) -> list[StyleRule]:
         .stream()
     )
     rules = [_rule_from_doc(doc) for doc in docs]
+    rules = [rule for rule in rules if rule.state != RuleState.DELETED]
     rules.sort(key=lambda rule: rule.created_at or "")
     return rules
 
@@ -145,6 +153,18 @@ def set_rule_state(rule_id: str, state: RuleState) -> None:
     """
     client().collection(config.FIRESTORE_STYLE_RULES).document(rule_id).update(
         {"state": state.value, "updated_at": now_iso()}
+    )
+
+
+def delete_style_rule(rule_id: str) -> None:
+    """Hide one rule from the list of rules.
+
+    The state becomes `DELETED`. The document is not removed. Two things need
+    the document: a transaction row names the rules that made its draft, and the
+    corpus of past rules teaches the curator the voice of the person.
+    """
+    client().collection(config.FIRESTORE_STYLE_RULES).document(rule_id).update(
+        {"state": RuleState.DELETED.value, "updated_at": now_iso()}
     )
 
 

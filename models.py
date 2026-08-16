@@ -65,11 +65,17 @@ class RuleState(StrEnum):
     A rule goes from `PROPOSED` to `ACTIVE` only after a person clicks one time.
     A rule that a person dismisses becomes `INACTIVE`. The rule stays in the
     database, because the person can make it active again later.
+
+    A rule that a person deletes becomes `DELETED`. The list of rules does not
+    show that rule again. The document also stays in the database. A transaction
+    row names the rules that made its draft, so the text of a deleted rule must
+    stay for that receipt.
     """
 
     PROPOSED = "PROPOSED"
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
+    DELETED = "DELETED"
 
 
 class RuleSource(StrEnum):
