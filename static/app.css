@@ -93,6 +93,10 @@ label {
 /* The skip link sends the focus here, so leave room above the sheet. */
 #sheet { scroll-margin-top: var(--s3); }
 
+/* The sheet is a region and not a control. Keep the ring, but draw it inside the
+   paper edge. A ring outside the edge sits on top of the shadow and looks wrong. */
+#sheet:focus-visible { outline-offset: -5px; }
+
 body {
   margin: 0;
   min-height: 100dvh;
