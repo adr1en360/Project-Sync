@@ -38,6 +38,13 @@ USE_VERTEX_AI: bool = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").lower() in
     "true",
     "yes",
 )
+"""Tells if the run goes to Vertex AI or to the direct Gemini API.
+
+`GOOGLE_GENAI_USE_VERTEXAI` is deprecated. The new name is
+`GOOGLE_GENAI_USE_ENTERPRISE`. The old name still works, so this project keeps it,
+and a `DeprecationWarning` in a test run is not a problem. Both the GenAI SDK and
+ADK read the new name first and the old name second. See ledger row 2.13.
+"""
 GOOGLE_CLOUD_PROJECT: str = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
 GOOGLE_CLOUD_LOCATION: str = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
 
