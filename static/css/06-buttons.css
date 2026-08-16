@@ -1,0 +1,53 @@
+/*
+  The buttons. The rail and the sheet both use them, so they are not part of
+  either one.
+
+  A button lifts on hover and gives a hard shadow. It does not glow.
+*/
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 1.05rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 110ms ease, box-shadow 110ms ease,
+              background 140ms ease, color 140ms ease;
+}
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+.btn:active { transform: translate(1px, 1px); box-shadow: none; }
+.btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.42;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn--ink   { width: 100%; background: var(--ink); color: var(--paper-lit); }
+.btn--ink:hover { box-shadow: 3px 3px 0 var(--vermilion); }
+.btn--go    { background: var(--verdigris); border-color: var(--verdigris); color: #f4f0e4; }
+.btn--go:hover { box-shadow: 3px 3px 0 var(--ink); }
+.btn--danger { border-color: var(--vermilion); color: var(--vermilion); }
+.btn--danger:hover { background: var(--vermilion); color: var(--paper-lit); box-shadow: 3px 3px 0 var(--ink); }
+.btn--quiet { border-color: var(--rule); color: var(--ink-soft); }
+.btn--quiet:hover { border-color: var(--ink); color: var(--ink); }
+.btn--ghost {
+  min-height: 1.9rem;
+  padding: 0.2rem 0.5rem;
+  border-color: var(--rule-soft);
+  color: var(--ink-faint);
+  font-size: 0.63rem;
+  letter-spacing: 0.11em;
+}
+.btn--ghost:hover { border-color: var(--ink); color: var(--ink); box-shadow: 2px 2px 0 var(--rule); }

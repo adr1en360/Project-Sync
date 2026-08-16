@@ -1,0 +1,51 @@
+/*
+  The small screens, and print.
+
+  These rules come last, so they win. Under 1080 pixels the desk becomes one
+  column and the left margin of the sheet closes up. Print drops the rail, the
+  slips and the buttons, because a printed sheet is a document and not a
+  control.
+*/
+
+@media (max-width: 1080px) {
+  .desk { grid-template-columns: minmax(0, 1fr); gap: var(--s4); padding: var(--s3); }
+  .rail { position: static; }
+  .masthead { grid-template-columns: auto 1fr; padding: var(--s3); }
+  .masthead__meta { grid-column: 1 / -1; flex-wrap: wrap; }
+  .masthead::after { left: var(--s3); right: var(--s3); }
+
+  :root { --margin-col: 3.2rem; }
+  .sheet { padding: var(--s4) var(--s3) var(--s3) var(--s3); }
+  .sheet__holes { display: none; }
+  .stamp { top: -1rem; right: -0.4rem; }
+  .folio::before { font-size: 1.5rem; }
+  .marginalia { grid-column: 2; grid-row: auto; text-align: left; }
+  .marginalia li { transform: none; }
+  .marginalia--rules { position: static; width: auto; }
+  .sheet__head, .verdict, .folio, .sheet__act { grid-template-columns: minmax(0, 1fr); }
+  .sheet__head h2, .sheet__tag, .sheet__facts,
+  .verdict__body, .folio__head, .folio__body, .folio__meter,
+  .sheet__act-note, .sheet__act-row, .receipts { grid-column: 1; }
+  .sheet__no { grid-column: 1; grid-row: auto; margin-bottom: var(--s2); }
+  .verdict h3 { grid-column: 1; margin-bottom: var(--s2); }
+  .folio::before { grid-column: 1; grid-row: auto; text-align: left; }
+}
+
+@media (max-width: 560px) {
+  .field-row { grid-template-columns: 1fr; }
+  .sheet__act-row .btn { flex: 1 1 100%; }
+  .sheet__act-gap { display: none; }
+}
+
+/* The sheet is a document. It must print like one. */
+@media print {
+  .rail, .slips, .skip, .grain, .strip,
+  .sheet__act-row, .btn, .masthead__meta { display: none !important; }
+  body { background: #fff; }
+  body::before { display: none; }
+  .desk { display: block; padding: 0; }
+  .sheet { border: 0; box-shadow: none; padding: 0; }
+  .sheet::before { display: none; }
+  .folio__body { border-left: 1px solid #999; background: none; max-height: none; }
+  .stamp { position: static; display: inline-block; opacity: 1; transform: none; margin-bottom: 1rem; }
+}

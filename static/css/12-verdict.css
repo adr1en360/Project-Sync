@@ -1,0 +1,68 @@
+/*
+  The verdict of the path evaluator, and the marginalia.
+
+  The marginalia are here because the verdict block sets the left margin column
+  that they sit in. `.marginalia--rules` shows the rules that the model used, and
+  it sits beside the folios.
+*/
+
+.verdict {
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  gap: 0 var(--s3);
+  padding: var(--s4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.verdict h3 {
+  grid-column: 1;
+  margin-top: 0.2rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.verdict__body { grid-column: 2; }
+
+.verdict__line {
+  margin: 0 0 var(--s2);
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-variation-settings: "SOFT" 40, "WONK" 1;
+  line-height: 1.25;
+}
+.verdict__line b { font-weight: 700; }
+.verdict__line[data-verdict="FULL_PUBLISH"] b { color: var(--verdigris); }
+.verdict__line[data-verdict="PRIVATE_ONLY"] b { color: var(--vermilion); }
+
+.verdict__reasons { margin: 0; padding-left: 1.05rem; }
+.verdict__reasons li { margin-bottom: 0.3rem; color: var(--ink-soft); }
+.verdict__reasons li::marker { color: var(--rule); }
+
+/*
+  The marginalia sit in the left margin of the sheet, in red-lead, at a small
+  angle. They read as the marks that a person makes on a printed page.
+*/
+.marginalia {
+  grid-column: 1;
+  grid-row: 2;
+  margin: var(--s2) 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: right;
+}
+.marginalia li {
+  margin-bottom: 0.5rem;
+  color: var(--vermilion);
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.25;
+  transform: rotate(-1.4deg);
+  transform-origin: right;
+}
+.marginalia li::before { content: "✗ "; font-style: normal; opacity: 0.65; }
+
+.marginalia--rules { position: absolute; left: 0; width: var(--margin-col); }
+.marginalia--rules li { color: var(--verdigris); }
+.marginalia--rules li::before { content: "§ "; }

@@ -1,0 +1,81 @@
+/*
+  The four folios: the numeral, the head, the box that the operator edits, and
+  the meter under it.
+
+  The meter turns red through `data-warn`, which `folios.js` writes when the box
+  does not hold valid JSON, or when it holds a key that the approval drops.
+*/
+
+.folios { display: grid; }
+
+.folio {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  gap: 0 var(--s3);
+  padding: var(--s4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.folio::before {
+  content: attr(data-numeral);
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  align-self: start;
+  font-family: var(--display);
+  font-variation-settings: "SOFT" 0, "WONK" 0;
+  font-size: 2.6rem;
+  font-weight: 300;
+  line-height: 0.85;
+  text-align: right;
+  color: var(--rule);
+}
+
+.folio__head { grid-column: 2; display: grid; grid-template-columns: 1fr auto; gap: 0 var(--s2); align-items: start; }
+.folio__head h3 {
+  font-size: 1.32rem;
+  font-weight: 500;
+  font-variation-settings: "SOFT" 44, "WONK" 1;
+  letter-spacing: -0.014em;
+}
+.folio__note {
+  grid-column: 1;
+  margin: 0.25rem 0 0;
+  max-width: 52ch;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+.folio__head .btn { grid-column: 2; grid-row: 1; }
+
+.folio__body {
+  grid-column: 2;
+  margin-top: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 0;
+  border-left: 2px solid var(--rule);
+  background: rgba(255, 255, 255, 0.5);
+  field-sizing: content;
+  min-height: 5rem;
+  max-height: 34rem;
+  line-height: 1.62;
+  /* A scroll that reaches the end of the folio must stop there. Without this the
+     page moves instead, and the person loses the place in the text. */
+  overscroll-behavior: contain;
+}
+.folio__body:hover { background: rgba(255, 255, 255, 0.78); }
+.folio__body:focus {
+  background: #fffdf6;
+  border-left-color: var(--vermilion);
+  outline-offset: 0;
+}
+.folio__body--mono { font-family: var(--mono); font-size: 0.79rem; line-height: 1.72; }
+.folio__body--voice { font-size: 1.08rem; line-height: 1.6; }
+
+.folio__meter {
+  grid-column: 2;
+  margin: 0.35rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.07em;
+  color: var(--ink-faint);
+}
+.folio__meter[data-warn="yes"] { color: var(--vermilion); }

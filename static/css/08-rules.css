@@ -1,0 +1,54 @@
+/*
+  The voice rules: the line for each rule, the three states, and the toggle.
+
+  The left border carries the state, and the colour of it says who waits: green
+  for a rule in use, blue for a proposal that waits for a person.
+*/
+
+.rules { margin: var(--s3) 0 0; padding: 0; list-style: none; display: grid; gap: 0.55rem; }
+
+.rules li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--rule-soft);
+  border-left-width: 3px;
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.rules .rule__text { font-size: 0.9rem; line-height: 1.4; }
+.rules .rule__meta {
+  margin-top: 0.28rem;
+  font-family: var(--mono);
+  font-size: 0.61rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rules li[data-state="ACTIVE"]   { border-left-color: var(--verdigris); background: rgba(59, 92, 73, 0.07); }
+.rules li[data-state="PROPOSED"] { border-left-color: var(--stampblue); }
+.rules li[data-state="INACTIVE"] { border-left-color: var(--rule); opacity: 0.62; }
+
+.rules li[data-state="ACTIVE"]   .rule__meta { color: var(--verdigris); }
+.rules li[data-state="PROPOSED"] .rule__meta { color: var(--stampblue); }
+
+.rule__toggle {
+  min-height: 1.9rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 130ms ease, color 130ms ease;
+}
+.rule__toggle:hover { background: var(--ink); color: var(--paper-lit); }
+
+.rules__empty { color: var(--ink-faint); font-size: 0.88rem; font-style: italic; }

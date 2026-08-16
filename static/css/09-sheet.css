@@ -1,0 +1,44 @@
+/*
+  The sheet: the paper itself, the double border, and the three filing holes.
+
+  The parts on the sheet come after this file: the stamp, the head, the verdict,
+  the folios, the actions.
+*/
+
+.sheet {
+  position: relative;
+  padding: var(--s5) var(--s5) var(--s4) var(--s4);
+  background: var(--paper-lit);
+  border: 1.5px solid var(--ink);
+  /* A sheet of paper makes a hard shadow, not a soft one. */
+  box-shadow:
+    5px 5px 0 var(--paper-deep),
+    6px 6px 0 var(--rule),
+    22px 26px 44px -20px rgba(28, 24, 21, 0.3);
+}
+/* The inner rule makes the double border of a printed form. */
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid var(--rule);
+  pointer-events: none;
+}
+
+/* Three filing holes down the left edge. */
+.sheet__holes {
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sheet__holes i {
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 1px 2px rgba(28, 24, 21, 0.45);
+}

@@ -3,9 +3,9 @@
   The ProjectSync review desk.
 
   This page is one document. It has no build step and no framework. FastAPI
-  serves the three files in this folder as they are. A container that holds the
-  API also holds the interface, so the deploy stays at one Cloud Run service and
-  two Google Cloud services.
+  serves this folder as it is: this file, the stylesheets in `css/`, and the
+  modules in `js/`. A container that holds the API also holds the interface, so
+  the deploy stays at one Cloud Run service and two Google Cloud services.
 
   The design is a paper dossier: an intake form, a ledger of the six graph
   nodes, four editable folios, and a rubber stamp for the verdict. The stamp is
@@ -22,7 +22,37 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/app.css">
+<!--
+  The stylesheets, in the order of the cascade. The order below is the order of
+  the numbers, and it is the order that the design needs: the tokens first,
+  because every file after them reads them, and the small screens and print
+  last, because those rules must win.
+
+  There is no build step, so the browser reads each file. Do not put these into
+  one file with `@import`. The browser has a preload scanner, which reads this
+  page as it arrives and starts the downloads early. It finds all of the links
+  below at the same time, so the files come together. It cannot find an
+  `@import`, because the address of an `@import` is inside a CSS file and not in
+  this page. The browser must then get one file and read it before it can find
+  the next one. See `docs/VERIFICATION_LEDGER.md` row 5.4.
+-->
+<link rel="stylesheet" href="/static/css/01-tokens.css">
+<link rel="stylesheet" href="/static/css/02-base.css">
+<link rel="stylesheet" href="/static/css/03-desk.css">
+<link rel="stylesheet" href="/static/css/04-masthead.css">
+<link rel="stylesheet" href="/static/css/05-rail.css">
+<link rel="stylesheet" href="/static/css/06-buttons.css">
+<link rel="stylesheet" href="/static/css/07-ledger.css">
+<link rel="stylesheet" href="/static/css/08-rules.css">
+<link rel="stylesheet" href="/static/css/09-sheet.css">
+<link rel="stylesheet" href="/static/css/10-stamp.css">
+<link rel="stylesheet" href="/static/css/11-head.css">
+<link rel="stylesheet" href="/static/css/12-verdict.css">
+<link rel="stylesheet" href="/static/css/13-folios.css">
+<link rel="stylesheet" href="/static/css/14-actions.css">
+<link rel="stylesheet" href="/static/css/15-slips.css">
+<link rel="stylesheet" href="/static/css/16-motion.css">
+<link rel="stylesheet" href="/static/css/17-screens.css">
 </head>
 
 <body>

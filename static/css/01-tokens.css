@@ -1,0 +1,44 @@
+/*
+  Tokens: the paper, the ink, the four signal colours, the type and the space.
+
+  The design is a paper dossier. The desk is a warm stock, the sheet is a lighter
+  stock on top of it, and the accent is red-lead: the colour of a correction
+  mark. There is no gradient, and no shadow that blurs. A sheet of paper makes a
+  hard shadow.
+
+  Each signal colour has one job, and only one. Do not give a colour a second
+  job, because the operator reads the colour before the word.
+*/
+
+:root {
+  /* Paper and ink. */
+  --paper:      #ede6d8;
+  --paper-lit:  #f7f2e7;
+  --paper-deep: #e2d9c6;
+  --ink:        #1c1815;
+  --ink-soft:   #5d5449;
+  --ink-faint:  #857d70;
+  --rule:       #c8bda6;
+  --rule-soft:  #ded4c0;
+
+  /* The four signal colours. Each one has one job. */
+  --vermilion:  #a8321a;  /* the stamp, the gate, every correction mark */
+  --verdigris:  #3b5c49;  /* a pass, an approval, an active rule */
+  --stampblue:  #2d4a6b;  /* a proposal that waits for a person */
+  --amber:      #856317;  /* a partial result, a warning */
+
+  /* Type. */
+  --display: "Fraunces", "Georgia", "Times New Roman", serif;
+  --body:    "Newsreader", "Georgia", "Times New Roman", serif;
+  --mono:    "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
+
+  /* Space. The scale is a fourth. */
+  --s1: 0.35rem;
+  --s2: 0.7rem;
+  --s3: 1.15rem;
+  --s4: 1.9rem;
+  --s5: 3.1rem;
+  --s6: 5rem;
+
+  --margin-col: 7.5rem;  /* the left margin of the sheet holds the marginalia */
+}

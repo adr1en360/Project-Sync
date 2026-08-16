@@ -1,0 +1,91 @@
+/*
+  The rail: the panels down the left, and the form controls inside them.
+
+  The rail is where the operator types. The buttons are in the next file, because
+  the sheet uses them too.
+*/
+
+.rail {
+  position: sticky;
+  top: var(--s3);
+  display: grid;
+  gap: var(--s4);
+}
+
+.panel {
+  padding: var(--s3) var(--s3) var(--s4);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--ink);
+  background: rgba(247, 242, 231, 0.6);
+}
+
+.panel h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+  font-size: 1.28rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.panel__no {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  color: var(--vermilion);
+}
+
+/* --- Form controls ------------------------------------------------ */
+
+.field { display: grid; gap: var(--s1); margin: 0 0 var(--s2); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+
+label {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+label small { text-transform: none; letter-spacing: 0.06em; color: var(--ink-faint); }
+
+input[type="url"],
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border: 0;
+  border-bottom: 1.5px solid var(--ink);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.94rem;
+  caret-color: var(--vermilion);
+  transition: background 150ms ease, border-color 150ms ease;
+}
+input:hover, textarea:hover { background: rgba(255, 255, 255, 0.72); }
+input:focus, textarea:focus { background: #fffdf6; border-color: var(--vermilion); }
+input::placeholder, textarea::placeholder { color: var(--ink-faint); opacity: 1; }
+
+#repo-url { font-family: var(--mono); font-size: 0.86rem; }
+#user-id, #commit-sha { font-family: var(--mono); font-size: 0.8rem; }
+
+textarea { resize: vertical; line-height: 1.5; }
+
+.field__hint {
+  margin: 0 0 var(--s3);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.form-error {
+  margin-top: var(--s2);
+  padding-left: var(--s2);
+  border-left: 3px solid var(--vermilion);
+  color: var(--vermilion);
+  font-size: 0.86rem;
+}

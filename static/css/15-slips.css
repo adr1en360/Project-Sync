@@ -1,0 +1,34 @@
+/*
+  The slips: the small notes at the foot right of the page.
+
+  Four tones, and each one names what happened: ok, bad, warn, and the plain
+  one.
+*/
+
+.slips {
+  position: fixed;
+  right: var(--s3);
+  bottom: var(--s3);
+  z-index: 50;
+  display: grid;
+  gap: var(--s2);
+  width: min(24rem, calc(100vw - 2 * var(--s3)));
+}
+
+.slip {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--ink);
+  border-left-width: 4px;
+  background: var(--paper-lit);
+  box-shadow: 4px 4px 0 rgba(28, 24, 21, 0.16);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.slip b { display: block; margin-bottom: 0.2rem; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.6rem; }
+.slip[data-tone="ok"]   { border-left-color: var(--verdigris); }
+.slip[data-tone="ok"] b { color: var(--verdigris); }
+.slip[data-tone="bad"]  { border-left-color: var(--vermilion); }
+.slip[data-tone="bad"] b { color: var(--vermilion); }
+.slip[data-tone="warn"] { border-left-color: var(--amber); }
+.slip[data-tone="warn"] b { color: var(--amber); }
