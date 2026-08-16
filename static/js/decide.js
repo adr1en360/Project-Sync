@@ -5,7 +5,7 @@
 */
 
 import { postJson } from "./api.js";
-import { el } from "./dom.js";
+import { buttonLabel, el, setButtonLabel } from "./dom.js";
 import { collectEdits, renderFolios } from "./folios.js";
 import { pollOnce } from "./poll.js";
 import { loadRules } from "./rules.js";
@@ -16,8 +16,8 @@ import { state } from "./state.js";
 async function writeAgain() {
   if (!state.tx) return;
   el.regenerate.disabled = true;
-  const label = el.regenerate.textContent;
-  el.regenerate.textContent = "Writing…";
+  const label = buttonLabel(el.regenerate);
+  setButtonLabel(el.regenerate, "Writing…");
   try {
     const answer = await postJson("/api/v1/regenerate-asset", {
       transaction_id: state.tx.tx_id,
@@ -39,7 +39,7 @@ async function writeAgain() {
     slip("Write again failed", error.message, "bad");
   } finally {
     el.regenerate.disabled = false;
-    el.regenerate.textContent = label;
+    setButtonLabel(el.regenerate, label);
   }
 }
 
@@ -61,7 +61,8 @@ async function approve() {
   if (!confirm(question)) return;
 
   el.approve.disabled = true;
-  el.approve.textContent = "Committing…";
+  const approveLabel = buttonLabel(el.approve);
+  setButtonLabel(el.approve, "Committing…");
   try {
     const answer = await postJson("/api/v1/approval-callback", {
       transaction_id: state.tx.tx_id,
@@ -87,7 +88,7 @@ async function approve() {
     slip("The approval failed", error.message, "bad");
   } finally {
     el.approve.disabled = false;
-    el.approve.textContent = "Approve and commit";
+    setButtonLabel(el.approve, approveLabel);
   }
 }
 

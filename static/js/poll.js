@@ -11,6 +11,7 @@ import { renderLedger, resetLedger } from "./ledger.js";
 import { renderSheet } from "./sheet.js";
 import { slip } from "./slips.js";
 import { SAVED_TX, state } from "./state.js";
+import { showTab, syncTabs } from "./tabs.js";
 
 const POLL_MS = 1600;
 const POLL_LIMIT = 150; // about four minutes
@@ -41,6 +42,7 @@ export async function pollOnce(txId) {
   state.tx = tx;
   renderLedger(tx);
   renderSheet(tx);
+  syncTabs(tx);
 
   if (tx.status === "RUNNING") {
     if (state.polls >= POLL_LIMIT) {
@@ -59,7 +61,9 @@ export async function pollOnce(txId) {
   el.poll.textContent = `The run stopped at ${String(tx.status).replace(/_/g, " ")} after ${state.polls} ${state.polls === 1 ? "check" : "checks"}.`;
 
   if (tx.status === "PENDING_APPROVAL") {
-    el.sheet.scrollIntoView({ behavior: "smooth", block: "start" });
+    // The run is complete and the gate waits for a person. So the page opens the
+    // tab that holds the drafts and the verdict.
+    showTab("review");
   }
   if (String(tx.status).startsWith("FAILED")) {
     slip("The run failed", tx.error_message || String(tx.status), "bad");
@@ -75,5 +79,7 @@ export function openRecord(txId) {
   localStorage.setItem(SAVED_TX, txId);
   el.txid.textContent = txId;
   el.poll.textContent = "Opened. The first check follows.";
+  // A run starts now, so the page shows the tab that reports the nodes.
+  showTab("run");
   pollOnce(txId);
 }

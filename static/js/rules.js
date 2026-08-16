@@ -6,7 +6,7 @@
   on each run, so a change here acts on the next draft.
 */
 
-import { api, postJson } from "./api.js";
+import { api, del, postJson } from "./api.js";
 import { el } from "./dom.js";
 import { renderFolios } from "./folios.js";
 import { slip } from "./slips.js";
@@ -25,6 +25,9 @@ export async function loadRules(userId) {
     el.rules.replaceChildren();
     const li = document.createElement("li");
     li.className = "rules__empty";
+    // The same element says "no rule yet" and "the rules did not load". The tone
+    // tells the two apart, because an empty list is not a fault.
+    li.dataset.tone = "bad";
     li.textContent = `The rules did not load. ${error.message}`;
     el.rules.append(li);
     return;
@@ -53,9 +56,11 @@ function renderRules() {
 
   for (const rule of ordered) {
     const li = document.createElement("li");
+    li.className = "rule";
     li.dataset.state = rule.state;
 
     const left = document.createElement("div");
+    left.className = "rule__body";
     const text = document.createElement("p");
     text.className = "rule__text";
     text.textContent = rule.text;
@@ -71,7 +76,24 @@ function renderRules() {
     button.setAttribute("aria-pressed", String(rule.state === "ACTIVE"));
     button.addEventListener("click", () => setRuleState(rule));
 
-    li.append(left, button);
+    /*
+      The delete button is the third child of the line, and the toggle stays the
+      second child. The Node harness reads the children of a line by number, so
+      an element that holds these two buttons together breaks three of its
+      checks.
+
+      The button carries an icon and no text, so the name comes from
+      `aria-label`. The name repeats the rule, because a page can show many
+      delete buttons and each one must say what it deletes.
+    */
+    const remove = document.createElement("button");
+    remove.className = "rule__delete";
+    remove.type = "button";
+    remove.setAttribute("aria-label", `Delete the rule: ${rule.text}`);
+    remove.setAttribute("title", "Delete this rule");
+    remove.addEventListener("click", () => deleteRule(rule));
+
+    li.append(left, button, remove);
     el.rules.append(li);
   }
 }
@@ -96,6 +118,55 @@ async function setRuleState(rule) {
   } catch (error) {
     slip("The rule did not change", error.message, "bad");
   }
+}
+
+/**
+ * Delete one rule, and offer an undo.
+ *
+ * The delete is soft. The service puts the state of the rule to DELETED and
+ * keeps the document, so the receipts of a draft that named this rule stay
+ * correct and the voice corpus keeps the sentence.
+ *
+ * The page offers an undo and asks no question first. A question before each
+ * delete costs the operator a click every time. An undo costs a click only when
+ * the delete was a mistake, and the soft delete makes the undo exact.
+ */
+async function deleteRule(rule) {
+  const previous = rule.state;
+  try {
+    await del(`/api/v1/rules/${encodeURIComponent(rule.rule_id)}`);
+  } catch (error) {
+    slip("The rule was not deleted", error.message, "bad");
+    return;
+  }
+
+  state.rules = state.rules.filter((one) => one.rule_id !== rule.rule_id);
+  renderRules();
+  // The margin of the fourth folio names the rules of the draft. A rule that
+  // goes away must not stay in that margin.
+  if (state.tx) renderFolios(state.tx);
+
+  slip(
+    "The rule is deleted",
+    "The database keeps the record of it, so an earlier draft still names it.",
+    "warn",
+    { label: "Undo", run: () => undoDelete(rule, previous) },
+  );
+}
+
+/** Put a rule that a delete took away back in the state that it had. */
+async function undoDelete(rule, previous) {
+  try {
+    await postJson(`/api/v1/rules/${encodeURIComponent(rule.rule_id)}`, { state: previous });
+  } catch (error) {
+    slip("The rule did not come back", error.message, "bad");
+    return;
+  }
+  rule.state = previous;
+  state.rules.push(rule);
+  renderRules();
+  if (state.tx) renderFolios(state.tx);
+  slip("The rule is back", `It is ${previous} again.`, "ok");
 }
 
 /** Listen for a new rule from the form in the voice panel. */

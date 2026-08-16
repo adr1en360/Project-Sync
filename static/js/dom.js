@@ -45,6 +45,22 @@ export const el = {
   receipts: $("receipts"),
   slips: $("slips"),
   colophonModel: $("c-model"),
+  themeToggle: $("theme-toggle"),
+};
+
+/*
+  The four tabs, in the order that the operator reads them.
+
+  `tabs.js` walks this list, so the order here is the order of the arrow keys.
+*/
+export const TAB_NAMES = ["intake", "run", "review", "voice"];
+
+/* Each tab, with the panel that it controls. */
+export const tabs = {
+  intake: { tab: $("tab-intake"), pane: $("panel-intake") },
+  run: { tab: $("tab-run"), pane: $("panel-run") },
+  review: { tab: $("tab-review"), pane: $("panel-review") },
+  voice: { tab: $("tab-voice"), pane: $("panel-voice") },
 };
 
 /* The four editable boxes, each with the meter below it. */
@@ -77,6 +93,33 @@ export function fact(term, value, href) {
   }
   wrap.append(dt, dd);
   return wrap;
+}
+
+/**
+ * Read the words of a button.
+ *
+ * A button with an icon holds two children: the `svg` of the icon and a `span`
+ * with the words. A button with no icon holds the words alone.
+ */
+export function buttonLabel(button) {
+  const span = button.querySelector("span");
+  return span ? span.textContent : button.textContent;
+}
+
+/**
+ * Put new words in a button and keep the icon of it.
+ *
+ * `button.textContent = "Copied"` takes away every child of the button, so the
+ * `svg` of the icon goes at the first press and it never comes back. This writes
+ * into the `span` when the button has one, and the icon stays.
+ */
+export function setButtonLabel(button, words) {
+  const span = button.querySelector("span");
+  if (span) {
+    span.textContent = words;
+  } else {
+    button.textContent = words;
+  }
 }
 
 /** Fill a list with one line for each item. The old lines go away. */

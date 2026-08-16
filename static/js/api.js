@@ -10,9 +10,10 @@
     GET  /api/v1/transactions/{id}
     POST /api/v1/regenerate-asset    {transaction_id}
     POST /api/v1/approval-callback   {transaction_id, approved, edited_assets?}
-    GET  /api/v1/rules?user_id=
-    POST /api/v1/rules               {user_id, text}
-    POST /api/v1/rules/{id}          {state}
+    GET    /api/v1/rules?user_id=
+    POST   /api/v1/rules             {user_id, text}
+    POST   /api/v1/rules/{id}        {state}
+    DELETE /api/v1/rules/{id}
 */
 
 /* An operator can point the page at a different host with ?api=… */
@@ -48,3 +49,10 @@ export async function api(path, options = {}) {
 
 export const postJson = (path, payload) =>
   api(path, { method: "POST", body: JSON.stringify(payload) });
+
+/*
+  A DELETE is a soft delete. The service puts the state of the rule to DELETED
+  and keeps the document, so the receipts of an earlier draft stay correct and
+  the operator can undo the delete.
+*/
+export const del = (path) => api(path, { method: "DELETE" });

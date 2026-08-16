@@ -5,8 +5,8 @@
   each other module. Change the fields of the object. Do not replace the object,
   because a new object breaks that link.
 
-  This file also holds the two names in `localStorage`. The names are here and
-  not in the three modules that use them, so a spelling mistake is not possible.
+  This file also holds each name in `localStorage`. The names are here and not in
+  the modules that use them, so a spelling mistake is not possible.
 */
 
 export const state = {
@@ -22,3 +22,13 @@ export const SAVED_USER = "ps.user";
 
 /** The record that is open. A reload opens the same record again. */
 export const SAVED_TX = "ps.tx";
+
+/**
+ * The theme that the operator chose: "light" or "dark".
+ * No value means that the operator made no choice. The page then follows the
+ * theme of the operating system.
+ */
+export const SAVED_THEME = "ps.theme";
+
+/** The tab that is open. A reload shows the same tab again. */
+export const SAVED_TAB = "ps.tab";

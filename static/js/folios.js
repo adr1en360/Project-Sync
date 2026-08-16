@@ -5,7 +5,7 @@
   to the service with the approval, and nothing reaches GitHub before that.
 */
 
-import { el, folio, listItems } from "./dom.js";
+import { buttonLabel, el, folio, listItems, setButtonLabel } from "./dom.js";
 import { slip } from "./slips.js";
 import { state } from "./state.js";
 
@@ -176,9 +176,9 @@ export function connectFolios() {
     const box = document.getElementById(button.dataset.copy);
     try {
       await navigator.clipboard.writeText(box.value);
-      const label = button.textContent;
-      button.textContent = "Copied";
-      setTimeout(() => (button.textContent = label), 1400);
+      const label = buttonLabel(button);
+      setButtonLabel(button, "Copied");
+      setTimeout(() => setButtonLabel(button, label), 1400);
     } catch {
       box.select();
       slip("Copy", "The browser refused the clipboard. The text is selected.", "warn");

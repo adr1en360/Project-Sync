@@ -23,6 +23,8 @@
     intake.js   the form that starts a run
     decide.js   write again, discard, approve
     rules.js    the voice rules
+    tabs.js     the four tabs, and how far each step went
+    theme.js    the light theme and the dark theme
 */
 
 import { api } from "./api.js";
@@ -36,7 +38,13 @@ import { openRecord } from "./poll.js";
 import { connectRules, loadRules } from "./rules.js";
 import { renderSheet } from "./sheet.js";
 import { SAVED_TX, SAVED_USER, state } from "./state.js";
+import { connectTabs, syncTabs } from "./tabs.js";
+import { connectTheme } from "./theme.js";
 
+// The theme goes first, so the page shows the correct colour before the rest of
+// the work starts.
+connectTheme();
+connectTabs();
 connectIntake();
 connectDecisions();
 connectFolios();
@@ -58,6 +66,7 @@ async function boot() {
       state.tx = tx;
       renderLedger(tx);
       renderSheet(tx);
+      syncTabs(tx);
       if (tx.status === "RUNNING") {
         openRecord(savedTx);
       } else {
