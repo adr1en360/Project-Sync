@@ -1,7 +1,9 @@
 # Verification Ledger
 
 Every load-bearing technical and competition claim in `docs/`, checked against a primary source.
-Verified: 2026-08-16 · Verifier: Claude Opus 5 · Method: official docs + PyPI + Devpost rules page
+Verified: 2026-08-16 · Verifier: Claude Opus 5
+Method: official docs + PyPI + the Devpost rules page, then the installed packages in `.venv`, and
+then the code in a run. §5 exists because the last of those three found what the first two could not.
 
 Legend: ✅ confirmed · ❌ false, corrected · ⚠️ true but incomplete/risky · ⬜ not verified this pass
 
@@ -90,6 +92,22 @@ Legend: ✅ confirmed · ❌ false, corrected · ⚠️ true but incomplete/risk
 | 4.8 | An inequality filter implies ordering on that field, and it must be the **first** ordering | ✅ **gotcha** | Firestore docs |
 | 4.9 | Positional `.where("f", ">", v)` deprecation status | ⬜ page uses only the `filter=` keyword form; deprecation not stated. Use `filter=FieldFilter(...)` |
 | 4.10 | Cost estimate "$30–50 Cloud Run + $5 Firestore + $10 Vertex AI = $50" | ⬜ **unverified estimate**, not a quote. Keep labelled as an estimate |
+
+---
+
+## 5. The interface
+
+This section exists because of 5.1. Every row above it came from reading a
+document or a package. 5.1 came from running the code, and nothing else would
+have found it.
+
+| # | Claim | Verdict | Source |
+|---|---|---|---|
+| 5.1 | The review desk worked in a browser before 2026-08-16 | ❌ **it had never run, once.** The old `static/app.js:134` built `new Intl.DateTimeFormat(undefined, {dateStyle: "medium", timeStyle: "short", timeZoneName: "short"})` at the top level of the module. That mixture is not valid (5.2), so the constructor threw, the module never finished, `boot()` never ran, the masthead stayed at `…`, and no button did anything. The defect passed every earlier check for one reason: **a dead page and a live page give the same HTTP answer.** `curl /` returns the markup, `curl /healthz` returns the health, and every route answers exactly as before. Found by importing the modules under a fake DOM. Fixed in `static/js/sheet.js` with named component options, which give the same text and add the zone: `09:00Z` renders as `Aug 16, 2026, 10:00 AM GMT+1` in Africa/Lagos | probed on node v24.14.0, icu 78.2, 2026-08-16 · fixed at `static/js/sheet.js:28-35` · `tests/desk_harness.mjs` |
+| 5.2 | Which options may not go with `dateStyle` or `timeStyle` | ✅ **eleven:** `weekday, era, year, month, day, dayPeriod, hour, minute, second, fractionalSecondDigits, timeZoneName`. The locale options are safe, and `timeZone` is one of them. So `{dateStyle, timeZone: "UTC"}` is valid and `{dateStyle, timeZoneName: "short"}` is not — the two differ by four letters. One point of difference: MDN says the combination "is not valid" and names `RangeError` as the exception of the constructor, and **V8 throws `TypeError: Invalid option : option`.** Five mixtures were probed and all five threw `TypeError`. The class of the error changes nothing here, because either one stops the module | [MDN `Intl.DateTimeFormat()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/DateTimeFormat), read 2026-08-16 · five mixtures probed the same day |
+| 5.3 | A probe of the API is enough to test this product | ❌ **no**, and 5.1 is the proof. Two faults in the interface give a page that does not work and an API that answers correctly: a module that throws at import, and an address with one wrong letter in it. The interface now has four tests of its own. `tests/desk_harness.mjs` imports every module under a fake DOM and reads what they wrote — 81 checks, 12 requests, all eight API paths. Three tests in `tests/test_review_desk.py` hold `index.html` and the files beside it to the same list: every address on the page is a file, every stylesheet is on the page, and the links stay in the order of their numbers. Each of the three was made to fail on purpose before it was kept | `tests/`, added 2026-08-16 · `uv run pytest tests/ -q` → 40 passed, 1 skipped |
+| 5.4 | "`@import` sends the downloads one after the other, so ordered `<link>` tags are faster" | ✅ **true, and sourced.** The browser has a preload scanner. It reads the raw HTML as the page arrives and it starts the downloads early. It finds every `<link rel="stylesheet">` in the head at the same time, so those files come together. It cannot find an `@import`, because an `@import` is inside a CSS file and not in the HTML. The browser learns of the second file only after it has the first one and reads it, which makes a request chain and holds the render longer. web.dev says to keep to `<link rel="stylesheet">` for this reason. **This row stood at ⬜ for part of the day, because the first two pages that were read for it were the wrong pages:** MDN's `@import` page carries no performance guidance, and web.dev's render-blocking page does not mention `@import` at all. The guidance is on the preload scanner page. Cost of the 17 links, measured: 2.1 ms each on one kept-alive connection, and a browser opens six | [web.dev, the preload scanner](https://web.dev/articles/preload-scanner), read 2026-08-16 · the two pages that do **not** state it, both read the same day: [MDN `@import`](https://developer.mozilla.org/en-US/docs/Web/CSS/@import), [web.dev render-blocking CSS](https://web.dev/articles/critical-rendering-path/render-blocking-css) · timing measured on 127.0.0.1 |
+| 5.5 | Splitting `app.css` into 17 files changed no rule | ✅ the comments and the whitespace were taken out of both sides, and the declarations then matched exactly: 23,953 characters, the same on each side. Order is kept, so the cascade is kept. `@import` is not used, so the cascade order is the order of the links | compared 2026-08-16, before `static/app.css` was deleted. `git show HEAD:static/app.css` gives the original back |
 
 ---
 
