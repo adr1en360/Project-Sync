@@ -1,68 +1,92 @@
 /*
-  The verdict of the path evaluator, and the marginalia.
+  The gate.
 
-  The marginalia are here because the verdict block sets the left margin column
-  that they sit in. `.marginalia--rules` shows the rules that the model used, and
-  it sits beside the folios.
+  The path evaluator says one of two things: `FULL_PUBLISH` or `PRIVATE_ONLY`. It
+  gives a confidence and the reasons for the decision, and it lists what the
+  repository does not have.
+
+  This card takes a higher container tone than a folio, because it is the reason
+  that the page exists. A person who reads one thing on this panel must read
+  this.
 */
 
 .verdict {
+  background: var(--m3-surface-container);
+}
+
+.verdict__body {
   display: grid;
-  grid-template-columns: var(--margin-col) minmax(0, 1fr);
-  gap: 0 var(--s3);
-  padding: var(--s4) 0;
-  border-bottom: 1px solid var(--rule);
+  gap: var(--sp-3);
 }
-.verdict h3 {
-  grid-column: 1;
-  margin-top: 0.2rem;
-  font-family: var(--mono);
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.verdict__body { grid-column: 2; }
-
-.verdict__line {
-  margin: 0 0 var(--s2);
-  font-family: var(--display);
-  font-size: 1.3rem;
-  font-variation-settings: "SOFT" 40, "WONK" 1;
-  line-height: 1.25;
-}
-.verdict__line b { font-weight: 700; }
-.verdict__line[data-verdict="FULL_PUBLISH"] b { color: var(--verdigris); }
-.verdict__line[data-verdict="PRIVATE_ONLY"] b { color: var(--vermilion); }
-
-.verdict__reasons { margin: 0; padding-left: 1.05rem; }
-.verdict__reasons li { margin-bottom: 0.3rem; color: var(--ink-soft); }
-.verdict__reasons li::marker { color: var(--rule); }
 
 /*
-  The marginalia sit in the left margin of the sheet, in red-lead, at a small
-  angle. They read as the marks that a person makes on a printed page.
-*/
-.marginalia {
-  grid-column: 1;
-  grid-row: 2;
-  margin: var(--s2) 0 0;
-  padding: 0;
-  list-style: none;
-  text-align: right;
-}
-.marginalia li {
-  margin-bottom: 0.5rem;
-  color: var(--vermilion);
-  font-size: 0.78rem;
-  font-style: italic;
-  line-height: 1.25;
-  transform: rotate(-1.4deg);
-  transform-origin: right;
-}
-.marginalia li::before { content: "✗ "; font-style: normal; opacity: 0.65; }
+  The line of the decision.
 
-.marginalia--rules { position: absolute; left: 0; width: var(--margin-col); }
-.marginalia--rules li { color: var(--verdigris); }
-.marginalia--rules li::before { content: "§ "; }
+  The edge at the start carries the colour of the decision, and the words carry
+  the decision itself. `js/sheet.js` writes "Ready to show" or "Hold it back" in
+  the bold part, so the colour is never the only cue.
+*/
+.verdict__line {
+  border-inline-start: 4px solid var(--m3-outline-variant);
+  padding-inline-start: var(--sp-3);
+  color: var(--m3-on-surface);
+  font: var(--type-title-sm);
+  letter-spacing: var(--track-title-sm);
+}
+
+.verdict__line[data-verdict="FULL_PUBLISH"] {
+  border-inline-start-color: var(--m3-success);
+}
+
+.verdict__line[data-verdict="FULL_PUBLISH"] b {
+  color: var(--m3-success);
+}
+
+.verdict__line[data-verdict="PRIVATE_ONLY"] {
+  border-inline-start-color: var(--m3-warning);
+}
+
+.verdict__line[data-verdict="PRIVATE_ONLY"] b {
+  color: var(--m3-warning);
+}
+
+/* The words after the verb say the name of the decision and the confidence.
+   They step back, because the verb is what a person reads first. */
+.verdict__line span {
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-md);
+  letter-spacing: var(--track-body-md);
+}
+
+/* ---------------------------------------------------------------- */
+/* The reasons                                                      */
+/* ---------------------------------------------------------------- */
+
+/*
+  The reasons that the model gave. The dot in front of each one is drawn and it
+  is not a character, so no new character goes on the approved list in
+  `tests/test_review_desk.py`.
+*/
+.verdict__reasons {
+  display: grid;
+  gap: var(--sp-2);
+  padding-inline-start: var(--sp-5);
+}
+
+.verdict__reasons li {
+  position: relative;
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-md);
+  letter-spacing: var(--track-body-md);
+}
+
+.verdict__reasons li::before {
+  content: "";
+  position: absolute;
+  top: 0.4375rem;
+  left: calc(var(--sp-4) * -1);
+  width: 5px;
+  height: 5px;
+  border-radius: var(--shape-full);
+  background: var(--m3-outline);
+}

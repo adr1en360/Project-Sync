@@ -1,0 +1,203 @@
+/*
+  The shell: the bar at the top, the column of work, and the foot.
+
+  The shell holds one measure for the width of the content. A dashboard on a
+  wide screen must not stretch a line of text across the whole screen, because a
+  long line is hard to read. The column stops at `--shell-max` and stays in the
+  middle of the screen.
+
+  The bar at the top and the foot are quiet. Both sit on a container tone and
+  carry one hairline. The page shows depth with tone and with a hairline, and
+  not with a shadow. A shadow on each box makes a page that looks like a set of
+  cards on a table, and an operator must read one page.
+*/
+
+:root {
+  /* The width of the column of work. 54rem is near 864px at the default size. */
+  --shell-max: 54rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* The link that a keyboard finds first                             */
+/* ---------------------------------------------------------------- */
+
+/*
+  The link stays out of sight above the page until a keyboard reaches it. It
+  must not go away with `display: none`, because an element with no display gets
+  no focus, and then a keyboard cannot find it at all.
+*/
+.skip {
+  position: absolute;
+  z-index: 20;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--shape-sm);
+  background: var(--m3-primary);
+  color: var(--m3-on-primary);
+  font: var(--type-label-lg);
+  letter-spacing: var(--track-label-lg);
+  text-decoration: none;
+  transform: translateY(-300%);
+  transition: transform var(--dur-short) var(--ease-standard);
+}
+
+.skip:focus,
+.skip:focus-visible {
+  transform: translateY(0);
+}
+
+/* ---------------------------------------------------------------- */
+/* The bar at the top                                               */
+/* ---------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-height: 56px;
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--m3-outline-variant);
+  background: var(--m3-surface-container-low);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.topbar__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--shape-sm);
+  background: var(--m3-primary);
+  color: var(--m3-on-primary);
+  font: var(--type-label-md);
+  letter-spacing: var(--track-label-md);
+}
+
+.topbar__name {
+  font: var(--type-title-md);
+  letter-spacing: var(--track-title-md);
+}
+
+/* The health goes to the end of the bar, and the theme control after it. */
+.topbar__health {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-inline-start: auto;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--shape-full);
+  background: var(--m3-surface-container-high);
+}
+
+.chip__label {
+  font: var(--type-label-sm);
+  line-height: 1.25;
+  color: var(--m3-on-surface-variant);
+}
+
+/*
+  The value takes the mono type, so that a model name and a route name keep the
+  same width from one read to the next. A value that changes width makes the bar
+  move, and a bar that moves looks broken.
+*/
+.chip__value {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: var(--m3-on-surface);
+}
+
+/* ---------------------------------------------------------------- */
+/* The strip of a message                                           */
+/* ---------------------------------------------------------------- */
+
+.strip {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+  text-align: center;
+}
+
+.strip--warn {
+  background: var(--m3-warning-container);
+  color: var(--m3-on-warning-container);
+}
+
+/* ---------------------------------------------------------------- */
+/* The column of work, and one tab panel                            */
+/* ---------------------------------------------------------------- */
+
+.work {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-4) var(--sp-8);
+}
+
+/*
+  One tab panel. Every space inside a panel comes from this one gap, so each
+  panel gives the same rhythm and no box needs a margin.
+*/
+.pane {
+  display: grid;
+  gap: var(--sp-5);
+  align-content: start;
+}
+
+.pane__head {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.pane__title {
+  font: var(--type-title-lg);
+  color: var(--m3-on-surface);
+  text-wrap: balance;
+}
+
+/*
+  The hint stops at 68 characters. A line that is longer is hard to read,
+  because the eye loses the start of the next line.
+*/
+.pane__hint {
+  max-width: 68ch;
+  color: var(--m3-on-surface-variant);
+}
+
+/* ---------------------------------------------------------------- */
+/* The foot                                                         */
+/* ---------------------------------------------------------------- */
+
+.colophon {
+  display: grid;
+  gap: var(--sp-1);
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-4);
+  border-top: 1px solid var(--m3-outline-variant);
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+  text-align: center;
+}
+
+.colophon p {
+  font: inherit;
+  letter-spacing: inherit;
+}

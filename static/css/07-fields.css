@@ -1,0 +1,144 @@
+/*
+  The fields.
+
+  A label stays above its field and it does not float into the border. A label
+  that floats becomes small when the field holds a value, so a full form turns
+  into a column of small grey text and it is hard to scan. A label that stays
+  put keeps one size and one place.
+
+  A field is 48px tall, which is the target for a finger. A button is 40px,
+  because a button holds no text that a person must read inside it.
+
+  The text of a field is 16px. A field with text below 16px makes Safari on iOS
+  make the whole page larger when the field takes focus, and the page then does
+  not come back.
+*/
+
+/*
+  A form gives the space between its own children. There are two forms on this
+  page and both hold fields only, so this rule can name the element and no form
+  needs a class for it.
+*/
+form {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.field {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.field__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  color: var(--m3-on-surface);
+  font: var(--type-label-lg);
+  letter-spacing: var(--track-label-lg);
+}
+
+/* The word that says a field is not necessary. It must read as a note, and not
+   as a part of the name of the field. */
+.field__opt {
+  color: var(--m3-on-surface-variant);
+  font: var(--type-label-sm);
+}
+
+.field__input {
+  width: 100%;
+  min-height: var(--target-min);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--m3-outline);
+  border-radius: var(--shape-xs);
+  background: var(--m3-surface-container-lowest);
+  color: var(--m3-on-surface);
+  font: var(--type-body-lg);
+  letter-spacing: var(--track-body-lg);
+  transition: border-color var(--dur-short) var(--ease-standard);
+}
+
+.field__input:hover {
+  border-color: var(--m3-on-surface-variant);
+}
+
+/*
+  The field with focus takes a ring of 2px inside its own box, and not a border
+  of 2px. A change of the border width moves the text of the field by one pixel,
+  and then the whole form appears to jump when a person moves through it.
+*/
+.field__input:focus-visible {
+  border-color: var(--m3-primary);
+  outline: 2px solid var(--m3-primary);
+  outline-offset: -2px;
+}
+
+/*
+  `:user-invalid` and not `:invalid`.
+
+  `:invalid` matches a field that is necessary and empty, from the first paint.
+  So a form that nobody has touched appears to be full of errors. `:user-invalid`
+  waits for the person to give a value or to leave the field.
+*/
+.field__input:user-invalid {
+  border-color: var(--m3-error);
+}
+
+textarea.field__input {
+  min-height: calc(var(--target-min) * 1.5);
+}
+
+/*
+  The colour that the browser paints on a field that it filled.
+
+  Chrome paints a pale yellow there, from the light theme, and it keeps that
+  colour in the dark theme. A field then shows dark text on a light fill, or
+  light text on a light fill, and the person cannot read it. An inset shadow of
+  40px paints over the whole field, which is the one way to reach that colour.
+
+  The two rules stay apart on purpose. A browser drops a whole rule when one
+  selector in the list is a selector that it does not know, so `:autofill` and
+  `:-webkit-autofill` must not share a list.
+*/
+.field__input:autofill {
+  -webkit-text-fill-color: var(--m3-on-surface);
+  box-shadow: 0 0 0 40px var(--m3-surface-container-lowest) inset;
+}
+
+.field__input:-webkit-autofill {
+  -webkit-text-fill-color: var(--m3-on-surface);
+  box-shadow: 0 0 0 40px var(--m3-surface-container-lowest) inset;
+}
+
+/* Two fields beside each other. `16-screens.css` puts them one under the other
+   on a narrow screen. */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+.field__hint {
+  max-width: 68ch;
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+}
+
+/*
+  The error of a form. The element carries `role="alert"`, so a screen reader
+  says it at the moment that the JavaScript shows it. The `[hidden]` rule in
+  `02-reset.css` keeps it off the page until then.
+
+  The edge of 4px is a second cue beside the colour, for a person who does not
+  read the red.
+*/
+.form-error {
+  padding: var(--sp-3) var(--sp-4);
+  border-inline-start: 4px solid var(--m3-error);
+  border-radius: var(--shape-xs);
+  background: var(--m3-error-container);
+  color: var(--m3-on-error-container);
+  font: var(--type-body-md);
+  letter-spacing: var(--track-body-md);
+}

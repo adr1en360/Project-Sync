@@ -1,0 +1,209 @@
+/*
+  The surfaces: the card, the sheet, the facts, the receipts, and the bar of
+  decisions.
+
+  A card here is a container tone with one hairline and no shadow. Material
+  Design 3 calls this tonal elevation, and it is the reason this page has no
+  shadow on a box. A shadow under each box turns a page into a pile of cards on
+  a table, and an operator must read one page.
+
+  A box goes on this page only when it holds a group that a person acts on as one
+  group. Every other group is a heading with text under it. A page where each
+  paragraph has a border of its own is harder to read, not easier.
+*/
+
+.card {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--m3-outline-variant);
+  border-radius: var(--shape-md);
+  background: var(--m3-surface-container-low);
+}
+
+/*
+  A form takes the full width of the column of work.
+*/
+.card--form {
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- */
+/* The sheet: one transaction                                       */
+/* ---------------------------------------------------------------- */
+
+/*
+  The sheet holds the head, the gate, the four drafts, and the bar of decisions.
+  It is not a card, because its own children are cards. A card inside a card
+  gives two borders that say nothing.
+*/
+.sheet {
+  position: relative;
+  display: grid;
+  gap: var(--sp-5);
+  align-content: start;
+}
+
+.sheet__no {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  color: var(--m3-on-surface-variant);
+  font: var(--type-label-md);
+  letter-spacing: var(--track-label-md);
+}
+
+.sheet__no b {
+  color: var(--m3-on-surface);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------- */
+/* The facts of the record                                          */
+/* ---------------------------------------------------------------- */
+
+/*
+  Each fact is a term with a value under it. The row wraps, so a wide screen
+  shows every fact on one line and a narrow screen shows fewer. No fact carries a
+  border: an operator reads values, and not boxes.
+*/
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-6);
+  padding-top: var(--sp-2);
+}
+
+.facts > div {
+  display: grid;
+}
+
+.facts dt {
+  color: var(--m3-on-surface-variant);
+  font: var(--type-label-sm);
+}
+
+.facts dd {
+  color: var(--m3-on-surface);
+  font: var(--type-body-md);
+  letter-spacing: var(--track-body-md);
+}
+
+/* ---------------------------------------------------------------- */
+/* The notes in the margin                                          */
+/* ---------------------------------------------------------------- */
+
+/*
+  Two lists use this. `#verdict-missing` says what the repository does not have,
+  and `#applied-rules` names the rules that made the fourth draft.
+
+  `✗` marks a part that the repository does not have. `§` marks a rule. Both
+  characters are on the approved list in `tests/test_review_desk.py`.
+*/
+.marginalia {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.marginalia li {
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  gap: var(--sp-2);
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+}
+
+.marginalia li::before {
+  content: "✗";
+  color: var(--m3-warning);
+}
+
+.marginalia--rules li::before {
+  content: "§";
+  color: var(--m3-primary);
+}
+
+/* ---------------------------------------------------------------- */
+/* The receipts                                                     */
+/* ---------------------------------------------------------------- */
+
+/*
+  Each receipt is a real commit that the service wrote, so this block is the
+  proof that the loop closed. It takes the success tone when both commits landed,
+  and the warning tone when one of the two failed.
+*/
+.receipts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-6);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--shape-sm);
+  background: var(--m3-success-container);
+  color: var(--m3-on-success-container);
+}
+
+.receipts[data-partial="yes"] {
+  background: var(--m3-warning-container);
+  color: var(--m3-on-warning-container);
+}
+
+.receipts > div {
+  display: grid;
+}
+
+.receipts dt {
+  font: var(--type-label-sm);
+}
+
+.receipts dd {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1rem;
+}
+
+/* The link takes the colour of the block. The colour of a link on the success
+   tone has no measured contrast, and the underline already marks the link. */
+.receipts a {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------- */
+/* The bar of decisions                                             */
+/* ---------------------------------------------------------------- */
+
+/*
+  This bar holds the one action on the page that writes to GitHub. It takes a
+  higher container tone than the drafts above it, so a person sees where the
+  reading stops and the deciding starts.
+*/
+.act {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--m3-outline-variant);
+  border-radius: var(--shape-md);
+  background: var(--m3-surface-container);
+}
+
+.act__note {
+  max-width: 68ch;
+  color: var(--m3-on-surface-variant);
+}
+
+.act__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/*
+  The gap pushes the two decisions to the end of the row, away from the action
+  that only writes again. A hand that goes for "write again" is then far from
+  "approve and commit", which is the button that cannot be taken back.
+*/
+.act__gap {
+  flex: 1 1 var(--sp-4);
+}

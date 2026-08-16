@@ -1,0 +1,132 @@
+/*
+  The narrow window.
+
+  The page is one column at every width, so it needs no layout for a wide screen.
+  This file takes things away as the window becomes narrow, in the order that
+  costs the operator least:
+
+    1. The space around the work.
+    2. The second column of a pair of fields.
+    3. The second column of a folio and of a rule.
+    4. The number on a tab, which the icon and the word already say.
+
+  Nothing here hides a value, a state, or a control. A window of 320px shows the
+  same information as a window of 1600px.
+
+  The queries are in `rem` and not in `px`, so a person who makes the text of the
+  browser larger reaches the narrow layout at the width where the text needs it.
+*/
+
+@media (max-width: 60rem) {
+  /* A pair of fields becomes two rows. Two fields of 200px each are worse than
+     one field of 420px. */
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 48rem) {
+  .work {
+    padding: var(--sp-5) var(--sp-3) var(--sp-6);
+  }
+
+  /* The bar at the top holds the name and the health of the service. On a narrow
+     window the health drops to a line of its own, and nothing is lost. */
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  /*
+    The four tabs can scroll from side to side. A tab that shrinks below its own
+    word is a tab that nobody can read, so the row scrolls instead.
+  */
+  .tabs__list {
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: none;
+    padding-inline: var(--sp-3);
+  }
+
+  /* The numeral of a folio goes above the title, so the title keeps the full
+     width of the card. */
+  .folio {
+    grid-template-columns: 1fr;
+  }
+
+  .folio__head {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .folio::before {
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 40rem) {
+  /*
+    A rule becomes two rows: the words, then the two controls under them. The
+    order of the children in `index.html` does not change, so
+    `tests/desk_harness.mjs` still reads the toggle at position two.
+  */
+  .rule {
+    grid-template-columns: 1fr auto;
+  }
+
+  .rule__body {
+    grid-column: 1 / -1;
+  }
+
+  .rule__toggle {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .rule__delete {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  /*
+    The three decisions become three rows, each one the full width of the bar. A
+    button of the full width is easy to hit with a thumb, and the fill still says
+    which of the three is the one that writes.
+
+    The spacer goes away, because a spacer between rows would add an empty row.
+  */
+  .act__gap {
+    display: none;
+  }
+
+  .act__row .btn {
+    flex: 1 1 100%;
+  }
+
+  /* The copy button of a folio goes under the note, at the start of the card. */
+  .folio__head {
+    grid-template-columns: 1fr;
+  }
+
+  .folio__head .btn {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 30rem) {
+  /* The number on a tab goes last. The icon and the word stay, and the line under
+     the tab still says which one is open. */
+  .tab__step {
+    display: none;
+  }
+
+  /* The facts of a record become one column. Two columns of 140px break the
+     values across lines. */
+  .facts,
+  .receipts {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,202 @@
+/*
+  The four folios: the boxes that hold the drafts.
+
+  Each folio carries a Roman numeral, and the numeral is not decoration. A message
+  in a slip names a folio by that numeral ("Folio II is not valid JSON"), so a
+  person must be able to find the number on the screen. The numeral is a small
+  mark beside the title, and not a large figure in a corner.
+
+  Every box is a real `textarea`. An operator can edit a draft before the
+  approval, and the edits go to the service with that approval. So the box must
+  look like a box that a person can type in, and it takes the same border and the
+  same lowest tone as a field on the intake panel.
+*/
+
+.folios {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+/*
+  A folio is also a card, so it takes the border, the radius, and the tone from
+  `08-surfaces.css`. It adds a column for the numeral. The row gap is smaller
+  than the card default, because the meter belongs to the box above it.
+*/
+.folio {
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-3) var(--sp-4);
+}
+
+.folio::before {
+  content: attr(data-numeral);
+  display: grid;
+  grid-column: 1;
+  grid-row: 1;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--shape-sm);
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
+  font: var(--type-label-md);
+  letter-spacing: var(--track-label-md);
+}
+
+/* ---------------------------------------------------------------- */
+/* The head of a folio                                              */
+/* ---------------------------------------------------------------- */
+
+/*
+  The title and the note take the first column, and the copy button takes the
+  second one. The button stays at the top, level with the title, because a note
+  of two lines must not move the button down.
+*/
+.folio__head {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--sp-1) var(--sp-3);
+}
+
+.folio__title {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.folio__note {
+  grid-column: 1;
+  grid-row: 2;
+  max-width: 68ch;
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+}
+
+.folio__head .btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+/* ---------------------------------------------------------------- */
+/* The box that holds a draft                                       */
+/* ---------------------------------------------------------------- */
+
+/*
+  The box takes the full width of the card, under the numeral and the head.
+
+  `js/folios.js` sets the height of the box from its own content at each
+  keystroke, so the box grows with the draft and the page holds no small window
+  with a scrollbar in it.
+*/
+.folio__body {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: var(--sp-3);
+  border: 1px solid var(--m3-outline-variant);
+  border-radius: var(--shape-xs);
+  background: var(--m3-surface-container-lowest);
+  color: var(--m3-on-surface);
+  font: var(--type-body-md);
+  letter-spacing: var(--track-body-md);
+  transition: border-color var(--dur-short) var(--ease-standard);
+}
+
+.folio__body:hover {
+  border-color: var(--m3-outline);
+}
+
+.folio__body:focus-visible {
+  border-color: var(--m3-primary);
+  outline: 2px solid var(--m3-primary);
+  outline-offset: -2px;
+}
+
+/* Two of the four drafts are Markdown and JSON. A person reads those for their
+   structure, so they take mono type and a tab of two spaces. */
+.folio__body--mono {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.375rem;
+  tab-size: 2;
+}
+
+/* The social draft is prose that a person will read at the size of a post, so
+   the box shows it at that size. */
+.folio__body--voice {
+  font: var(--type-body-lg);
+  letter-spacing: var(--track-body-lg);
+}
+
+/*
+  The mark of a new draft.
+
+  A run can write into four boxes at one time. Without a cue an operator cannot
+  tell a box that changed from a box that did not. The border and the tone move
+  to the primary colour and come back.
+
+  The 1200ms matches the `setTimeout` in `js/folios.js` that takes the attribute
+  away. Keep the two numbers together.
+*/
+@keyframes folio-fresh {
+  from {
+    border-color: var(--m3-primary);
+    background: var(--m3-primary-container);
+  }
+
+  to {
+    border-color: var(--m3-outline-variant);
+    background: var(--m3-surface-container-lowest);
+  }
+}
+
+.folio__body[data-fresh="yes"] {
+  animation: folio-fresh 1200ms var(--ease-decelerate);
+}
+
+/* ---------------------------------------------------------------- */
+/* The meter under a box                                            */
+/* ---------------------------------------------------------------- */
+
+/*
+  The meter counts the words, the lines, or the characters, and it says when a
+  count is a problem. The dot at the start is the second cue beside the colour.
+
+  The dot comes only with `data-warn`, because `js/folios.js` writes that
+  attribute at the same moment as the words. An empty meter with a dot in front
+  of it would say that something is measured when nothing is.
+*/
+.folio__meter {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--m3-on-surface-variant);
+  font: var(--type-label-md);
+  letter-spacing: var(--track-label-md);
+}
+
+.folio__meter[data-warn]::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--shape-full);
+  background: var(--m3-success);
+}
+
+.folio__meter[data-warn="yes"] {
+  color: var(--m3-warning);
+}
+
+.folio__meter[data-warn="yes"]::before {
+  background: var(--m3-warning);
+}
+
+/* The rules that made the fourth draft sit at the end of that card. */
+.folio .marginalia {
+  grid-column: 1 / -1;
+}

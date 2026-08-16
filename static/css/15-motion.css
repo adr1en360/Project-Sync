@@ -1,0 +1,108 @@
+/*
+  The movement.
+
+  Three rules hold for every animation on this page:
+
+  1. It reports a change that already happened. Nothing moves for decoration.
+  2. It moves a small distance. 4px to 12px, and never across the window.
+  3. It ends. Nothing on this page repeats a movement without end.
+
+  The reduced-motion rule in `02-reset.css` covers every keyframe here, so no
+  block in this file repeats that guard. A person who asks for less movement gets
+  the end state of each animation at once, and never a page that is stuck at the
+  start of one.
+
+  Nothing here animates an element that the JavaScript builds again. `js/rules.js`
+  writes the list of rules again after each toggle and after each delete, so a
+  movement on a rule row would play again at each press and read as a flicker. The
+  six lines of the stepper are safe: `js/ledger.js` keeps the same six elements and
+  changes one attribute on each of them.
+*/
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  The panel of a tab.
+
+  `js/tabs.js` gives the `hidden` attribute to three panels and takes it from
+  one. A browser starts the animations of an element again at the moment that the
+  element comes back onto the page, so this one plays at each change of tab and
+  it needs no help from the JavaScript.
+*/
+.pane {
+  animation: rise var(--dur-medium) var(--ease-decelerate);
+}
+
+/*
+  The six nodes of the graph arrive in the order that the graph runs them.
+
+  The stagger reads as a sequence. Six lines that arrive together are a list, and
+  six lines that arrive in order are a route, which is what the stepper reports.
+
+  The index comes from `--i` on each `li` in `index.html`, because the six nodes
+  are the six nodes of the Python graph and their number cannot change at run
+  time. `tests/test_review_desk.py` holds `--i` in `INLINE_TOKENS` for this.
+
+  A change of state does not come through here. `.step` in `09-stepper.css` holds
+  a transition for the background, and `js/ledger.js` changes one attribute on a
+  line that stays on the page. So this animation plays at a change of tab and it
+  never plays at a poll.
+
+  The panel above also rises 6px, so the last line starts 12px low. That is the
+  end of the range that the top of this file states, and no element on this page
+  stacks a third one.
+*/
+.step {
+  animation: rise var(--dur-medium) var(--ease-decelerate) backwards;
+  animation-delay: calc(var(--i) * 40ms);
+}
+
+/*
+  The gate and the receipts.
+
+  Both are hidden until the service reports something, and both stay on the page
+  after that. So each one plays this one time, at the moment that the news
+  arrives.
+*/
+.verdict,
+.receipts {
+  animation: rise var(--dur-medium) var(--ease-decelerate);
+}
+
+/*
+  The four folios arrive in order.
+
+  The delay says that there are four of them and that they are a set. The last
+  one starts 180ms after the first one, which is short enough that a person who
+  waited for a run does not wait again.
+
+  The stagger comes from `:nth-child` and not from `--i`, because the four cards
+  carry no index in `index.html`. Four rules are shorter than four attributes in
+  the markup. The stepper has six lines and an index that is already there, so it
+  uses the index.
+*/
+.folio {
+  animation: rise var(--dur-medium) var(--ease-decelerate) backwards;
+}
+
+.folio:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.folio:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.folio:nth-child(4) {
+  animation-delay: 180ms;
+}
