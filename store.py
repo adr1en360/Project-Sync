@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import datetime as _dt
 import uuid
-from typing import Any, Optional
+from functools import lru_cache
+from typing import Any
 
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -31,21 +32,17 @@ from models import (
     TransactionStatus,
 )
 
-_client: Optional[firestore.Client] = None
 
-
+@lru_cache(maxsize=1)
 def client() -> firestore.Client:
     """Give the Firestore client. The client is made one time and kept.
 
-    A new client for each request costs a connection each time.
+    A new client for each request costs a connection each time. `lru_cache` holds
+    the one client, so the module needs no global variable.
     """
-    global _client
-    if _client is None:
-        if config.GOOGLE_CLOUD_PROJECT:
-            _client = firestore.Client(project=config.GOOGLE_CLOUD_PROJECT)
-        else:
-            _client = firestore.Client()
-    return _client
+    if config.GOOGLE_CLOUD_PROJECT:
+        return firestore.Client(project=config.GOOGLE_CLOUD_PROJECT)
+    return firestore.Client()
 
 
 def now_iso() -> str:
@@ -164,7 +161,7 @@ def save_transaction(transaction: Transaction) -> None:
     ).set(payload)
 
 
-def get_transaction(tx_id: str) -> Optional[Transaction]:
+def get_transaction(tx_id: str) -> Transaction | None:
     """Read one transaction row. The result is `None` if the row is absent."""
     doc = client().collection(config.FIRESTORE_TRANSACTIONS).document(tx_id).get()
     if not doc.exists:

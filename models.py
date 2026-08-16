@@ -23,7 +23,6 @@ annotation. So each node can use a typed model, but the data on the edge is JSON
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -93,7 +92,7 @@ class SyncRequest(BaseModel):
 
     repo_url: str = Field(description="The full URL of the GitHub repository.")
     user_id: str = Field("default", description="The owner of the style rules.")
-    commit_sha: Optional[str] = Field(
+    commit_sha: str | None = Field(
         None,
         description="Read this commit and not the head of the branch. The demo uses "
         "this field to scan an early, incomplete commit.",
@@ -110,7 +109,7 @@ class ScannedFile(BaseModel):
 
     path: str
     size_bytes: int
-    content: Optional[str] = Field(
+    content: str | None = Field(
         None, description="The text of the file. This field is empty for a large file."
     )
 
@@ -128,7 +127,7 @@ class RepoScan(BaseModel):
     default_branch: str
     commit_sha: str = Field(description="The commit that the scan read.")
 
-    readme: Optional[str] = None
+    readme: str | None = None
     manifests: dict[str, str] = Field(
         default_factory=dict,
         description="The build files. The key is the path and the value is the text.",
@@ -269,9 +268,9 @@ class StyleRule(BaseModel):
     text: str
     state: RuleState = RuleState.PROPOSED
     source: RuleSource = RuleSource.CURATOR
-    source_transaction_id: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    source_transaction_id: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 # --------------------------------------------------------------------------
@@ -297,18 +296,18 @@ class Transaction(BaseModel):
     repo_name: str
     status: TransactionStatus = TransactionStatus.PENDING_APPROVAL
 
-    metadata: Optional[ExtractedMetadata] = None
-    assets: Optional[GeneratedAssets] = None
-    recommendation: Optional[PathRecommendation] = None
+    metadata: ExtractedMetadata | None = None
+    assets: GeneratedAssets | None = None
+    recommendation: PathRecommendation | None = None
 
     style_rules_applied: list[str] = Field(
         default_factory=list, description="The rules that made this draft."
     )
-    approval_token: Optional[str] = None
+    approval_token: str | None = None
 
-    doc_commit_sha: Optional[str] = None
-    card_commit_sha: Optional[str] = None
+    doc_commit_sha: str | None = None
+    card_commit_sha: str | None = None
 
-    error_message: Optional[str] = None
-    created_at: Optional[str] = None
-    completed_at: Optional[str] = None
+    error_message: str | None = None
+    created_at: str | None = None
+    completed_at: str | None = None

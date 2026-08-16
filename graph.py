@@ -25,6 +25,8 @@ can bind the same node two times if a second import happens.
 
 from __future__ import annotations
 
+from itertools import pairwise
+
 from google.adk import Workflow
 from google.adk.workflow import START, Edge, FunctionNode
 
@@ -81,12 +83,10 @@ def build_phase1_workflow() -> Workflow:
     ]
 
     # The first edge starts at the START object. Each other edge joins one node to
-    # the next node in the list.
+    # the next node in the list. `pairwise` gives those pairs directly, so there is
+    # no second sequence to hold in step.
     edges = [Edge(from_node=START, to_node=order[0])]
-    edges += [
-        Edge(from_node=first, to_node=second)
-        for first, second in zip(order, order[1:], strict=True)
-    ]
+    edges += [Edge(from_node=first, to_node=second) for first, second in pairwise(order)]
 
     return Workflow(
         name="projectsync_phase1",

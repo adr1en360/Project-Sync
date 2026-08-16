@@ -100,16 +100,35 @@ class ScanError(RuntimeError):
 def parse_repo_url(repo_url: str) -> str:
     """Get `owner/name` from the URL of a GitHub repository.
 
-    The function accepts a URL with or without the `.git` end, and with or
-    without a slash at the end.
+    The function accepts each form that a person pastes:
+
+    * `https://github.com/owner/name`, with or without `.git`, and with or
+      without a slash at the end
+    * a deep URL such as `https://github.com/owner/name/tree/main`
+    * the SSH form `git@github.com:owner/name.git`
+    * the short form `owner/name`
+
+    The function removes the scheme and the host first. It then takes the first
+    two parts that are left. It does not take the last two parts, because a deep
+    URL ends with a branch name and not with the name of the repository.
+
+    Raises:
+      ScanError: The text holds no owner and no name.
     """
-    cleaned = repo_url.strip().rstrip("/")
-    if cleaned.endswith(".git"):
-        cleaned = cleaned[: -len(".git")]
-    parts = [p for p in cleaned.split("/") if p]
+    cleaned = repo_url.strip().rstrip("/").removesuffix(".git")
+
+    if "://" in cleaned:
+        # Remove the scheme, and then the host. `partition` gives an empty text
+        # when there is no slash, so a bare host raises the error below.
+        cleaned = cleaned.split("://", 1)[1].partition("/")[2]
+    elif "@" in cleaned and ":" in cleaned:
+        # The SSH form is `git@host:owner/name`. The host is before the colon.
+        cleaned = cleaned.split(":", 1)[1]
+
+    parts = [part for part in cleaned.split("/") if part]
     if len(parts) < 2:
         raise ScanError(f"The URL {repo_url!r} does not hold an owner and a name.")
-    return f"{parts[-2]}/{parts[-1]}"
+    return f"{parts[0]}/{parts[1]}"
 
 
 def is_relevant_file(file_path: str, file_size: int) -> bool:
@@ -300,7 +319,7 @@ def scan_github_repository(
             "test" in p or "spec" in p for p in lowered_paths
         ),
         has_license=any(
-            p.startswith("license") or p.startswith("licence") for p in lowered_paths
+            p.startswith(("license", "licence")) for p in lowered_paths
         ),
         has_ci=any(p.startswith(".github/workflows/") for p in lowered_paths),
     )
