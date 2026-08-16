@@ -91,14 +91,29 @@ Legend: ✅ confirmed · ❌ false, corrected · ⚠️ true but incomplete/risk
 
 - **4.4** — probe `get_contents` on a missing path during Day-1 build; the upsert branch depends on it.
 - **3.13 / 3.14** — re-check eligibility and the credit figure directly on the rules page before requesting credits.
-- **1.7** — read the `Workflow` signature out of the installed package once `google-adk` is present: `python -c "import google.adk, inspect; print(inspect.signature(google.adk.Workflow))"`.
-- **1.11** — if `RequestInput` durability is ever documented, revisit the Phase 2 architecture decision. Also re-check whether a Python `FirestoreSessionService` lands (currently Java only, **1.24**).
-- **New** — how a graph `Workflow` receives its *initial* input: via `Runner.run_async(new_message=...)` as `Content`, or as a typed parameter on the entry node. Both plausible; untested. Resolve on Day 2, it is the first thing the smoke test will hit.
-- **New** — `Agent` import path: `/adk-cheatsheet` shows `from google.adk.agents import Agent`, the graph pages show `from google.adk import Agent`. Confirm which resolves and use one form throughout.
 
 ## Resolved since first pass
 
-- **1.22** — the `{style_rules}` templating question, originally deferred to "Day 3, test which form resolves." Now answered from primary docs: the bare-key form does **not** apply to graph agent nodes. Design changed accordingly (`attach_style_rules` code node).
-- **1.24** — "could a durable session service make `RequestInput` viable?" Answered: not on Python.
+- **1.7** — **resolved 2026-08-16 by reading the installed `google-adk` 2.7.0.** `Workflow` fields: `name, description, rerun_on_resume, wait_for_output, retry_config, timeout, input_schema, output_schema, state_schema, edges, max_concurrency, graph`. Three findings were build-blocking and are recorded as **1.28–1.30** below.
+- **1.11 / 1.24** — "could a durable session service make `RequestInput` viable?" Answered: not on Python. `RequestInput` lives in `google.adk.events` and is an **event payload, not a node type**; the pause is a `adk_request_input` long-running function call whose state lives in session history. Python ships `InMemorySessionService`, `DatabaseSessionService`, and `VertexAiSessionService` only — no Firestore session service. `DatabaseSessionService` would add a third GCP service. Phase 2 stays plain FastAPI, for this reason and not the one the spec first gave.
+- **1.22** — the `{style_rules}` templating question. First answered from the docs, then **corrected on 2026-08-16 from the source**. See **1.28**; the first answer's replacement advice was wrong.
+- **Graph initial input** — resolved. `Runner.run_async(new_message=...)` sends `types.Content`, which does **not** coerce into a Pydantic model, so the entry node cannot take a `node_input` parameter. Pass the request through `run_async(state_delta={...})` and bind the entry node's parameters from state by name. This is what `nodes/scanner.py` does.
+- **`Agent` import path** — resolved. `from google.adk import Agent` works; `Agent` is re-exported from `google.adk.agents.llm_agent`. `LlmAgent`, `SequentialAgent`, `RequestInput`, and `InMemoryRunner` are **not** top-level exports. `Context` is.
+
+## Corrections found by reading the installed package (2026-08-16)
+
+These three were each capable of costing a build day. All were read out of
+`.venv/Lib/site-packages/google/adk/`, not from a document.
+
+| # | Claim as documented | What the source says | Where |
+|---|---|---|---|
+| 1.28 | Instruction templating uses `{Model.field}`; a bare `{state_key}` does not resolve in a graph agent node | **Backwards.** `_is_valid_state_name` accepts only a valid Python **identifier**, or an identifier behind `app:`/`user:`/`temp:`. `{style_rules}` resolves if that key is in state; `{AssetGenInput.style_rules}` does **not** — a dot fails the check and the token is returned unchanged, so the braces reach the model as literal text. `{artifact.name}` is the one dotted form. No exception is raised either way. **A graph agent node needs no template at all**: `prepare_llm_agent_input` calls `to_user_content(node_input)`, which is `model_dump_json()` for a `BaseModel`, appends it as a user event, and forces `include_contents='none'` so `_get_current_turn_contents` anchors on exactly that event. | `utils/instructions_utils.py:159,238-260`; `utils/content_utils.py:60-80`; `workflow/_llm_agent_wrapper.py:301-333,386-388`; `flows/llm_flows/contents.py:93-121,995-1022` |
+| 1.29 | `Edge(from_node="START", to_node="node_name")` | **Does not run.** `START` is a `BaseNode` instance with `name='__START__'`; `START == "START"` is `False`. `Edge.from_node` and `Edge.to_node` are typed `BaseNode`, so a string raises a Pydantic validation error. Import the object: `from google.adk.workflow import START`. | `workflow/_graph.py`, `workflow/_base_node.py` |
+| 1.30 | A code node needs `parameter_binding="node_input"` to read its predecessor | **Inverted.** The default is `'state'`, and that is what a chain node wants: a parameter named exactly `node_input` receives the predecessor's output (coerced by `TypeAdapter`), every other parameter is looked up in `ctx.state` **by name**, and a `Context`-annotated parameter receives the context. A missing parameter with no default raises `ValueError: Missing value for parameter ...` — it does not silently vanish. `'node_input'` mode destructures the payload parameter-by-parameter, "used when the node acts as an agent's tool." | `workflow/_function_node.py::_bind_parameters` |
+
+Two further findings that simplify the build rather than block it:
+
+- **`RetryConfig` and `timeout` are native fields** on both `Agent` and `Workflow` (`RetryConfig(max_attempts, initial_delay, max_delay, backoff_factor, jitter, exceptions)`). The §9 fallback matrix is declarative configuration, not hand-rolled retry code — and failure tolerance becomes visible in the graph definition, which is what the architecture criterion scores `[L3.8]`.
+- **`output_key` fires in graph mode.** `_llm_agent_wrapper.py:362-363` writes `ctx.actions.state_delta[agent.output_key] = output`. This is how `persist_transaction` gets the metadata and the assets, which the intervening evaluator node does not carry.
 
 _Last updated: 2026-08-16_

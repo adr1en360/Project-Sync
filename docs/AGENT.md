@@ -3,7 +3,7 @@
 ## Identity
 Solo builder (adrienoke), full-stack AI developer, Nigeria. Track: **Taskmaster** (locked).
 **One line:** turns a finished GitHub repository into career-ready outputs with one human approval, and gets better at the user's voice over time.
-Stack: `gemini-3.7-flash` | ADK 2.0 graph `Workflow` (`google-adk` 2.7.0) | Cloud Run + Firestore | Python 3.11
+Stack: `gemini-3.7-flash` | ADK 2.0 graph `Workflow` (`google-adk` 2.7.0) | Cloud Run + Firestore | Python 3.12 | `uv`
 Deadline: **Aug 31, 2026, 5:00 PM PT** — 15 days left as of 2026-08-16. Judging Sept 1 – Oct 1; winners ~Oct 8.
 Spec of record: [projectsync_full_spec.md](../projectsync_full_spec.md) (Aug 15, all decisions closed).
 
@@ -42,8 +42,10 @@ Spec of record: [projectsync_full_spec.md](../projectsync_full_spec.md) (Aug 15,
 ## Hard Rules
 - Model is `gemini-3.7-flash`. Never below Gemini 3.5 — that is a **pass/fail** submission gate. A 404 means fix `GOOGLE_CLOUD_LOCATION`, not the model name.
 - Exactly 2 GCP services: Cloud Run + Firestore. No Pub/Sub, no Gmail API.
-- Style rules reach the model as `{AssetGenInput.style_rules}`. A bare `{style_rules}` **does not resolve** in a graph agent node `[L1.22]`.
-- **Do not use the offline `/adk-cheatsheet` skill for graph APIs.** It is a pre-2.0 mirror with zero `/graphs/*` entries `[L1.26]` and will teach you ADK 1.x. Use `adk.dev` or the local cheatsheet doc instead.
+- Style rules reach the model **inside the node's input JSON**, not through a template field. `{AssetGenInput.style_rules}` renders as literal text — a dot fails the engine's identifier check `[L1.28]`. Instructions in this project carry no `{...}` at all; `tests/test_nodes.py` enforces that.
+- `Edge(from_node=START, ...)` takes the **imported `START` object**, never the string `"START"` `[L1.29]`.
+- A code node keeps the default `parameter_binding="state"`: a parameter named `node_input` gets the predecessor's output, every other name is read from `ctx.state` `[L1.30]`.
+- **Do not use the offline `/adk-cheatsheet` skill for graph APIs.** It is a pre-2.0 mirror with zero `/graphs/*` entries `[L1.26]` and will teach you ADK 1.x. Read the installed package under `.venv/Lib/site-packages/google/adk/` — that is what settled `[L1.28–L1.30]` after the docs got them wrong.
 - Every `google.github.io/adk-docs/*` URL is dead — 301 to `adk.dev` `[L1.27]`.
 - All code comments and docstrings use **ASD-STE100 Simplified Technical English**.
 - `.agents/` is a frozen historical log. Do not cite it as current architecture.
