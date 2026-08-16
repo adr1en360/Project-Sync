@@ -682,6 +682,17 @@ el.approve.addEventListener("click", async () => {
   const edits = collectEdits();
   if (edits === null) return;
 
+  // Ask first. This action writes two commits to two repositories, and a commit
+  // is not easy to take back. The discard action asks, so the action that writes
+  // must ask too.
+  const target = state.tx.repo_name;
+  const question =
+    `Commit for ${target}?\n\n` +
+    "· The documentation sheet goes to docs/synced/ in that repository.\n" +
+    "· The portfolio card goes to your private portfolio repository.\n\n" +
+    "Both are real commits. The resume lines and the social post stay here.";
+  if (!confirm(question)) return;
+
   el.approve.disabled = true;
   el.approve.textContent = "Committing…";
   try {
