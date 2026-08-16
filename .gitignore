@@ -33,3 +33,7 @@ desktop.ini
 *.log
 .firestore-emulator/
 scratch/
+.adk/
+*.db
+*.sqlite3
+agents/
