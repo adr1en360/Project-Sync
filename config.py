@@ -73,6 +73,19 @@ FIRESTORE_USERS: str = os.environ.get("FIRESTORE_USERS", "users")
 
 DASHBOARD_BASE_URL: str = os.environ.get("DASHBOARD_BASE_URL", "http://localhost:8080")
 
+ALLOWED_ORIGINS: list[str] = [
+    origin.strip()
+    for origin in os.environ.get("ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+"""The origins that a browser may call the API from.
+
+The interface comes from the same service, so this list is empty by default and
+the application adds no CORS rule. A browser needs no CORS for a same-origin
+request. Give this variable a value only if you serve the interface from a
+different host.
+"""
+
 
 def missing_required() -> list[str]:
     """Give the names of the variables that the application needs but does not have.

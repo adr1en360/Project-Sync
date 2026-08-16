@@ -14,18 +14,22 @@ and the resume trigger is an HTTP request.
 The status endpoint polls. A graph workflow does not support live streaming, so
 the client asks again and does not hold a stream open.
 
-This module serves JSON only. The framework for the user interface is not chosen
-yet, so nothing here decides it.
+This module also serves the review desk in `static/`. That interface is plain
+HTML, CSS, and JavaScript, with no build step. One container holds the API and
+the interface together, so the deploy stays at one Cloud Run service.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from google.adk import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types as genai_types
@@ -57,15 +61,32 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# The interface will run on a different origin while the framework is open. This
-# rule lets a browser client call the API from anywhere. Make the list exact
-# before the deploy.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# The interface comes from this same service, so a browser needs no CORS rule for
+# it. The middleware goes on only if `ALLOWED_ORIGINS` names a different host.
+# An open list is a real risk here, because every endpoint writes to GitHub or to
+# Firestore.
+if config.ALLOWED_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=config.ALLOWED_ORIGINS,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
+
+# The review desk. The files are plain HTML, CSS, and JavaScript, so there is no
+# build step and the container needs no Node.
+_STATIC_DIR = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def review_desk() -> FileResponse:
+    """Give the review desk.
+
+    The route is explicit and not a mount at the root path. A mount at the root
+    path can hide an API route, and this way the order of the routes is clear.
+    """
+    return FileResponse(_STATIC_DIR / "index.html")
 
 # The session service holds the events of one graph run. `InMemorySessionService`
 # is correct here, because one Phase 1 run finishes inside one request. The pause
@@ -137,7 +158,9 @@ async def _run_phase1(request: SyncRequest, tx_id: str) -> None:
                 logger.error(
                     "The node %s failed: %s", event.author, event.error_message
                 )
-    except Exception as error:  # noqa: BLE001 - the row must record every failure.
+    # Catch every error here. The row must record each failure, because the client
+    # polls the row and has no other way to learn that the run stopped.
+    except Exception as error:
         logger.exception("The Phase 1 run %s failed.", tx_id)
         _record_failure(tx_id, error)
 
@@ -157,7 +180,9 @@ def _record_failure(tx_id: str, error: Exception) -> None:
 
     try:
         store.fail_transaction(tx_id, status, str(error))
-    except Exception:  # noqa: BLE001 - Firestore can also be down.
+    # Firestore can also be down. This handler is the last one, so it writes the
+    # problem to the log and stops there.
+    except Exception:
         logger.exception("The failure of %s could not be written.", tx_id)
 
 
@@ -394,7 +419,9 @@ async def approval_callback(request: ApprovalRequest) -> dict:
     proposed: list[str] = []
     try:
         proposed = await _run_curator(transaction.user_id, request.transaction_id)
-    except Exception:  # noqa: BLE001 - the curator must not fail the approval.
+    # The curator is an extra, and the commits are already written. A failure here
+    # must not fail the approval.
+    except Exception:
         logger.exception("The curator step failed. The approval stands.")
 
     return {
