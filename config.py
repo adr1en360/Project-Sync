@@ -41,6 +41,14 @@ USE_VERTEX_AI: bool = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").lower() in
 GOOGLE_CLOUD_PROJECT: str = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
 GOOGLE_CLOUD_LOCATION: str = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
 
+GOOGLE_API_KEY: str = os.environ.get("GOOGLE_API_KEY", "")
+"""The key for the direct Gemini API.
+
+The Google GenAI SDK reads this variable from the environment itself, so no part of
+this application gives the key to the SDK. This name is here for one purpose: the
+health check must tell a person that the key is absent. Vertex AI does not use it.
+"""
+
 # --------------------------------------------------------------------------
 # GitHub
 # --------------------------------------------------------------------------
@@ -99,4 +107,11 @@ def missing_required() -> list[str]:
         "GITHUB_TOKEN": GITHUB_TOKEN,
         "PORTFOLIO_DATA_REPO": PORTFOLIO_DATA_REPO,
     }
+
+    # The route to Gemini decides which credential is necessary. Vertex AI uses the
+    # project and the credentials of the machine. The direct API uses a key. A report
+    # of both names tells a person to set a variable that this route never reads.
+    if not USE_VERTEX_AI:
+        required["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+
     return sorted(name for name, value in required.items() if not value)

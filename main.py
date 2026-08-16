@@ -26,12 +26,13 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from google.adk import Runner
 from google.adk.sessions import InMemorySessionService
+from google.auth.exceptions import DefaultCredentialsError
 from google.genai import types as genai_types
 from pydantic import BaseModel
 
@@ -77,6 +78,34 @@ if config.ALLOWED_ORIGINS:
 # build step and the container needs no Node.
 _STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+
+@app.exception_handler(DefaultCredentialsError)
+def _no_credentials(request: Request, error: DefaultCredentialsError) -> JSONResponse:
+    """Change a Firestore credentials error into a reply that a person can act on.
+
+    Every endpoint except `/` and `/healthz` reads or writes Firestore. The client
+    is made at the first call, not at import, so a machine with no credentials gets
+    the error here and not at start. Without this handler the reply is a bare 500
+    with no text, and the most frequent cause is an empty `.env`.
+
+    A 503 is correct: the service is good, but a resource that it needs is absent.
+    """
+    missing = config.missing_required()
+    names = ", ".join(missing) if missing else "none"
+    logger.error("Firestore has no credentials. Empty settings: %s", names)
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": (
+                "Firestore refused the connection because this machine has no "
+                "credentials. Copy `.env.example` to `.env` and give a value to "
+                f"each empty setting: {names}. For a local run also do "
+                "`gcloud auth application-default login`."
+            ),
+            "missing_config": missing,
+        },
+    )
 
 
 @app.get("/", include_in_schema=False)

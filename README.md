@@ -60,6 +60,21 @@ Open `.env` and set two values to start:
 `GOOGLE_CLOUD_PROJECT` and `PORTFOLIO_DATA_REPO` are needed before the first real
 run, but not before the checks below.
 
+Firestore needs credentials of its own — an API key is not enough. Pick one:
+
+```bash
+gcloud auth application-default login    # real Firestore in your project
+```
+
+```bash
+gcloud emulators firestore start --host-port=localhost:8081
+export FIRESTORE_EMULATOR_HOST=localhost:8081   # no billing, no real data
+```
+
+The emulator still wants `GOOGLE_CLOUD_PROJECT` set to any non-empty string. Without
+either of these, every endpoint that touches Firestore answers `503` and names the
+settings that are still empty.
+
 ## Quickstart
 
 Run the offline checks. These need no API key and make no model call:
