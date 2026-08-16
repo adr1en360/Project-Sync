@@ -17,10 +17,8 @@ from __future__ import annotations
 import os
 
 import pytest
-from google.adk import Runner
-from google.adk.sessions import InMemorySessionService
-from google.genai import types as genai_types
 
+import adk_runtime
 from models import AssetGenInput, ExtractedMetadata, GeneratedAssets
 from nodes.generator import build_asset_generator_agent
 
@@ -55,28 +53,18 @@ def _metadata() -> ExtractedMetadata:
 
 
 async def _generate(payload: AssetGenInput, session_id: str) -> GeneratedAssets:
-    """Run the generator agent one time and give the four assets."""
-    runner = Runner(
-        agent=build_asset_generator_agent(),
-        app_name="projectsync-test",
-        session_service=InMemorySessionService(),
-        auto_create_session=True,
-    )
+    """Run the generator agent one time and give the four assets.
 
-    text = ""
-    async for event in runner.run_async(
+    The test calls the same helper as the endpoint. So this test also proves that
+    the shared runner reads the events correctly, and not only that the model obeys
+    a rule.
+    """
+    text = await adk_runtime.run_agent_for_text(
+        build_asset_generator_agent(),
+        payload.model_dump_json(),
         user_id="test-user",
         session_id=session_id,
-        new_message=genai_types.Content(
-            role="user", parts=[genai_types.Part(text=payload.model_dump_json())]
-        ),
-    ):
-        if event.content and event.content.parts and not event.partial:
-            text = "".join(
-                part.text
-                for part in event.content.parts
-                if part.text and not part.thought
-            )
+    )
 
     assert text.strip(), "The generator gave no text."
     return GeneratedAssets.model_validate_json(text)
