@@ -34,7 +34,7 @@ Build order is fixed by spec §11. Do not start a later stage before the earlier
 - **Framework: ADK 2.0 graph `Workflow`.** Code nodes are plain callables in the `edges` tuple; LLM nodes are `Agent` instances with Pydantic `input_schema`/`output_schema`.
 - **All code comments and docstrings in ASD-STE100 Simplified Technical English.** Approved vocabulary, active voice, imperative for instructions, one instruction per sentence, no `-ing` verb forms, ≤20 words per procedural sentence. Markdown prose stays normal English. See `research/adk_api_cheatsheet_notes.md` for the worked examples.
 - **One `Event.output` payload per node execution.** `GeneratedAssets` is one model with four fields, never four emissions.
-- **Instruction templating: `{Model.field}` only.** A bare `{state_key}` does **not** resolve in a graph agent node — that form belongs to the prebuilt `SequentialAgent` + `output_key` path. This is why the `attach_style_rules` code node exists.
+- **A graph agent node takes no instruction template.** Its input model arrives as JSON user content. A bare `{key}` resolves from session state; a dotted `{Model.field}` resolves never — the dot fails the state-name check and the braces reach the model as text, with no error. This is why the `attach_style_rules` code node exists: it puts the rules **on the model**.
 - **Agent nodes do not bind parameters.** A code node receives the predecessor payload as its declared parameter; an agent node receives it as user content, coerced by `input_schema`.
 
 - `output_schema` disables tool calling on that agent — fine, none of the three agents need tools.

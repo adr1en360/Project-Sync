@@ -93,7 +93,7 @@ Each of these was wrong somewhere in this tree on 2026-08-15. Check them before 
 | # | Constraint | Why it matters |
 |---|---|---|
 | 1 | Model is **`gemini-3.7-flash`**, pinned in `config.py`, asserted at startup | Gemini 3 Flash is **below the mandated 3.5 floor.** Stage One is pass/fail — this is elimination, not a deduction `[L2.3, L3.6]` |
-| 2 | Style rules reach the model via `{AssetGenInput.style_rules}`, never a bare `{style_rules}` | A bare state key **does not resolve** in a graph agent node. The rules would render as literal text and the learning loop would be a prop `[L1.22]` |
+| 2 | Style rules reach the model **on the input model**, and the generator instruction has no template field at all | A dotted `{AssetGenInput.style_rules}` fails the state-name check and reaches the model as literal braces. Nothing raises. The rules would render as text and the learning loop would be a prop `[L1.28]` |
 | 3 | **Agent nodes do not bind a typed parameter.** They get the predecessor's `Event.output` as user content | Code nodes do bind one. Mixing the two models means input silently absent `[L1.21]` |
 | 4 | **One `Event.output` per node execution** | Yielding twice is a runtime error mid-graph `[L1.23]` |
 | 5 | No Pub/Sub, no Gmail, no `AgentRunner`, no `@tool` | All four are either cut or ADK 1.x. A diagram showing them contradicts the code |
@@ -133,8 +133,11 @@ here.
 | `PathRecommendation` | `path_evaluator_agent` | `FULL_PUBLISH` \| `PRIVATE_ONLY`, reasons, missing elements |
 | `StyleRule` | the curator, or a human | `PROPOSED` → `ACTIVE` → `INACTIVE` |
 
-`AssetGenInput` exists for two reasons: so no language model is asked to copy a list of
-rules, and so the instruction can use the approved `{Model.field}` template form `[L1.22]`.
+`AssetGenInput` exists so that no language model is asked to copy a list of rules. The
+generator node needs **no instruction template at all**: a graph agent node receives its
+input model as JSON user content, so the rules are already in front of the model `[L1.28]`.
+Do not write `{AssetGenInput.style_rules}` — a dotted name fails the state-name check and
+reaches the model as literal braces, with no error raised.
 
 > ⚠️ **`output_schema` disables tool calling** on an agent. A node cannot have both. This is
 > why the scanner is a code node — the extraction agent then never needs a tool.
@@ -153,7 +156,7 @@ projectsync/
 │   ├── scanner.py             # CODE  — httpx, filters, payload budget
 │   ├── extraction.py          # AGENT — output_schema=ExtractedMetadata
 │   ├── style_rules.py         # CODE  — reads ACTIVE rules, returns AssetGenInput
-│   ├── generator.py           # AGENT — {AssetGenInput.style_rules}
+│   ├── generator.py           # AGENT — rules arrive on the input model, not a template
 │   ├── evaluator.py           # AGENT — temperature=0.0
 │   └── persist.py             # CODE  — Firestore write, PENDING_APPROVAL
 ├── sync/
@@ -162,10 +165,12 @@ projectsync/
 │   └── curator.py             # rule_curator_agent — proposes rules from edits
 ├── static/                    # Dashboard. No message thread, no send button.
 ├── tests/
+│   ├── conftest.py
 │   ├── test_nodes.py
 │   └── test_style_rules_change_output.py   # The test that catches memory theatre.
 ├── Dockerfile
-├── requirements.txt
+├── pyproject.toml             # Dependencies and the ruff rule list. No requirements.txt.
+├── uv.lock                    # Committed. The image installs from this file.
 └── README.md                  # Clone to working request in under 10 minutes.
 ```
 
@@ -193,29 +198,52 @@ path for generation, not two.
 
 ### `Dockerfile`
 
-```dockerfile
-# Two stages. The build tools do not go into the image that runs.
-FROM python:3.11-slim AS builder
-WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev \
-    && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+This is the file that is in the repository. `uv` reads `uv.lock`, so the image gets the
+same versions as the development machine.
 
-FROM python:3.11-slim AS runner
+```dockerfile
+# The interpreter is Python 3.12 — the same version as the development machine.
+FROM python:3.12-slim
+
+# Copy the `uv` binary from the official image. This is faster than a `pip install
+# uv` step, and it needs no network call at build time.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
-# Do not run as root.
-RUN addgroup --system appgroup && adduser --system --group appuser
-COPY --from=builder /root/.local /home/appuser/.local
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/usr/local
+
+# Install the dependencies before the source code. Docker then keeps this layer in
+# the cache while only the source code changes.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-install-project --no-dev
+
 COPY . .
-ENV PATH=/home/appuser/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PORT=8080
-USER appuser
+
+# Cloud Run gives the port in the PORT variable. The default is 8080.
+ENV PORT=8080
 EXPOSE 8080
-# One worker. The graph holds state for the length of a request.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+# One worker for each container. Cloud Run makes more containers when the load goes
+# up, so a second worker inside one container gives no benefit.
+CMD ["sh", "-c", "uv run --no-sync uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
 ```
+
+One stage, not two. `uv sync --no-dev` puts no build tools in the image, so a second
+stage would remove nothing. There is no `gcc` step: every dependency ships a wheel for
+this platform.
+
+`.dockerignore` carries the security weight here. The `COPY . .` line above would
+otherwise put `.env`, `.venv/`, and any key file into a layer — and a secret in a layer
+stays in that layer, because a later `RUN rm` cannot reach it.
+
+> **Remaining hardening: the image runs as root.** Add a system user and a `USER` line
+> before the deploy. Cloud Run does not need root, and the architecture criterion reads
+> the Dockerfile.
 
 ### Enable four APIs, not seven
 

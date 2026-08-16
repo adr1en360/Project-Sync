@@ -87,15 +87,16 @@ class ExtractedMetadata(BaseModel):
     completeness_signals: list[str]
 
 class AssetGenInput(ExtractedMetadata):
-    """The input to the asset generator agent.
+    """The input to the asset generator agent. Code makes this model, never a model.
 
     This model adds the current style rules. The attach_style_rules code node
     makes this model. A language model does not make it. Do not ask a language
     model to copy a list of rules.
 
-    This model exists for one more reason. The instruction can then use the
-    approved template form "{AssetGenInput.style_rules}". A single key in
-    braces does not work in a graph agent node.  [L1.22]
+    The generator agent gets this whole model as the message of the user, in JSON.
+    So the instruction of the generator needs no template field. Do not write
+    "{AssetGenInput.style_rules}": a name with a dot is not a valid identifier,
+    the engine leaves the text as it is, and the rules have no effect.  [L1.28]
     """
     style_rules: list[str] = Field(default_factory=list)
 
@@ -268,7 +269,7 @@ path_evaluator_agent = Agent(
 )
 ```
 
-> **Instruction templating — resolved 2026-08-16, no longer an open question `[L1.16, L1.22]`.** Graph agent nodes have exactly two documented forms: `{Model.field}`, and `<Model.field from producing_node>` to qualify by producer. A **bare `{style_rules}` does not work here** — bare-key interpolation is the *prebuilt* `SequentialAgent`/`LoopAgent` + `output_key` mechanism, a different model. That is why `attach_style_rules` exists.
+> **Instruction templating — corrected 2026-08-16 from the installed package `[L1.28]`.** The published docs describe `{Model.field}` and `<Model.field from producing_node>`. **Neither form works.** `_is_valid_state_name` accepts a Python identifier, optionally behind `app:`/`user:`/`temp:`; a dot fails the check and the token is returned unchanged, so the braces reach the model as literal text with no error raised. A bare `{style_rules}` *does* resolve — from session state — which is the reverse of what the docs imply. **A graph agent node needs no template at all:** `prepare_llm_agent_input` serialises the input model with `model_dump_json()`, appends it as a user event, and forces `include_contents='none'`. That is why `attach_style_rules` puts the rules on the model instead of in the prompt.
 
 > **Agent nodes receive input differently from code nodes `[L1.21]`.** A code node binds the predecessor payload to its declared parameter. An agent node does not: "the predecessor's `event.Output` is delivered as the agent's user content." `input_schema` governs coercion. Don't expect a function-style signature on an agent.
 

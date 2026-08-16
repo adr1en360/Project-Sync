@@ -44,16 +44,17 @@ Read the **bold** items. Skim the rest when you hit the problem they solve.
 Number 2 is the one that broke this project's plan. See FM-02 in
 [strategic_risk_and_win_analysis.md](strategic_risk_and_win_analysis.md).
 
-**Instruction templating** — the form that works in a graph agent node is
-`{Model.field}`, or `<Model.field from producing_node>` when you need to disambiguate.
-A bare `{state_key}` **does not resolve** in a graph agent node; that form belongs to the
-prebuilt-agent `output_key` path `[L1.22]`.
+**Instruction templating** — a graph agent node needs **no template**. Its input model
+arrives as JSON user content and the wrapper forces `include_contents='none'`. A bare
+`{key}` resolves from session state; a dotted `{Model.field}` resolves **never**, because
+the dot fails `_is_valid_state_name` and the token comes back unchanged. Nothing raises
+`[L1.28]`.
 
 **Action, Day 1, first hour:**
 
 ```bash
-pip install google-adk google-genai
-python -c "import google.adk; print(google.adk.__version__)"   # Expect 2.7.0
+uv add google-adk google-genai
+uv run python -c "import google.adk; print(google.adk.__version__)"   # Expect 2.7.0
 ```
 
 Then confirm the real import paths for `Workflow`, `Agent`, `Event`, and `RequestInput`

@@ -100,17 +100,20 @@ disqualification sitting in the build plan for five days.
 **What it is.** The learning loop appears to work in the demo while doing nothing. The style
 rules are read, stored, displayed, toggled — and never actually reach the model.
 
-**This was a real bug in this project's own plan.** The asset generator's instruction read
-`{style_rules}` as a bare state key. In an ADK graph agent node that form **does not
-resolve** — bare-key interpolation belongs to the prebuilt-agent `output_key` path, not to
-graph nodes `[L1.22]`. Left in, the rules would have rendered as literal text. The demo
-would have looked fine. The single most differentiating feature would have been a prop.
+**This was a real bug in this project's own plan, and the first fix was worse.** The asset
+generator's instruction read `{style_rules}` as a bare state key. The correction replaced it
+with `{AssetGenInput.style_rules}` on the strength of the published docs. Reading the source
+settled it: the engine accepts only a valid Python identifier, optionally behind
+`app:`/`user:`/`temp:`. A dot fails that check, the token is returned unchanged, and the
+braces reach the model as text — with **no error raised** `[L1.28]`. Left in, the rules
+would have rendered as literal text. The demo would have looked fine. The single most
+differentiating feature would have been a prop.
 
 **Mitigation.**
 - A deterministic code node, `attach_style_rules`, reads the active rules and returns a
   typed model. No language model is asked to copy a list.
-- The instruction uses the verified template form `{AssetGenInput.style_rules}` — model
-  and field, not a bare key `[L1.22]`.
+- The generator instruction has **no template field**. A graph agent node receives its
+  input model as JSON user content, so the rules are already in the prompt `[L1.28]`.
 - **The test that catches this class of bug:** generate with a rule `INACTIVE`, toggle it
   `ACTIVE`, regenerate, and assert the two outputs **differ**. A test that only asserts
   "generation succeeded" cannot tell theatre from function.
@@ -360,7 +363,7 @@ out-of-scope list.
 **Days 1–7 (Aug 16 – Aug 22) — core loop end to end**
 1. Pin the model. Assert the pin at startup. **FM-01 retired first, because it is the only
    elimination-class risk.**
-2. `pip install google-adk` and confirm the real import paths for `Workflow`, `Agent`,
+2. `uv add google-adk` and confirm the real import paths for `Workflow`, `Agent`,
    `Event`, and `RequestInput` against the installed package `[L1.7]`.
 3. Scanner code node with the filters above. Then the three agent nodes. Build the graph
    from the cheatsheet's verified contracts — **FM-03 retired by construction.**

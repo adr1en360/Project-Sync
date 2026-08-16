@@ -272,12 +272,14 @@ not a rewrite.
 **How it happens.** The rules are read, stored, displayed, and toggled — and never reach the
 model. The demo looks fine. The single most differentiating feature is a prop.
 
-**This was a real bug in this project's plan.** The generator's instruction read
-`{style_rules}` as a bare state key, which **does not resolve** in an ADK graph agent node
-`[L1.22]`. The rules would have rendered as literal text.
+**This was a real bug in this project's plan — twice over.** The generator's instruction read
+`{style_rules}` as a bare state key. The first fix replaced it with `{AssetGenInput.style_rules}`,
+which is **worse**: a dotted name fails the engine's state-name check and reaches the model as
+literal braces, and nothing raises `[L1.28]`. Either way the rules would have rendered as text.
 
-**Prevention.** Rules are attached by a code node into `AssetGenInput`, and the instruction
-uses `{AssetGenInput.style_rules}`. And the test that actually catches it:
+**Prevention.** A code node attaches the rules into `AssetGenInput`, and the generator uses
+**no template at all** — a graph agent node receives its input model as JSON user content, so
+the rules are already in front of the model. And the test that actually catches it:
 
 ```python
 def test_style_rules_change_output():

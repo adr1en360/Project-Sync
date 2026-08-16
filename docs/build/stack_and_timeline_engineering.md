@@ -47,7 +47,7 @@ Six nodes, three of them Python. Build it with a factory function — a module-l
 |---|---|
 | **Code nodes bind a typed parameter. Agent nodes do not** — they receive the predecessor's `Event.output` as user content `[L1.21]` | Input silently absent |
 | **One `Event.output` per node execution** `[L1.23]` | Runtime error mid-graph |
-| Instruction templating is `{Model.field}`, **never a bare `{state_key}`** `[L1.22]` | Renders as literal text. The learning loop becomes a prop |
+| **A graph agent node needs no instruction template.** Its input model arrives as JSON user content. A dotted `{Model.field}` fails the state-name check and reaches the model as literal braces `[L1.28]` | Silent. The learning loop becomes a prop and nothing raises |
 
 > ⚠️ **`output_schema` disables tool calling** on that agent. A node cannot have both. This
 > is why the scanner is a code node — the extraction agent never needs a tool.
@@ -83,9 +83,9 @@ Cloud Run.
 The first hour retires the only elimination-class risk and the biggest unknown.
 
 ```bash
-pip install google-adk google-genai pydantic fastapi uvicorn httpx \
-            google-cloud-firestore PyGithub python-dotenv
-python -c "import google.adk; print(google.adk.__version__)"      # Expect 2.7.0
+uv add google-adk google-genai pydantic fastapi uvicorn httpx \
+       google-cloud-firestore PyGithub python-dotenv
+uv run python -c "import google.adk; print(google.adk.__version__)"   # Expect 2.7.0
 ```
 
 Then confirm the real import paths against the installed package — the docs are ambiguous
@@ -182,15 +182,16 @@ gets in.
 
 ```python
 class AssetGenInput(ExtractedMetadata):
-    """The input to the asset generator agent.
+    """The input to the asset generator agent. Code makes this model, never a model.
 
     This model adds the current style rules. The attach_style_rules code node
     makes this model. A language model does not make it. Do not ask a language
     model to copy a list of rules.
 
-    This model exists for one more reason. The instruction can then use the
-    approved template form "{AssetGenInput.style_rules}". A single key in
-    braces does not work in a graph agent node.  [L1.22]
+    The generator agent gets this whole model as the message of the user, in JSON.
+    So the instruction of the generator needs no template field. Do not write
+    "{AssetGenInput.style_rules}": a name with a dot is not a valid identifier,
+    the engine leaves the text as it is, and the rules have no effect.  [L1.28]
     """
     style_rules: list[str] = Field(default_factory=list)
 
@@ -478,11 +479,13 @@ projectsync/
 ├── memory/curator.py   # rule_curator_agent
 ├── static/             # Dashboard.
 ├── tests/
+│   ├── conftest.py
 │   ├── test_nodes.py
-│   ├── test_failure_modes.py
+│   ├── test_failure_modes.py    # NOT WRITTEN YET — Phase 2 work, Days 8–12
 │   └── test_style_rules_change_output.py
 ├── Dockerfile
-├── requirements.txt
+├── pyproject.toml      # Dependencies. No requirements.txt.
+├── uv.lock             # Committed.
 └── README.md
 ```
 
@@ -533,15 +536,15 @@ documented direct-API path.
 
 ```bash
 # 1. ADK is 2.x, not 1.x.
-python -c "import google.adk; print(google.adk.__version__)"        # Expect 2.7.0
+uv run python -c "import google.adk; print(google.adk.__version__)"   # Expect 2.7.0
 
 # 2. Model pin at or above the mandated floor.
-python -c "from config import MODEL; print(MODEL)"                  # gemini-3.7-flash
+uv run python -c "import config; print(config.MODEL)"                # gemini-3.7-flash
 
 # 3. Tests.
-pytest tests/ -v
-pytest tests/test_style_rules_change_output.py -v    # Must FAIL if rules are ignored.
-pytest tests/test_failure_modes.py -v
+uv run pytest tests/ -v
+uv run pytest tests/test_style_rules_change_output.py -v   # Must FAIL if rules are ignored.
+uv run ruff check .
 
 # 4. Container builds and answers.
 docker build -t projectsync:test .

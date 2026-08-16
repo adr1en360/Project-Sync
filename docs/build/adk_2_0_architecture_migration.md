@@ -18,17 +18,17 @@ ADK 2.0 (current: **2.7.0** on PyPI `[L1.1]`) adds a first-class **graph engine*
 | Concept | Verified API | Ledger |
 |---|---|---|
 | Graph pipeline | `from google.adk import Workflow` → `Workflow(name=..., edges=[...])` | `[L1.3]` |
-| Sequential chain | One tuple: `("START", node_a, node_b, node_c)`. `"START"` is the literal entry node | `[L1.5]` |
+| Sequential chain | One tuple: `("START", node_a, node_b, node_c)`. The string `"START"` is legitimate **in the tuple form only** — `NodeLike` includes `Literal["START"]`. In the `Edge(...)` constructor it raises a validation error; import the object with `from google.adk.workflow import START` `[L1.5, L1.29]` | `[L1.5]` |
 | Conditional branch | `(router_node, {"KEY": node_x, "OTHER": node_y})` matched against `Event(route=...)` | `[L1.6]` |
 | LLM node | `Agent(name=, model=, instruction=, input_schema=, output_schema=)` | `[L1.16]` |
 | Deterministic code node | **A plain Python callable dropped into the `edges` tuple.** No wrapper, no decorator | `[L1.4]` |
 | Pass data to next node | `return Event(output=value)`, or plain `return value` | `[L1.13]` |
 | Receive previous output — **code node** | Declare it as the node's input parameter: `def persist(node_input: PathRecommendation)` | `[L1.13]` |
 | Receive previous output — **agent node** | **No parameter binding.** The predecessor's `Event.output` arrives as the agent's *user content*; `input_schema` coerces it | `[L1.21]` |
-| Instruction templating | `{Model.field}`, or `<Model.field from producing_node>` to qualify by producer. A bare `{state_key}` is the *prebuilt-agent* `output_key` form and does **not** apply here | `[L1.16, L1.22]` |
+| Instruction templating | **A graph agent node needs none.** The node input arrives as JSON user content, and the wrapper forces `include_contents='none'`. A bare `{key}` resolves from session state; a dotted `{Model.field}` does **not** — it fails the state-name check and reaches the model as literal braces, with no error `[L1.28]` | `[L1.28]` |
 | Session state | `Event(state={"k": v})` to write; `ctx.state` to read. Not for large payloads | `[L1.13, L1.18]` |
 | Human-input node | `from google.adk.events import RequestInput` → `yield RequestInput(message=, payload=, response_schema=)` | `[L1.10]` |
-| Execution | `Runner(agent=wf, app_name=, session_service=)` + `await runner.run_async(...)`; `InMemoryRunner` for dev | `[L1.19]` |
+| Execution | `Runner(agent=wf, app_name=, session_service=)` + `await runner.run_async(...)`. For dev: `from google.adk.runners import InMemoryRunner` — **not** a top-level export | `[L1.19]` |
 
 ### Hard constraints — these will bite
 
@@ -40,7 +40,7 @@ ADK 2.0 (current: **2.7.0** on PyPI `[L1.1]`) adds a first-class **graph engine*
 | Graph workflows do **not** support live streaming | Don't promise streamed progress in the dashboard or demo | `[L1.20]` |
 | `RequestInput` does **not** coerce the reply into `response_schema` | Irrelevant to us — Phase 2 is FastAPI. Noted so it isn't mistaken for validation | `[L1.12]` |
 | `Workflow`'s full constructor signature is unpublished | Only `name=` and `edges=` are documented. Read the real signature off the installed package on Day 1 | `[L1.7]` |
-| A bare `{state_key}` does not resolve in a graph agent node | Style rules must arrive on the **input model**, via the `attach_style_rules` code node — not as a bare state key | `[L1.22]` |
+| A dotted `{Model.field}` does not resolve anywhere — the token reaches the model as literal braces | Style rules must arrive on the **input model**, via the `attach_style_rules` code node. That node writes them into the model, so no template is needed at all | `[L1.28]` |
 | ADK's durable Firestore session service is **Java only** | There is no Python path to a session that survives a restart. This is the load-bearing reason Phase 2 is FastAPI + Firestore | `[L1.24]` |
 
 ### Code style
@@ -95,7 +95,7 @@ project_sync_phase1 = Workflow(
                ▼
   ┌──────────────────────────┐
   │ asset_generator_agent    │  [LLM] gemini-3.7-flash, temp 0.7
-  │ in:  AssetGenInput       │  instruction reads {AssetGenInput.style_rules}
+  │ in:  AssetGenInput       │  rules arrive on the input model as JSON — no template
   │ out: GeneratedAssets     │  ONE model, four fields  [L1.14]
   └────────────┬─────────────┘   doc_sheet_md · portfolio_card · resume_bullets · social_post
                ▼
@@ -112,7 +112,11 @@ project_sync_phase1 = Workflow(
   └──────────────────────────┘
 ```
 
-**Style rules injection — resolved 2026-08-16, was an open Day-3 question.** The earlier plan put `{style_rules}` in the generator's instruction as a bare state key. **That form does not resolve in a graph agent node.** Bare-key interpolation is the *prebuilt* `SequentialAgent`/`LoopAgent` + `output_key` mechanism; graph agent nodes have exactly two documented forms, `{Model.field}` and `<Model.field from producing_node>` `[L1.16, L1.22]`. Left unfixed, the rules would have rendered as literal text and the memory system would have *looked* functional while doing nothing — the worst class of bug in a demo.
+**Style rules injection — resolved 2026-08-16 by reading the installed package.** The earlier plan put `{style_rules}` in the generator's instruction. The first correction said that form was wrong and that `{Model.field}` was right. **Both readings were wrong, and the second one was worse.** `_is_valid_state_name` accepts a Python identifier, optionally behind `app:`/`user:`/`temp:`. So `{style_rules}` *would* resolve if that key were in session state — and `{AssetGenInput.style_rules}` resolves **never**, because the dot fails the check and the token is returned unchanged. No exception is raised in either case. The token reaches the model as literal braces `[L1.28]`.
+
+A graph agent node needs **no template at all**. `prepare_llm_agent_input` calls `to_user_content(node_input)` — `model_dump_json()` for a Pydantic model — appends it as a user event, and forces `include_contents='none'`. The whole input model is in front of the model already.
+
+Left unfixed, the rules would have rendered as literal text and the memory system would have *looked* functional while doing nothing — the worst class of bug in a demo.
 
 The fix is the `attach_style_rules` code node above. It also happens to be the better design, which is the tell that it's right:
 
