@@ -34,3 +34,10 @@ asyncio_mode = "auto"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+# Name the rules here. Ruff has a different default set in each version, so a
+# check with no list gives a different result on a different machine. This list
+# holds the families that this code uses, and `BLE` makes each `noqa: BLE001` in
+# the code do work.
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "BLE", "PIE", "PLW", "RUF", "FURB"]
