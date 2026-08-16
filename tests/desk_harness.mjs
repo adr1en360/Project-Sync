@@ -234,6 +234,10 @@ const RULES = [
 
 const sent = [];
 
+/* The rules that a delete took off the list. The service keeps the document and
+   hides the rule, so this set holds the ids that the list must not give back. */
+const hiddenRules = new Set();
+
 function reply(body, status = 200) {
   const text = JSON.stringify(body);
   return { ok: status < 400, status, text: async () => text };
@@ -266,7 +270,9 @@ globalThis.fetch = async (path, options = {}) => {
       missing_config: ["GITHUB_TOKEN"],
     });
   }
-  if (path.startsWith("/api/v1/rules?")) return reply(RULES);
+  if (path.startsWith("/api/v1/rules?")) {
+    return reply(RULES.filter((rule) => !hiddenRules.has(rule.rule_id)));
+  }
   if (path === "/api/v1/transactions/tx-abc") return reply(PENDING);
   if (path === "/api/v1/transactions/tx-run") return reply(RUNNING);
   if (path === "/api/v1/trigger-sync") return reply({ transaction_id: "tx-run" });
@@ -284,7 +290,15 @@ globalThis.fetch = async (path, options = {}) => {
   if (path === "/api/v1/rules") {
     return reply({ rule_id: "rule-3", text: "New one.", state: "PROPOSED", source: "USER" });
   }
-  if (path.startsWith("/api/v1/rules/")) return reply({});
+  if (path.startsWith("/api/v1/rules/")) {
+    /* A DELETE hides the rule. The row itself stays, as it does in Firestore. */
+    if (options.method === "DELETE") {
+      const ruleId = decodeURIComponent(path.slice("/api/v1/rules/".length));
+      hiddenRules.add(ruleId);
+      return reply({ rule_id: ruleId, state: "DELETED" });
+    }
+    return reply({});
+  }
   return reply({ detail: `The harness has no route for ${path}` }, 404);
 };
 
