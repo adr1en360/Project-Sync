@@ -18,10 +18,19 @@ import { renderStamp } from "./stamp.js";
   `Intl.DateTimeFormat` moves the value into the zone of the browser and writes
   the name of that zone. The first argument is `undefined`, so the format follows
   the language of the person and not a fixed one.
+
+  Name each part of the date and the time. Do not use `dateStyle` or `timeStyle`
+  here. ECMA-402 does not permit `dateStyle` or `timeStyle` together with a part
+  such as `timeZoneName`, and the constructor throws a TypeError for that
+  mixture. The list below gives the same result as a medium date and a short
+  time, and it also gives the zone.
 */
 const STAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
   timeZoneName: "short",
 });
 
