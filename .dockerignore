@@ -1,0 +1,58 @@
+# What must stay out of the image.
+#
+# The Dockerfile has one `COPY . .` line. Without this file that line copies
+# every file in the folder into a layer of the image.
+#
+# The first block is the important one. A secret in an image layer stays in that
+# layer. A later `RUN rm` does not remove it, because each layer keeps its own
+# copy of the files.
+
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+gcp-credentials*.json
+
+# The virtual environment of the development machine. The image makes its own
+# with `uv sync`, and this folder holds binary files for the wrong platform.
+.venv/
+venv/
+
+# Git history. The image does not need it, and it is large.
+.git/
+.gitignore
+
+# Python build files and cache folders.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# The tests and the documents. The service does not read them at run time.
+#
+# `README.md` stays in the image. `pyproject.toml` names it in the `readme`
+# field, and `uv` reads that field. A build with no README can fail there.
+tests/
+docs/
+projectsync_full_spec.md
+
+# Editors, the operating system, and local run files.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.firestore-emulator/
+scratch/
+
+# Docker files themselves.
+Dockerfile
+.dockerignore
