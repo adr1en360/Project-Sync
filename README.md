@@ -27,6 +27,11 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 - **Deterministic steps stay deterministic.** Three of the six nodes are plain
   Python: the repository scan, the rule lookup, and the Firestore write. No model
   is asked to do exact work.
+- **A review desk, not a dashboard.** The interface at `/` is a paper dossier: the
+  six graph nodes as a ledger, the four drafts as editable folios, and the verdict
+  as a rubber stamp. Your edits travel with the approval. It is hand-written HTML,
+  CSS, and JavaScript with no build step, so one container serves the API and the
+  interface together.
 
 ## Installation
 
@@ -68,6 +73,10 @@ Start the API:
 ```bash
 uv run uvicorn main:app --reload --port 8080
 ```
+
+Open <http://localhost:8080> for the review desk. Paste a repository URL there and
+the rest of this section happens in the browser. The commands below are the same
+flow over `curl`, for a demo or a script.
 
 Confirm it is up. The reply tells you which settings are still missing:
 
@@ -137,6 +146,7 @@ curl -X POST localhost:8080/api/v1/regenerate-asset \
 | `GET` `POST` | `/api/v1/rules` | Lists rules, or adds one by hand. |
 | `POST` | `/api/v1/rules/{id}` | Sets a rule to `ACTIVE`, `INACTIVE`, or `PROPOSED`. |
 | `GET` | `/healthz` | Liveness, the pinned model, and any missing settings. |
+| `GET` | `/` | The review desk. Static files are under `/static`. |
 
 Interactive docs are at `/docs` once the server is running.
 
@@ -180,10 +190,12 @@ with the source that confirms it. The product spec is
 
 ## Status
 
-Phase 1 (the graph) and Phase 2 (the commits and the rule curator) are
-implemented. **The web interface is not built yet, and its framework is not
-chosen** — the API above is the whole surface for now, and the JSON is designed to
-be driven by anything.
+Phase 1 (the graph), Phase 2 (the commits and the rule curator), and the review
+desk are implemented. `uv run pytest tests/ -q` passes 36 offline tests, and every
+route answers over HTTP.
+
+Not done yet: a real end-to-end run against Firestore and a live model, the Cloud
+Run deploy, and the demo recording. No `LICENSE` file — see below.
 
 ## Contributing
 
