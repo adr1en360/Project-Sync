@@ -118,6 +118,34 @@ const postJson = (path, payload) =>
   api(path, { method: "POST", body: JSON.stringify(payload) });
 
 /* ---------------------------------------------------------------- */
+/* Time                                                             */
+/* ---------------------------------------------------------------- */
+
+/*
+  The service writes every time in UTC, because `store.now_iso()` uses the UTC
+  zone. Do not cut the letters off the ISO text and show what is left. That gives
+  a UTC time with no zone on it, and a person in a different zone then reads a
+  time that is hours away from the true one.
+
+  `Intl.DateTimeFormat` moves the value into the zone of the browser and writes
+  the name of that zone. The first argument is `undefined`, so the format follows
+  the language of the person and not a fixed one.
+*/
+const STAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZoneName: "short",
+});
+
+/** Change an ISO time from the service into text for this browser. */
+function when(iso) {
+  if (!iso) return "—";
+  const at = new Date(iso);
+  // A bad value must show as it is. It must not show as "Invalid Date".
+  return Number.isNaN(at.getTime()) ? iso : STAMP_FORMAT.format(at);
+}
+
+/* ---------------------------------------------------------------- */
 /* Slips                                                            */
 /* ---------------------------------------------------------------- */
 
@@ -330,7 +358,7 @@ function renderSheet(tx) {
     fact("Repository", tx.repo_name, tx.repo_url),
     fact("Status", String(tx.status).replace(/_/g, " ").toLowerCase()),
     fact("Operator", tx.user_id),
-    fact("Opened", tx.created_at ? tx.created_at.slice(0, 19).replace("T", " ") : "—"),
+    fact("Opened", when(tx.created_at)),
   );
   if (tx.metadata && tx.metadata.tech_stack && tx.metadata.tech_stack.length) {
     el.facts.append(fact("Stack", tx.metadata.tech_stack.join(" · ")));
@@ -452,7 +480,7 @@ function renderReceipts(tx) {
     el.receipts.append(fact("Portfolio card commit", tx.card_commit_sha.slice(0, 12)));
   }
   if (tx.completed_at) {
-    el.receipts.append(fact("Closed", tx.completed_at.slice(0, 19).replace("T", " ")));
+    el.receipts.append(fact("Closed", when(tx.completed_at)));
   }
 }
 
