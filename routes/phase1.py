@@ -104,7 +104,7 @@ async def trigger_sync(request: SyncRequest, background: BackgroundTasks) -> dic
         )
     )
 
-    background.add_task(asyncio.create_task, _run_phase1(request, tx_id))
+    background.add_task(_run_phase1, request, tx_id)
     return {"transaction_id": tx_id, "status": TransactionStatus.RUNNING.value}
 
 

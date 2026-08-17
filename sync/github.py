@@ -117,12 +117,11 @@ def commit_assets(
 ) -> CommitResults:
     """Write the documentation sheet and the portfolio card.
 
-    The function tries both commits. It does not stop at the first failure,
-    because the two results are independent.
+    Both commits go to the private portfolio repository (`PORTFOLIO_DATA_REPO`).
+    The scanned repository is never written to.
 
     Args:
-      target_repo: The repository that the documentation sheet goes to. This is
-        the repository that the scan read.
+      target_repo: The repository that was scanned (kept for compatibility, not used).
       project_name: The name of the project. The file name comes from it.
       assets: The four assets from the generator.
       repo_url: The URL of the repository. It goes into the card.
@@ -135,11 +134,16 @@ def commit_assets(
     slug = slugify(project_name)
     client = _client()
 
-    # Target 1: the documentation sheet goes to the repository of the user.
+    if not config.PORTFOLIO_DATA_REPO:
+        results.doc_error = "PORTFOLIO_DATA_REPO is not set."
+        results.card_error = "PORTFOLIO_DATA_REPO is not set."
+        return results
+
+    # Target 1: the documentation sheet goes to the portfolio repository.
     try:
         results.doc_commit_sha = upsert_file(
             client,
-            target_repo,
+            config.PORTFOLIO_DATA_REPO,
             f"{config.SYNCED_DOCS_PATH}/{slug}.md",
             assets.doc_sheet_md,
             f"docs: add the {slug} sheet through ProjectSync",
@@ -148,26 +152,20 @@ def commit_assets(
         results.doc_error = str(error)
         logger.error("The documentation commit failed: %s", error)
 
-    # Target 2: the portfolio card goes to the private portfolio-data repository.
-    if not config.PORTFOLIO_DATA_REPO:
-        results.card_error = "PORTFOLIO_DATA_REPO is not set."
-    else:
-        try:
-            card = assets.portfolio_card.model_dump(mode="json")
-            # `PortfolioCard.repo_url` has the default value `""`, so the key is
-            # always in the dictionary. A test for the value is necessary here.
-            # `setdefault` would look at the key, find it, and keep the empty text.
-            if not card["repo_url"]:
-                card["repo_url"] = repo_url
-            results.card_commit_sha = upsert_file(
-                client,
-                config.PORTFOLIO_DATA_REPO,
-                f"cards/{slug}.json",
-                json.dumps(card, indent=2, ensure_ascii=False),
-                f"portfolio: add the {slug} card",
-            )
-        except CommitError as error:
-            results.card_error = str(error)
-            logger.error("The portfolio card commit failed: %s", error)
+    # Target 2: the portfolio card goes to the same portfolio repository.
+    try:
+        card = assets.portfolio_card.model_dump(mode="json")
+        if not card["repo_url"]:
+            card["repo_url"] = repo_url
+        results.card_commit_sha = upsert_file(
+            client,
+            config.PORTFOLIO_DATA_REPO,
+            f"cards/{slug}.json",
+            json.dumps(card, indent=2, ensure_ascii=False),
+            f"portfolio: add the {slug} card",
+        )
+    except CommitError as error:
+        results.card_error = str(error)
+        logger.error("The portfolio card commit failed: %s", error)
 
     return results
