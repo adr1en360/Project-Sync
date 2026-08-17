@@ -32,6 +32,9 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
   as a rubber stamp. Your edits travel with the approval. It is hand-written HTML,
   CSS, and JavaScript with no build step, so one container serves the API and the
   interface together.
+- **One private portfolio repository.** Both the documentation sheet and the
+  portfolio card commit to `PORTFOLIO_DATA_REPO`. The scanned repository is never
+  written to.
 
 ## Installation
 
@@ -124,9 +127,10 @@ curl -X POST localhost:8080/api/v1/approval-callback \
   -d '{"transaction_id":"<transaction_id>","approved":true}'
 ```
 
-The doc sheet lands in the scanned repository under `docs/synced/`, and the
-portfolio card lands in `PORTFOLIO_DATA_REPO` under `cards/`. The two commits are
-independent: if one fails, the row records that and stays open for a retry.
+Both the doc sheet and the portfolio card land in `PORTFOLIO_DATA_REPO` under
+`docs/synced/` and `cards/` respectively. The scanned repository is never written
+to. The two commits are independent: if one fails, the row records that and stays
+open for a retry.
 
 ### Teaching it your voice
 

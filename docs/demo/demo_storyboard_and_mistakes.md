@@ -55,7 +55,7 @@ an earlier commit. Do not discover this on recording day.
 | 2 | 0:25–1:40 | Paste URL → the graph runs | Innovation 40% + Architecture 30% |
 | 3 | 1:40–2:20 | **The negative result** | Innovation 40% |
 | 4 | 2:20–3:10 | **Toggle a rule → Regenerate** | Innovation 40% + Architecture 30% |
-| 5 | 3:10–4:00 | Approve → two commit SHAs → GCP console | Demo 30% |
+| 5 | 3:10–4:00 | Approve → two commits to portfolio-data → GCP console | Demo 30% |
 
 ---
 
@@ -199,12 +199,11 @@ a competitor to bolt on late, and the easiest to prove in under a minute.
 **On screen, in this order:**
 
 1. **Click Approve.** One click.
-2. **The scanned repository on GitHub** — a commit from seconds ago at
-   `docs/synced/{slug}.md`. Click into it. Frontmatter and markdown rendering. This repo is
-   **public**, so a judge can open this commit themselves.
-3. **The `portfolio-data` repository** — a second commit, `cards/{slug}.json`. **A different
-   repository**, and the card is JSON, not markdown. Spec §10.1 makes this repo **private**,
-   so show it on camera rather than claiming a judge can click it. See the note below.
+2. **The `portfolio-data` repository** — first commit at `docs/synced/{slug}.md`.
+   Click into it. Frontmatter and markdown rendering. This is the documentation sheet.
+3. **The same `portfolio-data` repository** — second commit, `cards/{slug}.json`. The
+   portfolio card is JSON, not markdown. Both commits go to the same private repository.
+   (Make it public for the recording so a judge can click both commits.)
 4. **Firestore in the GCP console** — refresh the transaction document in
    `projectsync_transactions`. `status` reads `COMPLETED`. `doc_commit_sha` and
    `card_commit_sha` both populated. `style_rules_applied` lists the four rules from Scene 4.
@@ -213,9 +212,9 @@ a competitor to bolt on late, and the easiest to prove in under a minute.
 
 **Narration, roughly:**
 
-> "One click. Two commits, in two different repositories. The documentation sheet lands in the
-> repository it documents — that one is public, you can open the commit yourself. The
-> portfolio card is JSON, and it goes to a separate private repo that my site builds from.
+> "One click. Two commits, both landing in `portfolio-data`. The documentation sheet is
+> markdown, the portfolio card is JSON — different formats, different folders, one private
+> repository that my portfolio site builds from. The scanned repository is never written to.
 >
 > In Firestore the transaction has moved from pending approval to completed, with both commit
 > SHAs and the exact list of style rules that shaped this draft. And here is the Cloud Run
@@ -225,15 +224,14 @@ a competitor to bolt on late, and the easiest to prove in under a minute.
 > whether the work is ready to be public, and it gets closer to my voice every time I correct
 > it."
 
-**Two commit SHAs in two repositories is the proof.** Not a screenshot, not a log line.
+**Two commit SHAs in one repository is the proof.** Not a screenshot, not a log line.
 Everything else in scene 5 supports that.
 
 > 💡 **Consider making `portfolio-data` public before recording.** Spec §10.1 chose private,
 > but the stated reason was *"no hosting, no webhook, buildable now"* — not confidentiality.
 > The contents are portfolio cards describing the user's own public projects. Making it public
-> costs nothing and upgrades scene 5 from "one clickable commit" to two. **This is a
-> suggestion, not a spec change** — if the repo stays private, do not tell the judge they can
-> click it.
+> costs nothing and lets a judge click both commits on camera. **This is a suggestion, not a
+> spec change** — if the repo stays private, do not tell the judge they can click it.
 
 ---
 
@@ -245,7 +243,7 @@ Everything else in scene 5 supports that.
 | 2 | Autonomous multi-step execution; three deterministic nodes; live Cloud Run | Innovation 40% + Architecture 30% |
 | 3 | The agent exercises judgment and can refuse. Reproducible at `temperature=0.0` | Innovation 40% |
 | 4 | Persistent memory that changes behaviour, with an audit trail | Innovation 40% + Architecture 30% |
-| 5 | *"Undeniable proof of execution"* `[L3.5]` — two commits, Firestore lifecycle, Cloud Run | Demo 30% |
+| 5 | *"Undeniable proof of execution"* `[L3.5]` — two commits to `portfolio-data`, Firestore lifecycle, Cloud Run | Demo 30% |
 Nothing in the video shows Pub/Sub, Gmail, or an email inbox. **They were cut.** A scene
 showing them would contradict the repository a judge is about to read.
 
@@ -375,7 +373,7 @@ Run this the morning of Aug 29.
       exhaust it
 - [ ] **Early commit SHA confirmed to return `PRIVATE_ONLY`** (found on Day 5)
 - [ ] **Scene 4 rehearsed** — the draft visibly changes on toggle
-- [ ] The scanned repo and `portfolio-data` both exist, and the token can write to both
+- [ ] `portfolio-data` exists, and the token can write to it
 - [ ] Decided whether `portfolio-data` is public for the recording. If it stays private, the
       narration must not claim a judge can click that commit
 - [ ] Firestore console open on the `projectsync_transactions` collection

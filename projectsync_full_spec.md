@@ -87,8 +87,8 @@ Endpoint: `POST /api/v1/approval-callback`
 User reviews all four generated outputs on a dashboard. User may edit any draft. User clicks **Approve** or **Discard**.
 
 **On Approve:**
-1. Commit the documentation sheet to the user's own repo, `/docs/` folder, via PyGithub (`create_file`/`update_file`). Returns a commit SHA. Real, closed-loop, provable.
-2. Commit the portfolio card JSON to a dedicated private repo (`portfolio-data`). Path A — resolved. See Section 8.
+1. Commit the documentation sheet to the private portfolio repo (`PORTFOLIO_DATA_REPO`), under `docs/synced/`, via PyGithub (`create_file`/`update_file`). Returns a commit SHA. Real, closed-loop, provable.
+2. Commit the portfolio card JSON to the same private portfolio repo (`PORTFOLIO_DATA_REPO`), under `cards/`. Path A — resolved. See Section 8.
 3. Run the **Rule Curator step** — proposes new rules, does not activate them. See Section 5.
 4. Set the Firestore row status to `COMPLETED`.
 
