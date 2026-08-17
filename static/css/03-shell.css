@@ -95,16 +95,17 @@
 
 .chip {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-3);
+  padding: 4px var(--sp-3);
   border-radius: var(--shape-full);
   background: var(--m3-surface-container-high);
+  line-height: 1;
 }
 
 .chip__label {
   font: var(--type-label-sm);
-  line-height: 1.25;
+  line-height: 1;
   color: var(--m3-on-surface-variant);
 }
 
@@ -116,7 +117,7 @@
 .chip__value {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  line-height: 1.25;
+  line-height: 1;
   color: var(--m3-on-surface);
 }
 

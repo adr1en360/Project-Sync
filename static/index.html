@@ -19,23 +19,26 @@
        come last, because those rules must win.
 -->
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ProjectSync — console</title>
-<meta name="description" content="Turns a finished GitHub repository into career-ready outputs with one human approval.">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProjectSync — console</title>
+  <meta name="description"
+    content="Turns a finished GitHub repository into career-ready outputs with one human approval.">
 
-<!-- The page gives a light theme and a dark theme. The browser chooses. A person
+  <!-- The page gives a light theme and a dark theme. The browser chooses. A person
      can then make a choice, and `js/theme.js` writes `data-theme` on the root. -->
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#FCF8F8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#131314" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#FCF8F8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#131314" media="(prefers-color-scheme: dark)">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
 
-<!--
+  <!--
   The stylesheets, in the order of the cascade.
 
   There is no build step, so the browser reads each file. Do not put these into
@@ -49,408 +52,416 @@
   `01-tokens.css` is made by a program. Run `tools/gen_m3_palette.py` to change
   it. Do not edit that one file by hand.
 -->
-<link rel="stylesheet" href="/static/css/01-tokens.css">
-<link rel="stylesheet" href="/static/css/02-reset.css">
-<link rel="stylesheet" href="/static/css/03-shell.css">
-<link rel="stylesheet" href="/static/css/04-typography.css">
-<link rel="stylesheet" href="/static/css/05-tabs.css">
-<link rel="stylesheet" href="/static/css/06-buttons.css">
-<link rel="stylesheet" href="/static/css/07-fields.css">
-<link rel="stylesheet" href="/static/css/08-surfaces.css">
-<link rel="stylesheet" href="/static/css/09-stepper.css">
-<link rel="stylesheet" href="/static/css/10-rules.css">
-<link rel="stylesheet" href="/static/css/11-folios.css">
-<link rel="stylesheet" href="/static/css/12-verdict.css">
-<link rel="stylesheet" href="/static/css/13-stamp.css">
-<link rel="stylesheet" href="/static/css/14-snackbar.css">
-<link rel="stylesheet" href="/static/css/15-motion.css">
-<link rel="stylesheet" href="/static/css/16-screens.css">
+  <link rel="stylesheet" href="/static/css/01-tokens.css">
+  <link rel="stylesheet" href="/static/css/02-reset.css">
+  <link rel="stylesheet" href="/static/css/03-shell.css">
+  <link rel="stylesheet" href="/static/css/04-typography.css">
+  <link rel="stylesheet" href="/static/css/05-tabs.css">
+  <link rel="stylesheet" href="/static/css/06-buttons.css">
+  <link rel="stylesheet" href="/static/css/07-fields.css">
+  <link rel="stylesheet" href="/static/css/08-surfaces.css">
+  <link rel="stylesheet" href="/static/css/09-stepper.css">
+  <link rel="stylesheet" href="/static/css/10-rules.css">
+  <link rel="stylesheet" href="/static/css/11-folios.css">
+  <link rel="stylesheet" href="/static/css/12-verdict.css">
+  <link rel="stylesheet" href="/static/css/13-stamp.css">
+  <link rel="stylesheet" href="/static/css/14-snackbar.css">
+  <link rel="stylesheet" href="/static/css/15-motion.css">
+  <link rel="stylesheet" href="/static/css/16-screens.css">
 </head>
 
 <body>
-<a class="skip" href="#main">Skip to the work</a>
+  <a class="skip" href="#main">Skip to the work</a>
 
-<!-- ==================================================================== -->
-<!-- The top app bar. It holds the name, the state of the service, and the -->
-<!-- control for the theme.                                               -->
-<!-- ==================================================================== -->
-<header class="topbar">
-  <div class="topbar__brand">
-    <span class="topbar__mark" aria-hidden="true">PS</span>
-    <span class="topbar__name">ProjectSync</span>
-  </div>
-
-  <dl class="topbar__health" id="health">
-    <div class="chip"><dt class="chip__label">Model</dt><dd class="chip__value" id="h-model" translate="no">…</dd></div>
-    <div class="chip"><dt class="chip__label">Route</dt><dd class="chip__value" id="h-route" translate="no">…</dd></div>
-    <div class="chip"><dt class="chip__label">Service</dt><dd class="chip__value" id="h-status">…</dd></div>
-  </dl>
-
-  <button class="icon-btn" type="button" id="theme-toggle"
-          aria-label="Change the theme" title="Change the theme">
-    <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle>
-      <path d="M12 3a9 9 0 010 18z" fill="currentColor"></path>
-    </svg>
-  </button>
-</header>
-
-<p class="strip" id="config-strip" hidden></p>
-
-<noscript>
-  <p class="strip strip--warn">This page needs JavaScript. The API answers without it:
-  <code translate="no">POST /api/v1/trigger-sync</code>. The reference is in <code translate="no">/docs</code>.</p>
-</noscript>
-
-<!-- ==================================================================== -->
-<!-- The tab strip. Each tab is one step of the work. `js/tabs.js` moves   -->
-<!-- the selection, and it writes `data-state` on each tab to show the     -->
-<!-- state of that step.                                                  -->
-<!-- ==================================================================== -->
-<nav class="tabs" aria-label="The steps of the work">
-  <div class="tabs__list" role="tablist" aria-label="The steps of the work">
-
-    <button class="tab" role="tab" type="button" id="tab-intake"
-            aria-controls="panel-intake" aria-selected="true" tabindex="0"
-            data-tab="intake" data-state="active">
-      <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-        <path d="M12 16l-5-5h3V4h4v7h3l-5 5zM5 18h14v2H5z"></path>
-      </svg>
-      <span class="tab__label">Intake</span>
-      <span class="tab__step" aria-hidden="true">1</span>
-    </button>
-
-    <button class="tab" role="tab" type="button" id="tab-run"
-            aria-controls="panel-run" aria-selected="false" tabindex="-1"
-            data-tab="run" data-state="idle">
-      <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-        <path d="M8 5v14l11-7z"></path>
-      </svg>
-      <span class="tab__label">Run</span>
-      <span class="tab__step" aria-hidden="true">2</span>
-    </button>
-
-    <button class="tab" role="tab" type="button" id="tab-review"
-            aria-controls="panel-review" aria-selected="false" tabindex="-1"
-            data-tab="review" data-state="idle">
-      <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"></path>
-      </svg>
-      <span class="tab__label">Review</span>
-      <span class="tab__step" aria-hidden="true">3</span>
-    </button>
-
-    <button class="tab" role="tab" type="button" id="tab-voice"
-            aria-controls="panel-voice" aria-selected="false" tabindex="-1"
-            data-tab="voice" data-state="idle">
-      <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-        <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2zM7 9h10v2H7zm0 4h7v2H7z"></path>
-      </svg>
-      <span class="tab__label">Voice</span>
-      <span class="tab__step" aria-hidden="true">4</span>
-    </button>
-
-  </div>
-</nav>
-
-<main class="work" id="main" tabindex="-1">
-
-  <!-- ================================================================== -->
-  <!-- Step 1. Intake. The form that starts a run.                        -->
-  <!-- ================================================================== -->
-  <section class="pane" role="tabpanel" id="panel-intake"
-           aria-labelledby="tab-intake" tabindex="0">
-    <div class="pane__head">
-      <h1 class="pane__title" id="intake-h">Open a record</h1>
-      <p class="pane__hint">Give the address of a repository that is complete.
-        The graph reads the repository, writes four drafts, and then stops for
-        you. Nothing leaves this machine until you approve it.</p>
+  <!-- ==================================================================== -->
+  <!-- The top app bar. It holds the name, the state of the service, and the -->
+  <!-- control for the theme.                                               -->
+  <!-- ==================================================================== -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__mark" aria-hidden="true">PS</span>
+      <span class="topbar__name">ProjectSync</span>
     </div>
 
-    <div class="card card--form">
-      <form id="intake" novalidate>
-        <div class="field">
-          <label class="field__label" for="repo-url">Repository URL</label>
-          <input class="field__input" id="repo-url" name="repo_url" type="url" required
-                 inputmode="url" spellcheck="false" autocapitalize="off"
-                 autocomplete="url" enterkeyhint="go"
-                 placeholder="https://github.com/owner/name">
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label class="field__label" for="user-id">Operator</label>
-            <input class="field__input" id="user-id" name="user_id" type="text" value="default"
-                   spellcheck="false" autocapitalize="off" autocomplete="off">
-          </div>
-          <div class="field">
-            <label class="field__label" for="commit-sha">Commit
-              <span class="field__opt">optional</span></label>
-            <input class="field__input" id="commit-sha" name="commit_sha" type="text"
-                   spellcheck="false" autocapitalize="off" autocomplete="off"
-                   placeholder="head">
-          </div>
-        </div>
-
-        <p class="field__hint">Give a commit to read an earlier state of the
-          repository. The demo uses this to show the gate refuse a commit that
-          is not complete.</p>
-
-        <div class="card__actions">
-          <button class="btn btn--filled" type="submit" id="begin">
-            <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-              <path d="M8 5v14l11-7z"></path>
-            </svg>
-            <span>Open a record</span>
-          </button>
-        </div>
-
-        <p class="form-error" id="intake-error" role="alert" hidden></p>
-      </form>
-    </div>
-  </section>
-
-  <!-- ================================================================== -->
-  <!-- Step 2. Run. The six nodes of the graph, as they report.            -->
-  <!-- ================================================================== -->
-  <section class="pane" role="tabpanel" id="panel-run"
-           aria-labelledby="tab-run" tabindex="0" hidden>
-    <div class="pane__head">
-      <h1 class="pane__title" id="ledger-h">The graph</h1>
-      <p class="pane__hint">Six nodes. Three are plain Python and three call the
-        model. A line is marked only after its output is in the row, so this is
-        evidence and not a progress bar.</p>
-    </div>
-
-    <div class="card">
-      <ol class="stepper" id="ledger" translate="no">
-        <li class="step" data-node="scan" data-kind="code" data-state="idle" style="--i:0">
-          <span class="step__dot" aria-hidden="true"></span>
-          <span class="step__name">scan_github_repository</span>
-          <span class="step__kind">code</span>
-          <span class="step__mark" aria-hidden="true"></span>
-        </li>
-        <li class="step" data-node="extract" data-kind="agent" data-state="idle" style="--i:1">
-          <span class="step__dot" aria-hidden="true"></span>
-          <span class="step__name">extraction_agent</span>
-          <span class="step__kind">model</span>
-          <span class="step__mark" aria-hidden="true"></span>
-        </li>
-        <li class="step" data-node="rules" data-kind="code" data-state="idle" style="--i:2">
-          <span class="step__dot" aria-hidden="true"></span>
-          <span class="step__name">attach_style_rules</span>
-          <span class="step__kind">code</span>
-          <span class="step__mark" aria-hidden="true"></span>
-        </li>
-        <li class="step" data-node="generate" data-kind="agent" data-state="idle" style="--i:3">
-          <span class="step__dot" aria-hidden="true"></span>
-          <span class="step__name">asset_generator_agent</span>
-          <span class="step__kind">model</span>
-          <span class="step__mark" aria-hidden="true"></span>
-        </li>
-        <li class="step" data-node="evaluate" data-kind="agent" data-state="idle" style="--i:4">
-          <span class="step__dot" aria-hidden="true"></span>
-          <span class="step__name">path_evaluator_agent</span>
-          <span class="step__kind">model</span>
-          <span class="step__mark" aria-hidden="true"></span>
-        </li>
-        <li class="step" data-node="persist" data-kind="code" data-state="idle" style="--i:5">
-          <span class="step__dot" aria-hidden="true"></span>
-          <span class="step__name">persist_transaction</span>
-          <span class="step__kind">code</span>
-          <span class="step__mark" aria-hidden="true"></span>
-        </li>
-      </ol>
-
-      <p class="poll" id="poll" role="status" aria-live="polite">No record open.</p>
-    </div>
-  </section>
-
-  <!-- ================================================================== -->
-  <!-- Step 3. Review. One transaction, the gate, and the four drafts.     -->
-  <!-- ================================================================== -->
-  <section class="pane" role="tabpanel" id="panel-review"
-           aria-labelledby="tab-review" tabindex="0" hidden>
-
-    <article class="sheet" id="sheet" aria-labelledby="proj">
-
-      <!-- The stamp is decoration. `#verdict` carries the words that a screen
-           reader gives, so the stamp stays hidden from that reader. -->
-      <div class="stamp" id="stamp" data-verdict="" aria-hidden="true">
-        <b class="stamp__text"></b>
-        <small class="stamp__sub"></small>
+    <dl class="topbar__health" id="health">
+      <div class="chip">
+        <dt class="chip__label">Model</dt>
+        <dd class="chip__value" id="h-model" translate="no">…</dd>
       </div>
+      <div class="chip">
+        <dt class="chip__label">Route</dt>
+        <dd class="chip__value" id="h-route" translate="no">…</dd>
+      </div>
+      <div class="chip">
+        <dt class="chip__label">Service</dt>
+        <dd class="chip__value" id="h-status">…</dd>
+      </div>
+    </dl>
 
+    <button class="icon-btn" type="button" id="theme-toggle" aria-label="Change the theme" title="Change the theme">
+      <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"></circle>
+        <path d="M12 3a9 9 0 010 18z" fill="currentColor"></path>
+      </svg>
+    </button>
+  </header>
+
+  <p class="strip" id="config-strip" hidden></p>
+
+  <noscript>
+    <p class="strip strip--warn">This page needs JavaScript. The API answers without it:
+      <code translate="no">POST /api/v1/trigger-sync</code>. The reference is in <code translate="no">/docs</code>.
+    </p>
+  </noscript>
+
+  <!-- ==================================================================== -->
+  <!-- The tab strip. Each tab is one step of the work. `js/tabs.js` moves   -->
+  <!-- the selection, and it writes `data-state` on each tab to show the     -->
+  <!-- state of that step.                                                  -->
+  <!-- ==================================================================== -->
+  <nav class="tabs" aria-label="The steps of the work">
+    <div class="tabs__list" role="tablist" aria-label="The steps of the work">
+
+      <button class="tab" role="tab" type="button" id="tab-intake" aria-controls="panel-intake" aria-selected="true"
+        tabindex="0" data-tab="intake" data-state="active">
+        <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+          <path d="M12 16l-5-5h3V4h4v7h3l-5 5zM5 18h14v2H5z"></path>
+        </svg>
+        <span class="tab__label">Intake</span>
+        <span class="tab__step" aria-hidden="true">1</span>
+      </button>
+
+      <button class="tab" role="tab" type="button" id="tab-run" aria-controls="panel-run" aria-selected="false"
+        tabindex="-1" data-tab="run" data-state="idle">
+        <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+          <path d="M8 5v14l11-7z"></path>
+        </svg>
+        <span class="tab__label">Run</span>
+        <span class="tab__step" aria-hidden="true">2</span>
+      </button>
+
+      <button class="tab" role="tab" type="button" id="tab-review" aria-controls="panel-review" aria-selected="false"
+        tabindex="-1" data-tab="review" data-state="idle">
+        <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+          <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"></path>
+        </svg>
+        <span class="tab__label">Review</span>
+        <span class="tab__step" aria-hidden="true">3</span>
+      </button>
+
+      <button class="tab" role="tab" type="button" id="tab-voice" aria-controls="panel-voice" aria-selected="false"
+        tabindex="-1" data-tab="voice" data-state="idle">
+        <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+          <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2zM7 9h10v2H7zm0 4h7v2H7z"></path>
+        </svg>
+        <span class="tab__label">Voice</span>
+        <span class="tab__step" aria-hidden="true">4</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <main class="work" id="main" tabindex="-1">
+
+    <!-- ================================================================== -->
+    <!-- Step 1. Intake. The form that starts a run.                        -->
+    <!-- ================================================================== -->
+    <section class="pane" role="tabpanel" id="panel-intake" aria-labelledby="tab-intake" tabindex="0">
       <div class="pane__head">
-        <p class="sheet__no"><span>Record</span> <b id="txid" translate="no">—</b></p>
-        <h1 class="pane__title" id="proj">No record is open</h1>
-        <p class="pane__hint" id="tagline">Open a record in the first tab. The
-          graph runs behind the request, and this tab fills as each node
-          reports.</p>
-        <dl class="facts" id="facts"></dl>
+        <h1 class="pane__title" id="intake-h">Open a record</h1>
+        <p class="pane__hint">Give the address of a repository that is complete.
+          The graph reads the repository, writes four drafts, and then stops for
+          you. Nothing leaves this machine until you approve it.</p>
       </div>
 
-      <!-- The gate arrives after the poll, so it must announce itself. -->
-      <section class="verdict card" id="verdict" hidden aria-labelledby="verdict-h"
-               aria-live="polite">
-        <h2 class="verdict__h" id="verdict-h">The gate</h2>
-        <div class="verdict__body">
-          <p class="verdict__line" id="verdict-line"></p>
-          <ul class="verdict__reasons" id="verdict-reasons"></ul>
-        </div>
-        <ul class="marginalia" id="verdict-missing"
-            aria-label="What the repository does not have"></ul>
-      </section>
+      <div class="card card--form">
+        <form id="intake" novalidate>
+          <div class="field">
+            <label class="field__label" for="repo-url">Repository URL</label>
+            <input class="field__input" id="repo-url" name="repo_url" type="url" required inputmode="url"
+              spellcheck="false" autocapitalize="off" autocomplete="url" enterkeyhint="go"
+              placeholder="https://github.com/owner/name">
+          </div>
 
-      <section class="folios" id="folios" hidden>
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="user-id">Operator</label>
+              <input class="field__input" id="user-id" name="user_id" type="text" value="default" spellcheck="false"
+                autocapitalize="off" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="commit-sha">Commit
+                <span class="field__opt">optional</span></label>
+              <input class="field__input" id="commit-sha" name="commit_sha" type="text" spellcheck="false"
+                autocapitalize="off" autocomplete="off" placeholder="head">
+            </div>
+          </div>
 
-        <section class="folio card" data-numeral="I" aria-labelledby="f-doc-h">
-          <header class="folio__head">
-            <h2 class="folio__title" id="f-doc-h">Documentation sheet</h2>
-            <p class="folio__note">Markdown. On approval this commits to
-              <code translate="no">docs/synced/</code> in the repository that was read.</p>
-            <button class="btn btn--text" type="button" data-copy="f-doc">
+          <p class="field__hint">Give a commit to read an earlier state of the
+            repository. The demo uses this to show the gate refuse a commit that
+            is not complete.</p>
+
+          <div class="card__actions">
+            <button class="btn btn--filled" type="submit" id="begin">
               <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-                <path d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                <path d="M8 5v14l11-7z"></path>
               </svg>
-              <span>Copy</span>
+              <span>Open a record</span>
             </button>
-          </header>
-          <textarea class="folio__body folio__body--mono" id="f-doc"
-                    aria-labelledby="f-doc-h" spellcheck="false" rows="12"></textarea>
-          <p class="folio__meter" id="m-doc"></p>
+          </div>
+
+          <p class="form-error" id="intake-error" role="alert" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- Step 2. Run. The six nodes of the graph, as they report.            -->
+    <!-- ================================================================== -->
+    <section class="pane" role="tabpanel" id="panel-run" aria-labelledby="tab-run" tabindex="0" hidden>
+      <div class="pane__head">
+        <h1 class="pane__title" id="ledger-h">The graph</h1>
+        <p class="pane__hint">Six nodes. Three are plain Python and three call the
+          model. A line is marked only after its output is in the row, so this is
+          evidence and not a progress bar.</p>
+      </div>
+
+      <div class="card">
+        <ol class="stepper" id="ledger" translate="no">
+          <li class="step" data-node="scan" data-kind="code" data-state="idle" style="--i:0">
+            <span class="step__dot" aria-hidden="true"></span>
+            <span class="step__name">scan_github_repository</span>
+            <span class="step__kind">code</span>
+            <span class="step__mark" aria-hidden="true"></span>
+          </li>
+          <li class="step" data-node="extract" data-kind="agent" data-state="idle" style="--i:1">
+            <span class="step__dot" aria-hidden="true"></span>
+            <span class="step__name">extraction_agent</span>
+            <span class="step__kind">model</span>
+            <span class="step__mark" aria-hidden="true"></span>
+          </li>
+          <li class="step" data-node="rules" data-kind="code" data-state="idle" style="--i:2">
+            <span class="step__dot" aria-hidden="true"></span>
+            <span class="step__name">attach_style_rules</span>
+            <span class="step__kind">code</span>
+            <span class="step__mark" aria-hidden="true"></span>
+          </li>
+          <li class="step" data-node="generate" data-kind="agent" data-state="idle" style="--i:3">
+            <span class="step__dot" aria-hidden="true"></span>
+            <span class="step__name">asset_generator_agent</span>
+            <span class="step__kind">model</span>
+            <span class="step__mark" aria-hidden="true"></span>
+          </li>
+          <li class="step" data-node="evaluate" data-kind="agent" data-state="idle" style="--i:4">
+            <span class="step__dot" aria-hidden="true"></span>
+            <span class="step__name">path_evaluator_agent</span>
+            <span class="step__kind">model</span>
+            <span class="step__mark" aria-hidden="true"></span>
+          </li>
+          <li class="step" data-node="persist" data-kind="code" data-state="idle" style="--i:5">
+            <span class="step__dot" aria-hidden="true"></span>
+            <span class="step__name">persist_transaction</span>
+            <span class="step__kind">code</span>
+            <span class="step__mark" aria-hidden="true"></span>
+          </li>
+        </ol>
+
+        <p class="poll" id="poll" role="status" aria-live="polite">No record open.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- Step 3. Review. One transaction, the gate, and the four drafts.     -->
+    <!-- ================================================================== -->
+    <section class="pane" role="tabpanel" id="panel-review" aria-labelledby="tab-review" tabindex="0" hidden>
+
+      <article class="sheet" id="sheet" aria-labelledby="proj">
+
+        <!-- The stamp is decoration. `#verdict` carries the words that a screen
+           reader gives, so the stamp stays hidden from that reader. -->
+        <div class="stamp" id="stamp" data-verdict="" aria-hidden="true">
+          <b class="stamp__text"></b>
+          <small class="stamp__sub"></small>
+        </div>
+
+        <div class="pane__head">
+          <p class="sheet__no"><span>Record</span> <b id="txid" translate="no">—</b></p>
+          <h1 class="pane__title" id="proj">No record is open</h1>
+          <p class="pane__hint" id="tagline">Open a record in the first tab. The
+            graph runs behind the request, and this tab fills as each node
+            reports.</p>
+          <dl class="facts" id="facts"></dl>
+        </div>
+
+        <!-- The gate arrives after the poll, so it must announce itself. -->
+        <section class="verdict card" id="verdict" hidden aria-labelledby="verdict-h" aria-live="polite">
+          <h2 class="verdict__h" id="verdict-h">The gate</h2>
+          <div class="verdict__body">
+            <p class="verdict__line" id="verdict-line"></p>
+            <ul class="verdict__reasons" id="verdict-reasons"></ul>
+          </div>
+          <ul class="marginalia" id="verdict-missing" aria-label="What the repository does not have"></ul>
         </section>
 
-        <section class="folio card" data-numeral="II" aria-labelledby="f-card-h">
-          <header class="folio__head">
-            <h2 class="folio__title" id="f-card-h">Portfolio card</h2>
-            <p class="folio__note">JSON. On approval this commits to
-              <code translate="no">cards/</code> in the private portfolio repository.</p>
-            <button class="btn btn--text" type="button" data-copy="f-card">
-              <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-                <path d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
-              </svg>
-              <span>Copy</span>
-            </button>
-          </header>
-          <textarea class="folio__body folio__body--mono" id="f-card"
-                    aria-labelledby="f-card-h" spellcheck="false" rows="10"></textarea>
-          <p class="folio__meter" id="m-card"></p>
+        <section class="folios" id="folios" hidden>
+
+          <section class="folio card" data-numeral="I" aria-labelledby="f-doc-h">
+            <header class="folio__head">
+              <h2 class="folio__title" id="f-doc-h">Documentation sheet</h2>
+              <p class="folio__note">Markdown. On approval this commits to
+                <code translate="no">docs/synced/</code> in the repository that was read.
+              </p>
+              <button class="btn btn--text" type="button" data-copy="f-doc">
+                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                  fill="currentColor">
+                  <path
+                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                  </path>
+                </svg>
+                <span>Copy</span>
+              </button>
+            </header>
+            <textarea class="folio__body folio__body--mono" id="f-doc" aria-labelledby="f-doc-h" spellcheck="false"
+              rows="12"></textarea>
+            <p class="folio__meter" id="m-doc"></p>
+          </section>
+
+          <section class="folio card" data-numeral="II" aria-labelledby="f-card-h">
+            <header class="folio__head">
+              <h2 class="folio__title" id="f-card-h">Portfolio card</h2>
+              <p class="folio__note">JSON. On approval this commits to
+                <code translate="no">cards/</code> in the private portfolio repository.
+              </p>
+              <button class="btn btn--text" type="button" data-copy="f-card">
+                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                  fill="currentColor">
+                  <path
+                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                  </path>
+                </svg>
+                <span>Copy</span>
+              </button>
+            </header>
+            <textarea class="folio__body folio__body--mono" id="f-card" aria-labelledby="f-card-h" spellcheck="false"
+              rows="10"></textarea>
+            <p class="folio__meter" id="m-card"></p>
+          </section>
+
+          <section class="folio card" data-numeral="III" aria-labelledby="f-bullets-h">
+            <header class="folio__head">
+              <h2 class="folio__title" id="f-bullets-h">Resume lines</h2>
+              <p class="folio__note">One line for each point. This is a draft to
+                copy. Nothing publishes it.</p>
+              <button class="btn btn--text" type="button" data-copy="f-bullets">
+                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                  fill="currentColor">
+                  <path
+                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                  </path>
+                </svg>
+                <span>Copy</span>
+              </button>
+            </header>
+            <textarea class="folio__body" id="f-bullets" aria-labelledby="f-bullets-h" rows="5"></textarea>
+            <p class="folio__meter" id="m-bullets"></p>
+          </section>
+
+          <section class="folio card" data-numeral="IV" aria-labelledby="f-social-h">
+            <header class="folio__head">
+              <h2 class="folio__title" id="f-social-h">Social post</h2>
+              <p class="folio__note">A draft to copy. Nothing publishes it. The
+                voice rules act here first.</p>
+              <button class="btn btn--text" type="button" data-copy="f-social">
+                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                  fill="currentColor">
+                  <path
+                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                  </path>
+                </svg>
+                <span>Copy</span>
+              </button>
+            </header>
+            <textarea class="folio__body folio__body--voice" id="f-social" aria-labelledby="f-social-h"
+              rows="5"></textarea>
+            <p class="folio__meter" id="m-social"></p>
+            <ul class="marginalia marginalia--rules" id="applied-rules" aria-label="The rules that made this draft">
+            </ul>
+          </section>
+
         </section>
 
-        <section class="folio card" data-numeral="III" aria-labelledby="f-bullets-h">
-          <header class="folio__head">
-            <h2 class="folio__title" id="f-bullets-h">Resume lines</h2>
-            <p class="folio__note">One line for each point. This is a draft to
-              copy. Nothing publishes it.</p>
-            <button class="btn btn--text" type="button" data-copy="f-bullets">
+        <!-- The bar of decisions. It holds the one action that writes. -->
+        <footer class="act" id="act" hidden>
+          <p class="act__note" id="act-note">Read the four drafts. Edit any of
+            them. The edits go with the approval.</p>
+          <div class="act__row">
+            <button class="btn btn--outlined" type="button" id="regenerate">
               <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-                <path d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                <path d="M12 5V2L7 6l5 4V7a5 5 0 11-5 5H5a7 7 0 107-7z"></path>
               </svg>
-              <span>Copy</span>
+              <span>Write again with the active rules</span>
             </button>
-          </header>
-          <textarea class="folio__body" id="f-bullets"
-                    aria-labelledby="f-bullets-h" rows="5"></textarea>
-          <p class="folio__meter" id="m-bullets"></p>
-        </section>
-
-        <section class="folio card" data-numeral="IV" aria-labelledby="f-social-h">
-          <header class="folio__head">
-            <h2 class="folio__title" id="f-social-h">Social post</h2>
-            <p class="folio__note">A draft to copy. Nothing publishes it. The
-              voice rules act here first.</p>
-            <button class="btn btn--text" type="button" data-copy="f-social">
+            <span class="act__gap"></span>
+            <button class="btn btn--text btn--danger" type="button" id="discard">Discard</button>
+            <button class="btn btn--filled" type="button" id="approve">
               <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-                <path d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"></path>
               </svg>
-              <span>Copy</span>
+              <span>Approve and commit</span>
             </button>
-          </header>
-          <textarea class="folio__body folio__body--voice" id="f-social"
-                    aria-labelledby="f-social-h" rows="5"></textarea>
-          <p class="folio__meter" id="m-social"></p>
-          <ul class="marginalia marginalia--rules" id="applied-rules"
-              aria-label="The rules that made this draft"></ul>
-        </section>
+          </div>
+          <dl class="receipts" id="receipts" hidden></dl>
+        </footer>
 
-      </section>
+      </article>
+    </section>
 
-      <!-- The bar of decisions. It holds the one action that writes. -->
-      <footer class="act" id="act" hidden>
-        <p class="act__note" id="act-note">Read the four drafts. Edit any of
-          them. The edits go with the approval.</p>
-        <div class="act__row">
-          <button class="btn btn--outlined" type="button" id="regenerate">
-            <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-              <path d="M12 5V2L7 6l5 4V7a5 5 0 11-5 5H5a7 7 0 107-7z"></path>
-            </svg>
-            <span>Write again with the active rules</span>
-          </button>
-          <span class="act__gap"></span>
-          <button class="btn btn--text btn--danger" type="button" id="discard">Discard</button>
-          <button class="btn btn--filled" type="button" id="approve">
-            <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-              <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"></path>
-            </svg>
-            <span>Approve and commit</span>
-          </button>
-        </div>
-        <dl class="receipts" id="receipts" hidden></dl>
-      </footer>
+    <!-- ================================================================== -->
+    <!-- Step 4. Voice. The rules that shape the drafts.                     -->
+    <!-- ================================================================== -->
+    <section class="pane" role="tabpanel" id="panel-voice" aria-labelledby="tab-voice" tabindex="0" hidden>
+      <div class="pane__head">
+        <h1 class="pane__title" id="voice-h">Your voice</h1>
+        <p class="pane__hint">A rule does nothing until you turn it on. Every rule
+          starts at <b>proposed</b>, and the generator reads the active rules new
+          on each run. Delete a rule to take it off this list.</p>
+      </div>
 
-    </article>
-  </section>
+      <div class="card card--form">
+        <form id="new-rule">
+          <div class="field">
+            <label class="field__label" for="rule-text">Write a rule</label>
+            <textarea class="field__input" id="rule-text" rows="2" maxlength="240"
+              placeholder="Never open a post with “Excited to share”…"></textarea>
+          </div>
+          <div class="card__actions">
+            <button class="btn btn--tonal" type="submit">
+              <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+                <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"></path>
+              </svg>
+              <span>Propose it</span>
+            </button>
+          </div>
+        </form>
+      </div>
 
-  <!-- ================================================================== -->
-  <!-- Step 4. Voice. The rules that shape the drafts.                     -->
-  <!-- ================================================================== -->
-  <section class="pane" role="tabpanel" id="panel-voice"
-           aria-labelledby="tab-voice" tabindex="0" hidden>
-    <div class="pane__head">
-      <h1 class="pane__title" id="voice-h">Your voice</h1>
-      <p class="pane__hint">A rule does nothing until you turn it on. Every rule
-        starts at <b>proposed</b>, and the generator reads the active rules new
-        on each run. Delete a rule to take it off this list.</p>
-    </div>
+      <ul class="rules" id="rules"></ul>
+    </section>
 
-    <div class="card card--form">
-      <form id="new-rule">
-        <div class="field">
-          <label class="field__label" for="rule-text">Write a rule</label>
-          <textarea class="field__input" id="rule-text" rows="2" maxlength="240"
-                    placeholder="Never open a post with “Excited to share”…"></textarea>
-        </div>
-        <div class="card__actions">
-          <button class="btn btn--tonal" type="submit">
-            <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
-              <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"></path>
-            </svg>
-            <span>Propose it</span>
-          </button>
-        </div>
-      </form>
-    </div>
+  </main>
 
-    <ul class="rules" id="rules"></ul>
-  </section>
+  <footer class="colophon">
+    <p>© 2026 <b>ProjectSync</b> · Taskmaster track · <a href="/healthz">Health</a><span id="c-model" hidden></span></p>
+  </footer>
 
-</main>
-
-<footer class="colophon">
-  <p><b>ProjectSync</b> · Taskmaster track, All Things Agentic Hackathon ·
-    <span id="c-model" translate="no">gemini</span> on a six-node Google ADK 2.0 graph ·
-    Cloud Run and Firestore</p>
-  <p><a href="/docs">API reference</a> · <a href="/healthz">Health</a></p>
-</footer>
-
-<!-- A slip carries a receipt, an error, or an action that undoes a change. The
+  <!-- A slip carries a receipt, an error, or an action that undoes a change. The
      slips stack at the bottom of the window. -->
-<div class="snackbar" id="slips" aria-live="polite" aria-atomic="false"></div>
+  <div class="snackbar" id="slips" aria-live="polite" aria-atomic="false"></div>
 
-<!-- The browser reads the modules itself, because of `type="module"`. There is no
+  <!-- The browser reads the modules itself, because of `type="module"`. There is no
      build step. `js/main.js` is the map of the page: it names each module and
      connects each listener. -->
-<script type="module" src="/static/js/main.js"></script>
+  <script type="module" src="/static/js/main.js"></script>
 </body>
+
 </html>
