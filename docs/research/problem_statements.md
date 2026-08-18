@@ -99,8 +99,8 @@ The user can delete ProjectSync tomorrow and keep every artefact it made.
 │ PHASE 2 — FastAPI (Cloud Run)                   │
 │                                                 │
 │  APPROVE:                                       │
-│   • doc sheet  → user's repo /docs/synced/      │  two independent commits,
-│   • card JSON  → private portfolio-data repo    │  two independent flags
+│   • doc sheet  → portfolio repo /docs/synced/   │  two independent commits,
+│   • card JSON  → same portfolio-data repo       │  two independent flags
 │   • Rule Curator proposes rules (non-blocking)  │
 │   • status → COMPLETED                          │
 │                                                 │

@@ -9,7 +9,6 @@ client asks again and does not hold a stream open.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException

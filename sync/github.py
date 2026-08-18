@@ -1,11 +1,13 @@
 """The Phase 2 commits. This module writes to GitHub.
 
-Two commits go to two different repositories:
+Both commits go to one repository, the private `PORTFOLIO_DATA_REPO`:
 
-1. The documentation sheet goes to the repository that it documents, in the
-   folder from `SYNCED_DOCS_PATH`. That repository is public, so a judge can open
-   the commit.
-2. The portfolio card goes to the private `portfolio-data` repository, as JSON.
+1. The documentation sheet goes to `SYNCED_DOCS_PATH` inside the portfolio
+   repository, as Markdown.
+2. The portfolio card goes to the same portfolio repository, as JSON.
+
+A single repository keeps a person's own repo free of third-party writes. The
+scanned repository is never written to.
 
 The two commits are independent. If one fails and the other succeeds, the
 transaction row keeps that fact and the dashboard offers a retry for only the
@@ -113,7 +115,7 @@ def upsert_file(
 
 
 def commit_assets(
-    target_repo: str, project_name: str, assets: GeneratedAssets, repo_url: str
+    project_name: str, assets: GeneratedAssets, repo_url: str
 ) -> CommitResults:
     """Write the documentation sheet and the portfolio card.
 
@@ -121,7 +123,6 @@ def commit_assets(
     The scanned repository is never written to.
 
     Args:
-      target_repo: The repository that was scanned (kept for compatibility, not used).
       project_name: The name of the project. The file name comes from it.
       assets: The four assets from the generator.
       repo_url: The URL of the repository. It goes into the card.
