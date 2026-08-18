@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException
 
 import adk_runtime
 import store
-from models import AssetGenInput, GeneratedAssets, RegenerateRequest
+from models import AssetGenInput, AssetSource, AssetVersion, GeneratedAssets, RegenerateRequest
 from nodes.generator import build_asset_generator_agent
 
 router = APIRouter(prefix="/api/v1", tags=["regenerate"])
@@ -63,9 +63,21 @@ async def regenerate_asset(request: RegenerateRequest) -> dict:
     )
     assets = await _run_generator(payload, session_id=f"regen-{store.new_id()}")
 
+    # Append a REGENERATED version instead of overwriting the draft. The previous
+    # draft stays in the row, so a person can compare and the curator can see the
+    # difference that the new rules made.
+    new_version = AssetVersion(
+        assets=assets,
+        source=AssetSource.REGENERATED,
+        created_at=store.now_iso(),
+        style_rules_applied=[rule.rule_id for rule in rules],
+    )
+    versions = [version.model_dump(mode="json") for version in transaction.asset_versions]
+    versions.append(new_version.model_dump(mode="json"))
+
     store.update_transaction(
         request.transaction_id,
-        assets=assets.model_dump(mode="json"),
+        asset_versions=versions,
         style_rules_applied=[rule.rule_id for rule in rules],
     )
     return {

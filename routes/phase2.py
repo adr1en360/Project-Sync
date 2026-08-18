@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException
 import adk_runtime
 import store
 from memory import curator
-from models import ApprovalRequest, TransactionStatus
+from models import ApprovalRequest, AssetSource, AssetVersion, TransactionStatus
 from sync import github as github_sync
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,6 @@ async def approval_callback(request: ApprovalRequest) -> dict:
         raise HTTPException(status_code=409, detail="This transaction has no assets.")
 
     results = github_sync.commit_assets(
-        target_repo=transaction.repo_name,
         project_name=(
             transaction.metadata.project_name
             if transaction.metadata
@@ -90,6 +89,20 @@ async def approval_callback(request: ApprovalRequest) -> dict:
     # Both commits must land for the row to become COMPLETED. A row with one
     # commit stays open, so the client can retry only the part that failed.
     both_done = bool(results.doc_commit_sha and results.card_commit_sha)
+
+    # If the person edited the assets, append a HUMAN_EDITED version so the
+    # curator can see the before/after difference. If they didn't edit, append
+    # the generated version as GENERATED.
+    source = AssetSource.HUMAN_EDITED if request.edited_assets else AssetSource.GENERATED
+    new_version = AssetVersion(
+        assets=assets,
+        source=source,
+        created_at=store.now_iso(),
+        style_rules_applied=transaction.style_rules_applied if source == AssetSource.GENERATED else [],
+    )
+    versions = [version.model_dump(mode="json") for version in transaction.asset_versions]
+    versions.append(new_version.model_dump(mode="json"))
+
     _update(
         request.transaction_id,
         status=(
@@ -100,13 +113,15 @@ async def approval_callback(request: ApprovalRequest) -> dict:
         doc_commit_sha=results.doc_commit_sha,
         card_commit_sha=results.card_commit_sha,
         error_message=results.doc_error or results.card_error,
-        assets=assets.model_dump(mode="json"),
+        asset_versions=versions,
+        style_rules_applied=transaction.style_rules_applied,
         completed_at=store.now_iso() if both_done else None,
     )
 
     proposed: list[str] = []
     try:
-        proposed = await _run_curator(transaction.user_id, request.transaction_id)
+        # Use the new function that also checks for default rule proposals
+        proposed = await curator.run_curator_with_defaults(transaction.user_id, request.transaction_id)
     # The curator is an extra, and the commits are already written. A failure here
     # must not fail the approval.
     except Exception:

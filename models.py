@@ -50,6 +50,7 @@ class TransactionStatus(StrEnum):
     FAILED_SCAN = "FAILED_SCAN"
     FAILED_EXTRACTION = "FAILED_EXTRACTION"
     FAILED_GENERATION = "FAILED_GENERATION"
+    CANCELLED = "CANCELLED"
 
 
 class PublishPath(StrEnum):
@@ -296,6 +297,32 @@ class StyleRule(BaseModel):
 # --------------------------------------------------------------------------
 
 
+class AssetSource(StrEnum):
+    """How one asset version came to be."""
+
+    GENERATED = "GENERATED"
+    REGENERATED = "REGENERATED"
+    HUMAN_EDITED = "HUMAN_EDITED"
+
+
+class AssetVersion(BaseModel):
+    """One snapshot of the four assets. The list of versions never shrinks.
+
+    Each version records where it came from. The transaction row keeps every
+    version, so the curator can see the difference between what the model wrote
+    and what the person approved.
+    """
+
+    assets: GeneratedAssets = Field(description="The four assets in this version.")
+    source: AssetSource = AssetSource.GENERATED
+    created_at: str = Field(description="`store.now_iso()` at write time.")
+    style_rules_applied: list[str] = Field(
+        default_factory=list,
+        description="The rule identifiers that made this version. Empty for a "
+        "human edit, because the person writes the text directly.",
+    )
+
+
 class Transaction(BaseModel):
     """One full row in the `projectsync_transactions` collection.
 
@@ -306,6 +333,11 @@ class Transaction(BaseModel):
     commit fails and the other succeeds, the row shows this. A partial failure
     is a partial success, and the dashboard offers a retry for only the part
     that failed.
+
+    `asset_versions` is append-only. Each generation, regenerate, and approval
+    appends a version instead of overwriting the one before it. `assets` is a
+    read-only view of the newest version, kept so the interface and the tests
+    can read the current draft without walking the list.
     """
 
     tx_id: str
@@ -315,7 +347,7 @@ class Transaction(BaseModel):
     status: TransactionStatus = TransactionStatus.PENDING_APPROVAL
 
     metadata: ExtractedMetadata | None = None
-    assets: GeneratedAssets | None = None
+    asset_versions: list[AssetVersion] = Field(default_factory=list)
     recommendation: PathRecommendation | None = None
 
     style_rules_applied: list[str] = Field(
@@ -329,6 +361,17 @@ class Transaction(BaseModel):
     error_message: str | None = None
     created_at: str | None = None
     completed_at: str | None = None
+
+    @property
+    def assets(self) -> GeneratedAssets | None:
+        """The assets of the newest version, or `None` if there is no version.
+
+        This is a read-only view. `ledger.js`, `folios.js`, and the existing
+        tests read this property and keep working without a change.
+        """
+        if not self.asset_versions:
+            return None
+        return self.asset_versions[-1].assets
 
 
 # --------------------------------------------------------------------------
