@@ -101,6 +101,17 @@ request. Give this variable a value only if you serve the interface from a
 different host.
 """
 
+# --------------------------------------------------------------------------
+# Development / Testing
+# --------------------------------------------------------------------------
+
+FIXTURE_MODE: bool = os.environ.get("FIXTURE_MODE", "").lower() in ("1", "true", "yes")
+"""When true, run_workflow returns a canned transaction instead of calling the model.
+
+This makes all UI work cost zero model calls. Set FIXTURE_MODE=1 for local
+development and demo rehearsals against the 20 daily requests budget.
+"""
+
 
 def missing_required() -> list[str]:
     """Give the names of the variables that the application needs but does not have.

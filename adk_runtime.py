@@ -17,13 +17,18 @@ curator must answer with an empty list. Only the caller knows which is correct.
 
 from __future__ import annotations
 
+import json
 import logging
+from pathlib import Path
 
 from google.adk import Runner
 from google.adk.agents import BaseAgent
 from google.adk.sessions import InMemorySessionService
 from google.adk.workflow import BaseNode
 from google.genai import types as genai_types
+
+import config
+import store
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +103,32 @@ async def run_workflow(
     A node that fails does not stop this loop, because the framework puts the error
     in an event and continues. The loop writes each such error to the log. The
     caller gets an exception only if the run itself stops.
+
+    If `config.FIXTURE_MODE` is true, this function does not call the model.
+    Instead it writes a canned transaction to Firestore and returns immediately.
     """
+    # FIXTURE_MODE: serve a canned transaction, zero model calls
+    if config.FIXTURE_MODE:
+        fixture_path = Path(__file__).parent / "tests" / "fixtures" / "canned_transaction.json"
+        if fixture_path.exists():
+            with open(fixture_path) as f:
+                canned = json.load(f)
+            # Write the canned transaction to Firestore so the rest of the flow works
+            store.create_transaction(
+                user_id=user_id,
+                repo_name=canned.get("repo_name", "fixture/repo"),
+                repo_url=canned.get("repo_url", "https://github.com/fixture/repo"),
+            )
+            tx_id = canned.get("transaction_id", store.new_id())
+            store.update_transaction(
+                tx_id,
+                status=canned.get("status", "PENDING_APPROVAL"),
+                assets=canned.get("assets"),
+                metadata=canned.get("metadata"),
+            )
+            return
+        logger.warning("FIXTURE_MODE=1 but no fixture found at %s", fixture_path)
+
     runner = Runner(
         node=node,
         app_name=APP_NAME,

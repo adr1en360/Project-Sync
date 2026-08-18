@@ -1,0 +1,33 @@
+{
+  "transaction_id": "fixture-tx-001",
+  "repo_name": "example/project",
+  "repo_url": "https://github.com/example/project",
+  "status": "PENDING_APPROVAL",
+  "metadata": {
+    "project_name": "Example Project",
+    "description": "A demonstration project for ProjectSync",
+    "primary_language": "Python",
+    "topics": ["demo", "projectsync", "example"]
+  },
+  "assets": {
+    "doc_sheet_md": "# Example Project\n\n## Overview\n\nThis is a demonstration project showing how ProjectSync generates documentation from GitHub repositories.\n\n## Architecture\n\nThe project uses a clean modular structure with:\n\n- **Scanner**: Reads the repository and extracts key files\n- **Extractor**: Understands the project structure and purpose\n- **Generator**: Creates four documentation assets\n- **Curator**: Learns from your edits to improve future drafts\n\n## Key Files\n\n- `src/main.py` — Entry point\n- `src/config.py` — Configuration\n- `src/utils.py` — Helper functions\n\n## Setup\n\n```bash\npip install -r requirements.txt\npython src/main.py\n```\n\n## Contributing\n\nSee [CONTRIBUTING.md](CONTRIBUTING.md).",
+    "portfolio_card": {
+      "repo_url": "https://github.com/example/project",
+      "project_name": "Example Project",
+      "one_liner": "A demonstration project for ProjectSync",
+      "tags": ["demo", "python", "documentation"],
+      "highlights": [
+        "Clean modular architecture",
+        "Automated documentation generation",
+        "Learns from your editing style"
+      ],
+      "tech_stack": ["Python", "FastAPI", "Firestore", "Gemini"]
+    },
+    "resume_bullets": [
+      "Built an automated documentation pipeline that scans GitHub repositories and generates structured documentation using Gemini 3.7 Flash",
+      "Designed a learning loop where user edits feed a rule curator that proposes style improvements for future runs",
+      "Implemented a review desk UI with real-time diff preview, side-by-side comparison, and one-click rule acceptance"
+    ],
+    "social_draft": "🚀 Just shipped ProjectSync — an AI-powered tool that reads your GitHub repos and writes documentation, portfolio cards, resume bullets, and social posts in your voice.\n\nIt learns from every edit you make, so the more you use it, the better it gets at sounding like you.\n\nBuilt with FastAPI, Firestore, and Gemini 3.7 Flash. Try it on your own repos!\n\n#AI #Documentation #DeveloperTools #OpenSource"
+  }
+}
