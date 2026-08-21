@@ -1,27 +1,35 @@
 {
-  "transaction_id": "fixture-tx-001",
   "repo_name": "example/project",
   "repo_url": "https://github.com/example/project",
   "status": "PENDING_APPROVAL",
   "metadata": {
     "project_name": "Example Project",
-    "description": "A demonstration project for ProjectSync",
-    "primary_language": "Python",
-    "topics": ["demo", "projectsync", "example"]
+    "tagline": "Turns a finished GitHub repository into career-ready outputs.",
+    "problem_solved": "A developer finishes a project but never writes it up, so good work stays invisible to a recruiter.",
+    "tech_stack": ["Python", "FastAPI", "Firestore", "Gemini"],
+    "key_features": [
+      "Scans a repository and extracts the technical facts",
+      "Writes four career assets in one pass",
+      "Learns the writing voice of the person over time"
+    ],
+    "architecture_summary": "A six-node workflow graph. Three nodes are plain Python and three are agents.",
+    "has_readme": true,
+    "has_tests": true,
+    "has_license": true,
+    "completeness_notes": []
   },
   "assets": {
     "doc_sheet_md": "# Example Project\n\n## Overview\n\nThis is a demonstration project showing how ProjectSync generates documentation from GitHub repositories.\n\n## Architecture\n\nThe project uses a clean modular structure with:\n\n- **Scanner**: Reads the repository and extracts key files\n- **Extractor**: Understands the project structure and purpose\n- **Generator**: Creates four documentation assets\n- **Curator**: Learns from your edits to improve future drafts\n\n## Key Files\n\n- `src/main.py` — Entry point\n- `src/config.py` — Configuration\n- `src/utils.py` — Helper functions\n\n## Setup\n\n```bash\npip install -r requirements.txt\npython src/main.py\n```\n\n## Contributing\n\nSee [CONTRIBUTING.md](CONTRIBUTING.md).",
     "portfolio_card": {
-      "repo_url": "https://github.com/example/project",
-      "project_name": "Example Project",
-      "one_liner": "A demonstration project for ProjectSync",
-      "tags": ["demo", "python", "documentation"],
+      "title": "Example Project",
+      "tagline": "Turns a finished GitHub repository into career-ready outputs.",
+      "stack": ["Python", "FastAPI", "Firestore", "Gemini"],
       "highlights": [
         "Clean modular architecture",
         "Automated documentation generation",
         "Learns from your editing style"
       ],
-      "tech_stack": ["Python", "FastAPI", "Firestore", "Gemini"]
+      "repo_url": "https://github.com/example/project"
     },
     "resume_bullets": [
       "Built an automated documentation pipeline that scans GitHub repositories and generates structured documentation using Gemini 3.7 Flash",

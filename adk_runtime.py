@@ -29,6 +29,7 @@ from google.genai import types as genai_types
 
 import config
 import store
+from models import RunEventState
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,18 @@ async def run_agent_for_text(
     return text
 
 
+# Node names in the graph — must match the ADK node names exactly
+GRAPH_NODES = (
+    "scan_github_repository",
+    "extraction_agent",
+    "attach_style_rules",
+    "asset_generator_agent",
+    "select_evaluator_input",
+    "path_evaluator_agent",
+    "persist_transaction",
+)
+
+
 async def run_workflow(
     node: BaseNode, prompt: str, *, user_id: str, session_id: str, state: dict
 ) -> None:
@@ -106,7 +119,16 @@ async def run_workflow(
 
     If `config.FIXTURE_MODE` is true, this function does not call the model.
     Instead it writes a canned transaction to Firestore and returns immediately.
+
+    This function also persists a per-node event log and checks for cooperative
+    cancellation between nodes.
     """
+    tx_id = state.get("tx_id") or state.get("transaction_id")
+    if not tx_id:
+        logger.error("No transaction_id in state, cannot log events or check cancel")
+        # Fall back to old behavior without events/cancel
+        return await _run_workflow_legacy(node, prompt, user_id, session_id, state)
+
     # FIXTURE_MODE: serve a canned transaction, zero model calls
     if config.FIXTURE_MODE:
         fixture_path = Path(__file__).parent / "tests" / "fixtures" / "canned_transaction.json"
@@ -114,21 +136,131 @@ async def run_workflow(
             with open(fixture_path) as f:
                 canned = json.load(f)
             # Write the canned transaction to Firestore so the rest of the flow works
-            store.create_transaction(
-                user_id=user_id,
-                repo_name=canned.get("repo_name", "fixture/repo"),
-                repo_url=canned.get("repo_url", "https://github.com/fixture/repo"),
+            from models import Transaction, TransactionStatus
+
+            # Keep the tx_id that the caller resolved above. The client polls the
+            # row under the id that the trigger gave it, so the fixture must save
+            # under that same id, and not under the id inside the fixture file. An
+            # overwrite here left the client's row at RUNNING for ever.
+            store.save_transaction(
+                Transaction(
+                    tx_id=tx_id,
+                    user_id=user_id,
+                    repo_name=canned.get("repo_name", "fixture/repo"),
+                    repo_url=canned.get("repo_url", "https://github.com/fixture/repo"),
+                    status=TransactionStatus(canned.get("status", "PENDING_APPROVAL")),
+                    metadata=canned.get("metadata"),
+                    asset_versions=[],
+                    created_at=store.now_iso(),
+                )
             )
-            tx_id = canned.get("transaction_id", store.new_id())
-            store.update_transaction(
-                tx_id,
-                status=canned.get("status", "PENDING_APPROVAL"),
-                assets=canned.get("assets"),
-                metadata=canned.get("metadata"),
-            )
+            # Update with assets if present
+            if canned.get("assets"):
+                from models import AssetSource, AssetVersion, GeneratedAssets
+                assets = GeneratedAssets(**canned["assets"])
+                version = AssetVersion(
+                    assets=assets,
+                    source=AssetSource.GENERATED,
+                    created_at=store.now_iso(),
+                    style_rules_applied=[],
+                )
+                store.update_transaction(
+                    tx_id,
+                    asset_versions=[version.model_dump(mode="json")],
+                    status=canned.get("status", "PENDING_APPROVAL"),
+                )
             return
         logger.warning("FIXTURE_MODE=1 but no fixture found at %s", fixture_path)
 
+    runner = Runner(
+        node=node,
+        app_name=APP_NAME,
+        session_service=_session_service,
+        auto_create_session=True,
+    )
+
+    # Track the current node so the log gets a start and a finish for each one.
+    # The value is -1 before the first node, and not 0. If it started at 0, the
+    # first node (index 0) would fail the `node_idx > current_node_idx` test, and
+    # the log would miss the STARTED event of the first node.
+    current_node_idx = -1
+
+    async for event in runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        state_delta=state,
+        new_message=_user_message(prompt),
+    ):
+        # Check for cooperative cancellation between nodes
+        if store.cancel_requested(tx_id):
+            logger.info("Cancellation requested for %s, stopping run", tx_id)
+            node_name = (
+                GRAPH_NODES[current_node_idx]
+                if 0 <= current_node_idx < len(GRAPH_NODES)
+                else "unknown"
+            )
+            store.append_run_event(
+                tx_id,
+                node_name,
+                RunEventState.CANCELLED,
+                error="Cooperative cancellation requested by user",
+            )
+            store.update_transaction(
+                tx_id,
+                status="CANCELLED",
+                error_message="Cancelled by user",
+                completed_at=store.now_iso(),
+            )
+            return
+
+        # Detect node transitions from the author field
+        if event.author and event.author in GRAPH_NODES:
+            node_idx = GRAPH_NODES.index(event.author)
+            if node_idx > current_node_idx:
+                # The previous node finished. Skip this on the first node, when
+                # there is no previous node yet and the index is still -1. A write
+                # here would use GRAPH_NODES[-1] and log the last node by mistake.
+                if current_node_idx >= 0:
+                    store.append_run_event(
+                        tx_id,
+                        GRAPH_NODES[current_node_idx],
+                        RunEventState.COMPLETED,
+                        finished_at=store.now_iso(),
+                    )
+                # New node started
+                current_node_idx = node_idx
+                store.append_run_event(
+                    tx_id,
+                    event.author,
+                    RunEventState.STARTED,
+                    started_at=store.now_iso(),
+                )
+
+        if event.error_message:
+            logger.error("The node %s failed: %s", event.author, event.error_message)
+            if event.author in GRAPH_NODES:
+                store.append_run_event(
+                    tx_id,
+                    event.author,
+                    RunEventState.FAILED,
+                    finished_at=store.now_iso(),
+                    error=event.error_message,
+                )
+
+    # Mark the last node that started as completed. Skip this if no node started.
+    if 0 <= current_node_idx < len(GRAPH_NODES):
+        store.append_run_event(
+            tx_id,
+            GRAPH_NODES[current_node_idx],
+            RunEventState.COMPLETED,
+            finished_at=store.now_iso(),
+        )
+
+
+async def _run_workflow_legacy(
+    node: BaseNode, prompt: str, *, user_id: str, session_id: str, state: dict
+) -> None:
+    """Legacy run without event logging or cancellation checks."""
     runner = Runner(
         node=node,
         app_name=APP_NAME,
