@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 # --------------------------------------------------------------------------
 # Enumerations
@@ -362,16 +362,48 @@ class Transaction(BaseModel):
     created_at: str | None = None
     completed_at: str | None = None
 
+    @computed_field
     @property
     def assets(self) -> GeneratedAssets | None:
         """The assets of the newest version, or `None` if there is no version.
 
-        This is a read-only view. `ledger.js`, `folios.js`, and the existing
-        tests read this property and keep working without a change.
+        This is a read-only view of `asset_versions[-1]`. It is a computed
+        field, not a plain property, so `model_dump()` and the API responses
+        include it. The interface reads `tx.assets`, and `ledger.js`,
+        `folios.js`, and the tests keep working without a change.
         """
         if not self.asset_versions:
             return None
         return self.asset_versions[-1].assets
+
+
+# --------------------------------------------------------------------------
+# Run events — per-node checkpoint log
+# --------------------------------------------------------------------------
+
+
+class RunEventState(StrEnum):
+    """The state of one node in the workflow."""
+
+    STARTED = "STARTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class RunEvent(BaseModel):
+    """One node event in the workflow run log.
+
+    This is written to the `events` subcollection of a transaction row.
+    """
+
+    event_id: str
+    tx_id: str
+    node: str
+    state: RunEventState
+    started_at: str
+    finished_at: str | None = None
+    error: str | None = None
 
 
 # --------------------------------------------------------------------------
@@ -423,3 +455,162 @@ class NewRuleRequest(BaseModel):
 
     user_id: str = "default"
     text: str
+
+
+# --------------------------------------------------------------------------
+# Stage 4: Bullet Bank and Social drafts
+# --------------------------------------------------------------------------
+
+
+class BulletTag(StrEnum):
+    """Predefined tags for resume bullets."""
+
+    IMPACT = "IMPACT"
+    LEADERSHIP = "LEADERSHIP"
+    TECHNICAL = "TECHNICAL"
+    COLLABORATION = "COLLABORATION"
+    PROBLEM_SOLVING = "PROBLEM_SOLVING"
+    ARCHITECTURE = "ARCHITECTURE"
+    PERFORMANCE = "PERFORMANCE"
+    SECURITY = "SECURITY"
+    TESTING = "TESTING"
+    DEVOPS = "DEVOPS"
+    FRONTEND = "FRONTEND"
+    BACKEND = "BACKEND"
+    DATA = "DATA"
+    MOBILE = "MOBILE"
+    CLOUD = "CLOUD"
+
+
+class ResumeBullet(BaseModel):
+    """One bullet in the bullet bank.
+
+    The bank is append-only for auto-seeded bullets. A person can add manual
+    bullets and edit any bullet. `source_tx_id` links back to the transaction
+    that created this bullet, so a person can see the context.
+    """
+
+    bullet_id: str
+    user_id: str
+    text: str
+    project: str = Field(description="Project name this bullet came from.")
+    source_tx_id: str | None = Field(
+        None, description="The transaction that seeded this bullet."
+    )
+    tags: list[BulletTag] = Field(default_factory=list)
+    created_at: str
+    is_manual_edit: bool = Field(
+        False, description="True if a person wrote or edited this bullet."
+    )
+
+
+class SocialPlatform(StrEnum):
+    """Platforms for social drafts."""
+
+    X = "X"
+    LINKEDIN = "LINKEDIN"
+    DEVTO = "DEVTO"
+    PITCH = "PITCH"
+
+
+class SocialTone(StrEnum):
+    """Tones for social drafts."""
+
+    TECHNICAL = "TECHNICAL"
+    PUNCHY = "PUNCHY"
+    STORYTELLING = "STORYTELLING"
+
+
+class SocialDraft(BaseModel):
+    """One social draft in the drafts collection.
+
+    A draft is tied to a transaction and can be regenerated with different
+    platform/tone/prompt combinations without rescanning the repository.
+    """
+
+    draft_id: str
+    user_id: str
+    tx_id: str
+    platform: SocialPlatform
+    tone: SocialTone
+    language: str = "en"
+    custom_prompt: str = Field(default="", description="Extra instruction for the generator.")
+    text: str
+    is_manual_edit: bool = Field(
+        False, description="True if a person wrote or edited this draft."
+    )
+    created_at: str
+
+
+# --------------------------------------------------------------------------
+# Stage 4 request models
+# --------------------------------------------------------------------------
+
+
+class BulletCreateRequest(BaseModel):
+    """Create a new bullet in the bank."""
+
+    user_id: str = "default"
+    text: str
+    project: str
+    source_tx_id: str | None = None
+    tags: list[BulletTag] = Field(default_factory=list)
+
+
+class BulletUpdateRequest(BaseModel):
+    """Update an existing bullet."""
+
+    text: str | None = None
+    tags: list[BulletTag] | None = None
+    project: str | None = None
+
+
+class BulletListRequest(BaseModel):
+    """Filters for listing bullets."""
+
+    user_id: str = "default"
+    project: str | None = None
+    tags: list[BulletTag] | None = None
+    limit: int = 50
+    offset: int = 0
+
+
+class SocialDraftCreateRequest(BaseModel):
+    """Create a new social draft."""
+
+    user_id: str = "default"
+    tx_id: str
+    platform: SocialPlatform
+    tone: SocialTone
+    language: str = "en"
+    custom_prompt: str = ""
+
+
+class SocialDraftUpdateRequest(BaseModel):
+    """Update an existing social draft."""
+
+    text: str | None = None
+    platform: SocialPlatform | None = None
+    tone: SocialTone | None = None
+    language: str | None = None
+    custom_prompt: str | None = None
+
+
+class SocialDraftListRequest(BaseModel):
+    """Filters for listing social drafts."""
+
+    user_id: str = "default"
+    tx_id: str | None = None
+    platform: SocialPlatform | None = None
+    limit: int = 50
+    offset: int = 0
+
+
+class SocialDraftRegenerateRequest(BaseModel):
+    """Regenerate a social draft with new parameters."""
+
+    draft_id: str
+    platform: SocialPlatform | None = None
+    tone: SocialTone | None = None
+    language: str | None = None
+    custom_prompt: str | None = None
