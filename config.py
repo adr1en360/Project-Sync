@@ -82,6 +82,14 @@ FIRESTORE_TRANSACTIONS: str = os.environ.get(
 FIRESTORE_STYLE_RULES: str = os.environ.get("FIRESTORE_STYLE_RULES", "style_rules")
 FIRESTORE_USERS: str = os.environ.get("FIRESTORE_USERS", "users")
 
+# Stage 4 collections
+FIRESTORE_RESUME_BULLETS: str = os.environ.get(
+    "FIRESTORE_RESUME_BULLETS", "resume_bullets"
+)
+FIRESTORE_SOCIAL_DRAFTS: str = os.environ.get(
+    "FIRESTORE_SOCIAL_DRAFTS", "social_drafts"
+)
+
 # --------------------------------------------------------------------------
 # Dashboard
 # --------------------------------------------------------------------------

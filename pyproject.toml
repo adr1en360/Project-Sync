@@ -41,3 +41,17 @@ target-version = "py312"
 # the code do work.
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "BLE", "PIE", "PLW", "RUF", "FURB"]
+
+# FastAPI puts Query, Path, Body, and Depends in an argument default on purpose.
+# These calls make no shared mutable state, so B008 does not apply to them.
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.Depends",
+    "fastapi.Form",
+    "fastapi.File",
+]

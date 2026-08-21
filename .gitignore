@@ -25,6 +25,7 @@ htmlcov/
 # Editors and operating system
 .vscode/
 .idea/
+.claude/
 .DS_Store
 Thumbs.db
 desktop.ini
