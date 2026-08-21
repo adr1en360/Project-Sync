@@ -26,9 +26,12 @@ Rules:
 - Write only a fact that the files show. Do not guess.
 - If the scan does not show a fact, leave the field empty.
 - Keep `tagline` to one sentence of 20 words or less.
+- Set `has_readme` to true if the scan has README text. Set `has_tests` and
+  `has_license` to the values that the scan gives.
 - Put each thing that the repository does not have into `completeness_notes`.
   Examples are a missing README, no test folder, and no licence file. The next
-  agent reads this list to decide if the work is safe to publish.
+  agent reads these three fields, with this list, to decide if the work is safe
+  to publish.
 - Do not praise the project. Do not add a word about quality.
 """
 

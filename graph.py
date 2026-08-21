@@ -1,6 +1,6 @@
 """The Phase 1 graph.
 
-Six nodes. Three are plain Python and three are agents. The ratio is the argument
+Seven nodes. Four are plain Python and three are agents. The ratio is the argument
 against a thin wrapper, and the architecture criterion scores it.
 
     START
@@ -8,6 +8,7 @@ against a thin wrapper, and the architecture criterion scores it.
       -> extraction_agent            agent
       -> attach_style_rules          code
       -> asset_generator_agent       agent
+      -> select_evaluator_input      code
       -> path_evaluator_agent        agent
       -> persist_transaction         code
 
@@ -30,7 +31,7 @@ from itertools import pairwise
 from google.adk import Workflow
 from google.adk.workflow import START, Edge, FunctionNode
 
-from nodes.evaluator import build_path_evaluator_agent
+from nodes.evaluator import build_path_evaluator_agent, select_evaluator_input
 from nodes.extraction import build_extraction_agent
 from nodes.generator import build_asset_generator_agent
 from nodes.persist import persist_transaction
@@ -66,6 +67,14 @@ def build_phase1_workflow() -> Workflow:
         timeout=30.0,
     )
     generator_node = build_asset_generator_agent()
+    # This code node re-reads the extraction metadata from the state and gives it
+    # to the evaluator. Without it, the evaluator reads the draft assets of the
+    # generator, and it cannot judge the README, the tests, or the licence.
+    evaluator_input_node = FunctionNode(
+        func=select_evaluator_input,
+        name="select_evaluator_input",
+        timeout=30.0,
+    )
     evaluator_node = build_path_evaluator_agent()
     persist_node = FunctionNode(
         func=persist_transaction,
@@ -78,6 +87,7 @@ def build_phase1_workflow() -> Workflow:
         extraction_node,
         style_rules_node,
         generator_node,
+        evaluator_input_node,
         evaluator_node,
         persist_node,
     ]

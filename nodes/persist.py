@@ -16,6 +16,8 @@ from google.adk import Context
 
 import store
 from models import (
+    AssetSource,
+    AssetVersion,
     ExtractedMetadata,
     GeneratedAssets,
     PathRecommendation,
@@ -44,6 +46,23 @@ def persist_transaction(ctx: Context, node_input: PathRecommendation) -> Transac
 
     metadata_raw = ctx.state.get("extracted_metadata")
     assets_raw = ctx.state.get("generated_assets")
+    style_rule_ids = list(ctx.state.get("style_rule_ids", []))
+
+    # Make the first asset version. The list is append-only. The persist node
+    # writes the GENERATED version, and Phase 2 adds a HUMAN_EDITED or a
+    # REGENERATED version later. If the generator gave no assets, the list stays
+    # empty, because a missing part must not stop the write of the row.
+    assets_model = _as_model(assets_raw, GeneratedAssets)
+    asset_versions: list[AssetVersion] = []
+    if assets_model is not None:
+        asset_versions.append(
+            AssetVersion(
+                assets=assets_model,
+                source=AssetSource.GENERATED,
+                created_at=store.now_iso(),
+                style_rules_applied=style_rule_ids,
+            )
+        )
 
     transaction = Transaction(
         tx_id=tx_id,
@@ -52,9 +71,9 @@ def persist_transaction(ctx: Context, node_input: PathRecommendation) -> Transac
         repo_name=ctx.state.get("repo_name", ""),
         status=TransactionStatus.PENDING_APPROVAL,
         metadata=_as_model(metadata_raw, ExtractedMetadata),
-        assets=_as_model(assets_raw, GeneratedAssets),
+        asset_versions=asset_versions,
         recommendation=node_input,
-        style_rules_applied=list(ctx.state.get("style_rule_ids", [])),
+        style_rules_applied=style_rule_ids,
         approval_token=store.new_id(),
         created_at=store.now_iso(),
     )

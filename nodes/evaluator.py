@@ -13,31 +13,37 @@ An agent that approves everything is a formatter with more steps.
 
 from __future__ import annotations
 
-from google.adk import Agent
+import logging
+
+from google.adk import Agent, Context
 from google.adk.workflow import RetryConfig
 from google.genai import types as genai_types
 
 import config
-from models import PathRecommendation
+from models import ExtractedMetadata, GeneratedAssets, PathRecommendation
+
+logger = logging.getLogger(__name__)
 
 INSTRUCTION = """\
 You decide if a software project is ready to go on a public portfolio.
 
+The message holds the facts of one repository, as JSON. Read these fields:
+
+- `has_readme`, `has_tests`, `has_license` — each is true or false.
+- `completeness_notes` — a list of the things that the repository does not have.
+- `project_name`, `tagline`, `problem_solved`, and the technical fields — the
+  facts that the scan and the extraction agent found.
+
 "Ready" does not mean that the code runs. It means that the repository is safe to
-show to a stranger. Look for these things:
+show to a stranger.
 
-- A real README. One line is not a README.
-- A test folder, or test files.
-- A licence file.
-- No secret, no key, and no token in the files.
-- No unfinished note, such as TODO or FIXME, in a main file.
-
-Give `FULL_PUBLISH` only if the repository has a real README, has tests, and has
-a licence. If one of the three is absent, give `PRIVATE_ONLY`.
+Give `FULL_PUBLISH` only if `has_readme`, `has_tests`, and `has_license` are all
+true, and `completeness_notes` names no blocker such as a secret in the files. If
+one of the three is false, give `PRIVATE_ONLY`.
 
 Put every reason in `reasons`. Put each thing that the repository must add in
-`missing_elements`. Be exact: write "the README is one line", and not "the
-documentation is weak".
+`missing_elements`; the lines of `completeness_notes` go here. Be exact: write
+"the repository has no licence", and not "the documentation is weak".
 
 `PRIVATE_ONLY` is not a failure. The notes are useful to the person in each case.
 The result only says that the work does not go on the public portfolio now.
@@ -62,3 +68,37 @@ def build_path_evaluator_agent() -> Agent:
         # same answer from the same commit.
         generate_content_config=genai_types.GenerateContentConfig(temperature=0.0),
     )
+
+
+def select_evaluator_input(ctx: Context, node_input: GeneratedAssets) -> ExtractedMetadata:
+    """Give the path evaluator the facts of the repository, not the draft assets.
+
+    An agent node reads the output of the node before it as its message. The node
+    before the evaluator is the generator, so without this node the evaluator
+    reads the four draft assets and not the facts of the repository. The evaluator
+    must judge the repository: the README, the tests, the licence, and the
+    completeness notes. So this node reads the extraction metadata from the state
+    and gives it to the evaluator.
+
+    The generator already wrote its assets to the state under `generated_assets`,
+    so the assets are safe and the persist node still finds them. This node only
+    changes the message that the evaluator reads. It does not use `node_input`.
+
+    Args:
+      ctx: The context of the run. The state holds `extracted_metadata`.
+      node_input: The four assets from the generator. This node does not use them,
+        because the evaluator judges the repository and not the drafts.
+
+    Returns:
+      The `ExtractedMetadata` for the evaluator to judge. An empty metadata goes
+      back if the state has none, so a missing part does not stop the run.
+    """
+    raw = ctx.state.get("extracted_metadata")
+    if isinstance(raw, ExtractedMetadata):
+        return raw
+    if raw is not None:
+        try:
+            return ExtractedMetadata.model_validate(raw)
+        except Exception as error:  # noqa: BLE001 - keep the run, and log the problem.
+            logger.warning("The evaluator input does not fit ExtractedMetadata: %s", error)
+    return ExtractedMetadata(project_name="", tagline="", problem_solved="")
