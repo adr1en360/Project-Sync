@@ -146,6 +146,17 @@ def is_relevant_file(file_path: str, file_size: int) -> bool:
     return file_size <= MAX_FILE_SIZE_BYTES
 
 
+def _is_priority_file(file_path: str) -> bool:
+    """Tell if the scan must read a file before the source files.
+
+    The README and the build files are the strongest signal for the model. The
+    byte budget can run out on small source files before the loop reaches a larger
+    README, so these files go to the front of the order and do not drop.
+    """
+    base_name = file_path.split("/")[-1]
+    return base_name in MANIFEST_NAMES or base_name.lower().startswith("readme")
+
+
 def _headers() -> dict[str, str]:
     """Build the headers for a GitHub request.
 
@@ -257,9 +268,15 @@ def scan_github_repository(
             for item in blobs
             if is_relevant_file(item["path"], item.get("size", 0))
         ]
-        # Put the smallest files first. Many small source files carry more
-        # signal than one large file.
-        relevant.sort(key=lambda item: item.get("size", 0))
+        # Read the smallest files first, but read the README and the build files
+        # before any source file. A README often is larger than a source file,
+        # and a size-first loop can spend the whole byte budget on small source
+        # files before it reaches the README. The README is the strongest signal,
+        # so it must not drop. A two-part key puts the priority files first, and
+        # then orders every file by size.
+        relevant.sort(
+            key=lambda item: (not _is_priority_file(item["path"]), item.get("size", 0))
+        )
 
         all_paths = [item["path"] for item in blobs]
         readme = None
