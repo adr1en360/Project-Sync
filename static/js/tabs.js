@@ -1,7 +1,10 @@
 /*
   The tabs.
 
-  The page is one dashboard with four tabs, and each tab is one step of the work.
+  The page is one dashboard with five tabs. The first three are the three steps
+  of the work. Library and Voice come after them, and they hold reference
+  material and no step, so `syncTabs` writes no state on those two.
+
   One panel is visible. Each other panel carries the `hidden` attribute, so a
   screen reader does not read it and the tab key does not go into it.
 
@@ -31,7 +34,7 @@ export function openTab() {
 }
 
 /**
- * Show one tab and hide the other three.
+ * Show one tab and hide each other one.
  * The function moves the focus only when a person pressed a key or a button.
  * A step that finishes moves the tab by itself, and it must not take the focus
  * from the field that the operator writes in.

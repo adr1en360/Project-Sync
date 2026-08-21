@@ -8,6 +8,7 @@
 import { api } from "./api.js";
 import { el } from "./dom.js";
 import { renderLedger, resetLedger } from "./ledger.js";
+import { reloadRail } from "./rail.js";
 import { renderSheet } from "./sheet.js";
 import { slip } from "./slips.js";
 import { SAVED_TX, state } from "./state.js";
@@ -59,6 +60,13 @@ export async function pollOnce(txId) {
 
   stopPolling();
   el.poll.textContent = `The run stopped at ${String(tx.status).replace(/_/g, " ")} after ${state.polls} ${state.polls === 1 ? "check" : "checks"}.`;
+
+  // The row reached a state that does not change again, so each list of the
+  // sideboard is now out of date: this run has a new status, and an approval also
+  // made new bullets and a new record for the showcase. `decide.js` ends the
+  // approval and the discard with a call to this function, so one call here
+  // serves the end of a run, an approval, and a discard.
+  reloadRail();
 
   if (tx.status === "PENDING_APPROVAL") {
     // The run is complete and the gate waits for a person. So the page opens the

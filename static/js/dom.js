@@ -1,9 +1,11 @@
 /*
   The elements of the page, and the two builders that make a new element.
 
-  Every id of the page is in this one file. A module reads `el` or `folio` and
-  calls no `getElementById` of its own. So a change to an id in `index.html`
-  needs a change in one place.
+  Every id that a module names is in this one file. A module reads `el`, `tabs`,
+  `rail`, `libViews`, or `folio`, and it writes no id of its own. So a change to
+  an id in `index.html` needs a change in one place. `js/folios.js` is the one
+  file that looks an element up outside this one, and it takes the id from the
+  `data-copy` attribute of the button, so it names no id either.
 
   The script tag has `type="module"`, and a module runs after the browser reads
   the whole document. So each element below is present when this file runs.
@@ -14,6 +16,7 @@ const $ = (id) => document.getElementById(id);
 export const el = {
   health: { model: $("h-model"), route: $("h-route"), status: $("h-status") },
   configStrip: $("config-strip"),
+  work: $("main"),
   intake: $("intake"),
   repoUrl: $("repo-url"),
   userId: $("user-id"),
@@ -49,18 +52,71 @@ export const el = {
 };
 
 /*
-  The four tabs, in the order that the operator reads them.
+  The five tabs, in the order that the operator reads them.
+
+  The first three are the three steps of the work. Library and Voice hold
+  reference material and no step, so `tabs.js` writes no state on those two.
 
   `tabs.js` walks this list, so the order here is the order of the arrow keys.
 */
-export const TAB_NAMES = ["intake", "run", "review", "voice"];
+export const TAB_NAMES = ["intake", "run", "review", "library", "voice"];
 
 /* Each tab, with the panel that it controls. */
 export const tabs = {
   intake: { tab: $("tab-intake"), pane: $("panel-intake") },
   run: { tab: $("tab-run"), pane: $("panel-run") },
   review: { tab: $("tab-review"), pane: $("panel-review") },
+  library: { tab: $("tab-library"), pane: $("panel-library") },
   voice: { tab: $("tab-voice"), pane: $("panel-voice") },
+};
+
+/*
+  The sideboard, the drawer, and the lists of the library.
+
+  Three sets of data go to more than one list. The history goes to the rail, to
+  the drawer, and to two lists in the library. So each name below holds every
+  list that shows that data, and `js/rail.js` reads the data one time and writes
+  it to each list in the set.
+
+  `some` drops an empty value, so a set stays a list of real elements and
+  `rail.js` needs no test for `null`. That drop must not hide a wrong letter, so
+  `tests/test_review_desk.py` holds every id in this file to the ids of
+  `index.html`.
+*/
+const some = (...ids) => ids.map((id) => $(id)).filter(Boolean);
+
+export const rail = {
+  root: $("rail"),
+  toggle: $("rail-toggle"),
+  collapse: $("rail-collapse"),
+  drawer: $("rail-drawer"),
+  drawerClose: $("rail-drawer-close"),
+  mini: some("rail-mini-history", "rail-mini-bullets", "rail-mini-social"),
+  heading: {
+    history: $("rail-history-h"),
+    bullets: $("rail-bullets-h"),
+    social: $("rail-social-h"),
+  },
+  lists: {
+    history: some("rail-history-list", "rail-drawer-history-list", "lib-history-list"),
+    bullets: some("rail-bullets-list", "rail-drawer-bullets-list", "lib-bullets-list"),
+    social: some("rail-social-list", "rail-drawer-social-list"),
+    showcase: some("lib-showcase-list"),
+  },
+};
+
+/*
+  The three parts of the library.
+
+  The order here is the order of the arrow keys inside the segmented control,
+  and `js/library.js` walks this list.
+*/
+export const LIB_VIEWS = ["bullets", "showcase", "history"];
+
+export const libViews = {
+  bullets: { tab: $("lib-tab-bullets"), view: $("lib-view-bullets") },
+  showcase: { tab: $("lib-tab-showcase"), view: $("lib-view-showcase") },
+  history: { tab: $("lib-tab-history"), view: $("lib-view-history") },
 };
 
 /* The four editable boxes, each with the meter below it. */

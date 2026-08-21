@@ -32,3 +32,13 @@ export const SAVED_THEME = "ps.theme";
 
 /** The tab that is open. A reload shows the same tab again. */
 export const SAVED_TAB = "ps.tab";
+
+/**
+ * The width of the sideboard: "open" or "collapsed".
+ * The choice holds across a reload, because a person who makes the rail narrow
+ * wants a wide column of work at the next visit as well.
+ */
+export const SAVED_RAIL = "ps.rail";
+
+/** The part of the library that is open: bullets, showcase or history. */
+export const SAVED_LIB = "ps.lib";

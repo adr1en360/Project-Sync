@@ -7,9 +7,15 @@
   modules in `js/`. A container that holds the API also holds the interface, so
   the deploy stays at one Cloud Run service and two Google Cloud services.
 
-  The design is Material Design 3. The page is one dashboard with four tabs, and
-  each tab is one step of the work: Intake, Run, Review, Voice. A person does
+  The design is Material Design 3. The page is one dashboard with five tabs. The
+  first three tabs are the three steps of the work: Intake, Run, and Review. A
+  numeral marks each one. The last two tabs are Library and Voice, and they hold
+  reference material and not a step, so neither one has a numeral. A person does
   one step at a time and sees the state of each other step in the tab strip.
+
+  The sideboard is the rail at the right of the work. It shows the recent runs,
+  the recent bullets, and the recent social drafts. A wide window shows the rail.
+  A narrow window shows the same content in a drawer that comes from the right.
 
   Two rules control this file:
     1. Every `id` here is read by `js/dom.js`. A change to an `id` breaks a
@@ -36,7 +42,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;700&family=Geist+Mono:wght@400;500&display=swap">
 
   <!--
   The stylesheets, in the order of the cascade.
@@ -104,6 +110,11 @@
         <path d="M12 3a9 9 0 010 18z" fill="currentColor"></path>
       </svg>
     </button>
+    <button class="rail__toggle icon-btn" type="button" id="rail-toggle" aria-label="Open sideboard" title="Open sideboard">
+      <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
+      </svg>
+    </button>
   </header>
 
   <p class="strip" id="config-strip" hidden></p>
@@ -115,12 +126,14 @@
   </noscript>
 
   <!-- ==================================================================== -->
-  <!-- The tab strip. Each tab is one step of the work. `js/tabs.js` moves   -->
-  <!-- the selection, and it writes `data-state` on each tab to show the     -->
-  <!-- state of that step.                                                  -->
+  <!-- The tab strip. The first three tabs are the three steps of the work,  -->
+  <!-- and each one carries a numeral. Library and Voice come after the      -->
+  <!-- divider, because a person reads those two and takes no step in them.  -->
+  <!-- `js/tabs.js` moves the selection, and it writes `data-state` on each   -->
+  <!-- step tab to show the state of that step.                              -->
   <!-- ==================================================================== -->
-  <nav class="tabs" aria-label="The steps of the work">
-    <div class="tabs__list" role="tablist" aria-label="The steps of the work">
+  <nav class="tabs" aria-label="The work and the reference">
+    <div class="tabs__list" role="tablist" aria-label="The work and the reference">
 
       <button class="tab" role="tab" type="button" id="tab-intake" aria-controls="panel-intake" aria-selected="true"
         tabindex="0" data-tab="intake" data-state="active">
@@ -149,19 +162,132 @@
         <span class="tab__step" aria-hidden="true">3</span>
       </button>
 
+      <!-- The divider separates the three steps from the two reference tabs. It
+         carries no name, because the two groups say what they are. -->
+      <span class="tabs__divider" role="presentation" aria-hidden="true"></span>
+
+      <button class="tab" role="tab" type="button" id="tab-library" aria-controls="panel-library" aria-selected="false"
+        tabindex="-1" data-tab="library">
+        <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+          <path d="M4 4h3v16H4zm4.5 0h3v16h-3zM14 4.4l2.9-.8 4.1 15.4-2.9.8z"></path>
+        </svg>
+        <span class="tab__label">Library</span>
+      </button>
+
       <button class="tab" role="tab" type="button" id="tab-voice" aria-controls="panel-voice" aria-selected="false"
-        tabindex="-1" data-tab="voice" data-state="idle">
+        tabindex="-1" data-tab="voice">
         <svg class="tab__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
           <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2zM7 9h10v2H7zm0 4h7v2H7z"></path>
         </svg>
         <span class="tab__label">Voice</span>
-        <span class="tab__step" aria-hidden="true">4</span>
       </button>
 
     </div>
   </nav>
 
-  <main class="work" id="main" tabindex="-1">
+  <main class="work" id="main" tabindex="-1" data-rail="open">
+
+    <!-- ==================================================================== -->
+    <!-- The sideboard: the rail at the right of the work. It holds the recent  -->
+    <!-- runs, the recent bullets, and the recent social drafts.                -->
+    <!--                                                                       -->
+    <!-- The rail has two widths. Open, it shows the three lists. Narrow, it    -->
+    <!-- shows one icon for each list, and each icon opens the rail again at    -->
+    <!-- that list. `js/rail.js` writes the choice on `main` as `data-rail`     -->
+    <!-- and keeps it in `localStorage`, so the width holds across a reload.    -->
+    <!-- ==================================================================== -->
+    <aside class="rail" id="rail" aria-label="Sideboard">
+
+      <div class="rail__bar">
+        <h2 class="rail__name">Sideboard</h2>
+        <button class="rail__collapse" id="rail-collapse" type="button" aria-controls="rail" aria-expanded="true"
+          aria-label="Make the sideboard narrow">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+            <path d="M9.3 12l5.4-5.4 1.4 1.4L12.1 12l4 4-1.4 1.4z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- The narrow rail. Every button here opens the rail at one list. -->
+      <div class="rail__mini">
+        <button class="rail__mini-btn" id="rail-mini-history" type="button" data-section="history"
+          aria-label="Open the sideboard at the history" title="History">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+            <path d="M13 3a9 9 0 100 18 9 9 0 000-18zm-1 5h2v5h4v2h-6z"></path>
+          </svg>
+        </button>
+        <button class="rail__mini-btn" id="rail-mini-bullets" type="button" data-section="bullets"
+          aria-label="Open the sideboard at the bullets" title="Bullet Bank">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+            <path d="M4 6h2v2H4zm4 0h12v2H8zM4 11h2v2H4zm4 0h12v2H8zM4 16h2v2H4zm4 0h12v2H8z"></path>
+          </svg>
+        </button>
+        <button class="rail__mini-btn" id="rail-mini-social" type="button" data-section="social"
+          aria-label="Open the sideboard at the social drafts" title="Social Drafts">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+            <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2zM7 9h10v2H7z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="rail__section" id="rail-history">
+        <h3 class="rail__heading" id="rail-history-h" tabindex="-1">History</h3>
+        <ul class="rail__list" id="rail-history-list" aria-label="Recent transactions"></ul>
+      </div>
+      <div class="rail__section" id="rail-bullets">
+        <h3 class="rail__heading" id="rail-bullets-h" tabindex="-1">Bullet Bank</h3>
+        <button class="btn btn--tonal btn--sm" id="rail-bullets-open" type="button">
+          <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"></path>
+          </svg>
+          <span>Add bullet</span>
+        </button>
+        <ul class="rail__list" id="rail-bullets-list" aria-label="Recent bullets"></ul>
+      </div>
+      <div class="rail__section" id="rail-social">
+        <h3 class="rail__heading" id="rail-social-h" tabindex="-1">Social Drafts</h3>
+        <button class="btn btn--tonal btn--sm" id="rail-social-open" type="button">
+          <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"></path>
+          </svg>
+          <span>Create draft</span>
+        </button>
+        <ul class="rail__list" id="rail-social-list" aria-label="Recent drafts"></ul>
+      </div>
+    </aside>
+
+    <!-- The drawer. A narrow window has no room for the rail, so the same three
+      lists come in from the right over the work. `03-shell.css` keeps this off
+      the page at every width where the rail itself is present. -->
+    <div class="rail__drawer" id="rail-drawer" data-open="false" aria-hidden="true" role="dialog" aria-label="Sideboard">
+      <div class="rail__drawer-inner">
+        <button class="rail__drawer-close" id="rail-drawer-close" type="button" aria-label="Close sideboard"></button>
+        <div class="rail__section" id="rail-drawer-history">
+          <h3 class="rail__heading">History</h3>
+          <ul class="rail__list" id="rail-drawer-history-list" aria-label="Recent transactions"></ul>
+        </div>
+        <div class="rail__section" id="rail-drawer-bullets">
+          <h3 class="rail__heading">Bullet Bank</h3>
+          <button class="btn btn--tonal btn--sm" id="rail-drawer-bullets-open" type="button">
+            <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"></path>
+            </svg>
+            <span>Add bullet</span>
+          </button>
+          <ul class="rail__list" id="rail-drawer-bullets-list" aria-label="Recent bullets"></ul>
+        </div>
+        <div class="rail__section" id="rail-drawer-social">
+          <h3 class="rail__heading">Social Drafts</h3>
+          <button class="btn btn--tonal btn--sm" id="rail-drawer-social-open" type="button">
+            <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"></path>
+            </svg>
+            <span>Create draft</span>
+          </button>
+          <ul class="rail__list" id="rail-drawer-social-list" aria-label="Recent drafts"></ul>
+        </div>
+      </div>
+    </div>
 
     <!-- ================================================================== -->
     <!-- Step 1. Intake. The form that starts a run.                        -->
@@ -303,89 +429,109 @@
           <ul class="marginalia" id="verdict-missing" aria-label="What the repository does not have"></ul>
         </section>
 
+        <!-- ================================================================ -->
+        <!-- The four drafts.                                                 -->
+        <!--                                                                  -->
+        <!-- Each card is two surfaces: the frame that carries the numeral,    -->
+        <!-- and the core inside it that carries the draft. The frame is one   -->
+        <!-- tone above the core, so the eye finds the edge of the draft with  -->
+        <!-- no shadow and no line of its own.                                -->
+        <!--                                                                  -->
+        <!-- `--i` is the position of the card in the set. `15-motion.css`     -->
+        <!-- makes the delay of the entry from it, so the four cards arrive in -->
+        <!-- order. `tests/test_review_desk.py` holds `--i` in `INLINE_TOKENS`. -->
+        <!-- ================================================================ -->
         <section class="folios" id="folios" hidden>
 
-          <section class="folio card" data-numeral="I" aria-labelledby="f-doc-h">
-            <header class="folio__head">
-              <h2 class="folio__title" id="f-doc-h">Documentation sheet</h2>
-              <p class="folio__note">Markdown. On approval this commits to
-                <code translate="no">docs/synced/</code> in your private portfolio repository.
-              </p>
-              <button class="btn btn--text" type="button" data-copy="f-doc">
-                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
-                  fill="currentColor">
-                  <path
-                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
-                  </path>
-                </svg>
-                <span>Copy</span>
-              </button>
-            </header>
-            <textarea class="folio__body folio__body--mono" id="f-doc" aria-labelledby="f-doc-h" spellcheck="false"
-              rows="12"></textarea>
-            <p class="folio__meter" id="m-doc"></p>
+          <section class="folio card" data-numeral="I" style="--i:0" aria-labelledby="f-doc-h">
+            <div class="folio__core">
+              <header class="folio__head">
+                <h2 class="folio__title" id="f-doc-h">Documentation sheet</h2>
+                <p class="folio__note">Markdown. On approval this commits to
+                  <code translate="no">docs/synced/</code> in your private portfolio repository.
+                </p>
+                <button class="btn btn--text" type="button" data-copy="f-doc">
+                  <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                    fill="currentColor">
+                    <path
+                      d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                    </path>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </header>
+              <textarea class="folio__body folio__body--mono" id="f-doc" aria-labelledby="f-doc-h" spellcheck="false"
+                rows="12"></textarea>
+              <p class="folio__meter" id="m-doc"></p>
+            </div>
           </section>
 
-          <section class="folio card" data-numeral="II" aria-labelledby="f-card-h">
-            <header class="folio__head">
-              <h2 class="folio__title" id="f-card-h">Portfolio card</h2>
-              <p class="folio__note">JSON. On approval this commits to
-                <code translate="no">cards/</code> in the private portfolio repository.
-              </p>
-              <button class="btn btn--text" type="button" data-copy="f-card">
-                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
-                  fill="currentColor">
-                  <path
-                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
-                  </path>
-                </svg>
-                <span>Copy</span>
-              </button>
-            </header>
-            <textarea class="folio__body folio__body--mono" id="f-card" aria-labelledby="f-card-h" spellcheck="false"
-              rows="10"></textarea>
-            <p class="folio__meter" id="m-card"></p>
+          <section class="folio card" data-numeral="II" style="--i:1" aria-labelledby="f-card-h">
+            <div class="folio__core">
+              <header class="folio__head">
+                <h2 class="folio__title" id="f-card-h">Portfolio card</h2>
+                <p class="folio__note">JSON. On approval this commits to
+                  <code translate="no">cards/</code> in the private portfolio repository.
+                </p>
+                <button class="btn btn--text" type="button" data-copy="f-card">
+                  <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                    fill="currentColor">
+                    <path
+                      d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                    </path>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </header>
+              <textarea class="folio__body folio__body--mono" id="f-card" aria-labelledby="f-card-h" spellcheck="false"
+                rows="10"></textarea>
+              <p class="folio__meter" id="m-card"></p>
+            </div>
           </section>
 
-          <section class="folio card" data-numeral="III" aria-labelledby="f-bullets-h">
-            <header class="folio__head">
-              <h2 class="folio__title" id="f-bullets-h">Resume lines</h2>
-              <p class="folio__note">One line for each point. This is a draft to
-                copy. Nothing publishes it.</p>
-              <button class="btn btn--text" type="button" data-copy="f-bullets">
-                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
-                  fill="currentColor">
-                  <path
-                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
-                  </path>
-                </svg>
-                <span>Copy</span>
-              </button>
-            </header>
-            <textarea class="folio__body" id="f-bullets" aria-labelledby="f-bullets-h" rows="5"></textarea>
-            <p class="folio__meter" id="m-bullets"></p>
+          <section class="folio card" data-numeral="III" style="--i:2" aria-labelledby="f-bullets-h">
+            <div class="folio__core">
+              <header class="folio__head">
+                <h2 class="folio__title" id="f-bullets-h">Resume lines</h2>
+                <p class="folio__note">One line for each point. This is a draft to
+                  copy. Nothing publishes it.</p>
+                <button class="btn btn--text" type="button" data-copy="f-bullets">
+                  <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                    fill="currentColor">
+                    <path
+                      d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                    </path>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </header>
+              <textarea class="folio__body" id="f-bullets" aria-labelledby="f-bullets-h" rows="5"></textarea>
+              <p class="folio__meter" id="m-bullets"></p>
+            </div>
           </section>
 
-          <section class="folio card" data-numeral="IV" aria-labelledby="f-social-h">
-            <header class="folio__head">
-              <h2 class="folio__title" id="f-social-h">Social post</h2>
-              <p class="folio__note">A draft to copy. Nothing publishes it. The
-                voice rules act here first.</p>
-              <button class="btn btn--text" type="button" data-copy="f-social">
-                <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
-                  fill="currentColor">
-                  <path
-                    d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
-                  </path>
-                </svg>
-                <span>Copy</span>
-              </button>
-            </header>
-            <textarea class="folio__body folio__body--voice" id="f-social" aria-labelledby="f-social-h"
-              rows="5"></textarea>
-            <p class="folio__meter" id="m-social"></p>
-            <ul class="marginalia marginalia--rules" id="applied-rules" aria-label="The rules that made this draft">
-            </ul>
+          <section class="folio card" data-numeral="IV" style="--i:3" aria-labelledby="f-social-h">
+            <div class="folio__core">
+              <header class="folio__head">
+                <h2 class="folio__title" id="f-social-h">Social post</h2>
+                <p class="folio__note">A draft to copy. Nothing publishes it. The
+                  voice rules act here first.</p>
+                <button class="btn btn--text" type="button" data-copy="f-social">
+                  <svg class="btn__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                    fill="currentColor">
+                    <path
+                      d="M9 2h9a2 2 0 012 2v12h-2V4H9zM5 6h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z">
+                    </path>
+                  </svg>
+                  <span>Copy</span>
+                </button>
+              </header>
+              <textarea class="folio__body folio__body--voice" id="f-social" aria-labelledby="f-social-h"
+                rows="5"></textarea>
+              <p class="folio__meter" id="m-social"></p>
+              <ul class="marginalia marginalia--rules" id="applied-rules" aria-label="The rules that made this draft">
+              </ul>
+            </div>
           </section>
 
         </section>
@@ -417,7 +563,62 @@
     </section>
 
     <!-- ================================================================== -->
-    <!-- Step 4. Voice. The rules that shape the drafts.                     -->
+    <!-- Library. This is not a step of the work. It holds what the runs made -->
+    <!-- and what the operator kept: the bullets, the records that are        -->
+    <!-- approved, and each run.                                              -->
+    <!-- ================================================================== -->
+    <section class="pane" role="tabpanel" id="panel-library" aria-labelledby="tab-library" tabindex="0" hidden>
+      <div class="pane__head">
+        <h1 class="pane__title" id="library-h">The library</h1>
+        <p class="pane__hint">What the runs made, and what you kept. The bullets
+          are the resume lines you saved. The showcase holds the records you
+          approved. The history holds every run, with the result of each one.</p>
+      </div>
+
+      <!-- The three parts of the library are one group, so they take a segmented
+        control and not three more tabs at the top of the page. `js/library.js`
+        moves the selection, and the browser remembers it. -->
+      <div class="seg" role="tablist" aria-label="The parts of the library">
+        <button class="seg__btn" role="tab" type="button" id="lib-tab-bullets" aria-controls="lib-view-bullets"
+          aria-selected="true" data-view="bullets">
+          <span>Bullets</span>
+        </button>
+        <button class="seg__btn" role="tab" type="button" id="lib-tab-showcase" aria-controls="lib-view-showcase"
+          aria-selected="false" tabindex="-1" data-view="showcase">
+          <span>Showcase</span>
+        </button>
+        <button class="seg__btn" role="tab" type="button" id="lib-tab-history" aria-controls="lib-view-history"
+          aria-selected="false" tabindex="-1" data-view="history">
+          <span>History</span>
+        </button>
+      </div>
+
+      <div class="lib card" role="tabpanel" id="lib-view-bullets" aria-labelledby="lib-tab-bullets" tabindex="0">
+        <h2 class="lib__title">The bullets you kept</h2>
+        <p class="lib__note">A resume line comes here when you save it from the
+          third draft of a record. Nothing here publishes.</p>
+        <ul class="rail__list" id="lib-bullets-list" aria-label="Every bullet"></ul>
+      </div>
+
+      <div class="lib card" role="tabpanel" id="lib-view-showcase" aria-labelledby="lib-tab-showcase" tabindex="0"
+        hidden>
+        <h2 class="lib__title">The records you approved</h2>
+        <p class="lib__note">A record comes here when the two commits land. Open
+          one to read it again.</p>
+        <ul class="rail__list" id="lib-showcase-list" aria-label="Every record that is approved"></ul>
+      </div>
+
+      <div class="lib card" role="tabpanel" id="lib-view-history" aria-labelledby="lib-tab-history" tabindex="0" hidden>
+        <h2 class="lib__title">Every run</h2>
+        <p class="lib__note">The most recent run is first. Open one to put that
+          record back on the desk.</p>
+        <ul class="rail__list" id="lib-history-list" aria-label="Every run"></ul>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- Voice. This is not a step of the work either. It holds the rules     -->
+    <!-- that shape the drafts of each run.                                   -->
     <!-- ================================================================== -->
     <section class="pane" role="tabpanel" id="panel-voice" aria-labelledby="tab-voice" tabindex="0" hidden>
       <div class="pane__head">

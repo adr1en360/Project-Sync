@@ -23,7 +23,9 @@
     intake.js   the form that starts a run
     decide.js   write again, discard, approve
     rules.js    the voice rules
-    tabs.js     the four tabs, and how far each step went
+    rail.js     the sideboard, the drawer, and the lists of the library
+    library.js  the three parts of the library
+    tabs.js     the five tabs, and how far each step went
     theme.js    the light theme and the dark theme
 */
 
@@ -34,7 +36,9 @@ import { connectFolios } from "./folios.js";
 import { loadHealth } from "./health.js";
 import { connectIntake } from "./intake.js";
 import { renderLedger } from "./ledger.js";
+import { connectLibrary } from "./library.js";
 import { openRecord } from "./poll.js";
+import { connectRail, loadHistory } from "./rail.js";
 import { connectRules, loadRules } from "./rules.js";
 import { renderSheet } from "./sheet.js";
 import { SAVED_TX, SAVED_USER, state } from "./state.js";
@@ -49,6 +53,8 @@ connectIntake();
 connectDecisions();
 connectFolios();
 connectRules();
+connectLibrary();
+connectRail();
 
 async function boot() {
   const savedUser = localStorage.getItem(SAVED_USER);
@@ -67,6 +73,9 @@ async function boot() {
       renderLedger(tx);
       renderSheet(tx);
       syncTabs(tx);
+      // The rail read the history before this record was on the desk, so the
+      // mark of the record that is open was not on any line. Read it again.
+      loadHistory();
       if (tx.status === "RUNNING") {
         openRecord(savedTx);
       } else {
