@@ -7,11 +7,11 @@ they wrote. That test passes over itself when the machine has no Node. Node is
 not a dependency of the product: the container serves the files, and the browser
 reads them. Node is here only to test them.
 
-The tests after it need no Node. The first three read `index.html` and the
-folders beside it, and they hold the page and the files to the same list. The
-five after those read the declarations in the stylesheets, because no other test
-in this project reads one. The last four read the two palettes and they measure
-the contrast of each pair of colours that the design puts together.
+The tests after it need no Node. The first four read `index.html` and the folders
+beside it, and they hold the page and the files to the same list. The five after
+those read the declarations in the stylesheets, because no other test in this
+project reads one. The last four read the two palettes and they measure the
+contrast of each pair of colours that the design puts together.
 
 Why these tests are necessary: a fault in the interface does not stop the API. A
 module that throws at import stops the whole page, and each request still gets
@@ -43,6 +43,21 @@ PAGE = STATIC / "index.html"
 # address that starts with `http` belongs to another host, so the group below
 # does not take it.
 LOCAL_ASSET = re.compile(r'(?:href|src)="/static/([^"]+)"')
+
+DOM_JS = STATIC / "js" / "dom.js"
+
+# Each id that the page gives to an element.
+PAGE_ID = re.compile(r'\sid="([^"]+)"')
+
+# The two lookups in `js/dom.js`: `$("one-id")` and `some("id", "id", "id")`.
+# The group holds every quoted id inside the brackets. The definition of each
+# helper takes a name and not a string, so the group does not take the
+# definition.
+DOM_LOOKUP = re.compile(r'(?:\$|some)\(\s*("[^"]+"(?:\s*,\s*"[^"]+")*)\s*\)')
+
+# `js/folios.js` reads this attribute and looks the value up as an id. It is the
+# one lookup by name outside `js/dom.js`, and the name comes from the page.
+COPY_TARGET = re.compile(r'data-copy="([^"]+)"')
 
 NODE = shutil.which("node")
 
@@ -114,6 +129,40 @@ def test_the_page_keeps_the_stylesheets_in_the_order_of_the_numbers():
     )
 
 
+def test_the_page_has_every_id_that_the_scripts_name():
+    """An id that the page does not have gives `null`, and the page then throws.
+
+    `js/dom.js` holds every id of the interface, so one wrong letter there takes
+    a whole module away at the first press. The harness above cannot find such a
+    letter, because the fake DOM of the harness makes an element for each id that
+    a module asks for. Only the real page can say which ids are there.
+
+    The test also reads `data-copy`, because `js/folios.js` looks that value up as
+    an id. That is the one lookup by name outside `js/dom.js`.
+    """
+    page = PAGE.read_text(encoding="utf-8")
+    on_page = set(PAGE_ID.findall(page))
+    assert len(on_page) > 60, (
+        f"The page gave only {len(on_page)} ids. Read `PAGE_ID` above."
+    )
+
+    named = {
+        id_
+        for group in DOM_LOOKUP.findall(DOM_JS.read_text(encoding="utf-8"))
+        for id_ in re.findall(r'"([^"]+)"', group)
+    }
+    assert len(named) > 60, (
+        f"`js/dom.js` gave only {len(named)} ids. Read `DOM_LOOKUP` above."
+    )
+    named |= set(COPY_TARGET.findall(page))
+
+    absent = sorted(named - on_page)
+    assert not absent, (
+        "A script names an id that `static/index.html` does not have. Each one "
+        f"is `null` in the browser and the module throws at the first use: {absent}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # The stylesheets themselves.
 #
@@ -140,7 +189,8 @@ TOKEN_VALUE = re.compile(r"(--[A-Za-z0-9_-]+)\s*:")
 TOKEN_READ = re.compile(r"var\(\s*(--[A-Za-z0-9_-]+)\s*(,?)")
 
 # `index.html` gives `--i` a value in a `style` attribute, and no stylesheet
-# does. The entrance stagger needs one number for each panel.
+# does. The entrance stagger needs one number for each line of the stepper and
+# one for each folio.
 INLINE_TOKENS = frozenset({"--i"})
 
 # Each character above ASCII that the design uses on purpose:

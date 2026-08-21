@@ -155,6 +155,13 @@ const beginSpan = makeEl("span");
 beginSpan.textContent = "Open a record";
 document.getElementById("begin").append(beginSpan);
 
+/* The three icons of the narrow rail. Each one names its list in `data-section`,
+   as `index.html` does, because `js/rail.js` reads that value to know which list
+   to open the rail at. */
+for (const section of ["history", "bullets", "social"]) {
+  document.getElementById(`rail-mini-${section}`).dataset.section = section;
+}
+
 document.getElementById("regenerate").textContent = "Write again with the active rules";
 document.getElementById("approve").textContent = "Approve and commit";
 document.getElementById("user-id").value = "default";
@@ -217,6 +224,71 @@ const RUNNING = {
   style_rules_applied: [],
 };
 
+/* A record where both commits landed. A line of the history opens this one, so it
+   holds the two commit hashes that the receipts read. */
+const DONE = {
+  ...PENDING,
+  tx_id: "tx-done",
+  repo_name: "owner/older",
+  status: "COMPLETED",
+  doc_commit_sha: "a1b2c3d4e5f60718",
+  card_commit_sha: "192a3b4c5d6e7f80",
+  completed_at: "2026-08-15T10:00:00+00:00",
+};
+
+/*
+  The rows of the sideboard.
+
+  The service gives the newest first, and `js/rail.js` writes one set of rows to
+  every list that shows them. The three statuses are there on purpose: the
+  showcase holds only the record that went out, and the history holds all three.
+*/
+const HISTORY = [
+  {
+    tx_id: "tx-abc",
+    repo_name: "owner/name",
+    repo_url: "https://github.com/owner/name",
+    status: "PENDING_APPROVAL",
+    created_at: "2026-08-16T09:00:00+00:00",
+  },
+  {
+    tx_id: "tx-done",
+    repo_name: "owner/older",
+    repo_url: "https://github.com/owner/older",
+    status: "COMPLETED",
+    created_at: "2026-08-15T09:00:00+00:00",
+  },
+  {
+    tx_id: "tx-bad",
+    repo_name: "owner/broken",
+    repo_url: "https://github.com/owner/broken",
+    status: "FAILED_SCAN",
+    created_at: "2026-08-14T09:00:00+00:00",
+  },
+];
+
+const BULLETS = [
+  {
+    bullet_id: "b-1",
+    user_id: "kofi",
+    text: "Built a six-node graph that turns a repository into a career record.",
+    project: "ProjectSync",
+    created_at: "2026-08-16T09:05:00+00:00",
+  },
+];
+
+const DRAFTS = [
+  {
+    draft_id: "d-1",
+    user_id: "kofi",
+    tx_id: "tx-abc",
+    text: "The problem came first.",
+    platform: "linkedin",
+    tone: "professional",
+    created_at: "2026-08-16T09:06:00+00:00",
+  },
+];
+
 const RULES = [
   {
     rule_id: "rule-1",
@@ -275,6 +347,7 @@ globalThis.fetch = async (path, options = {}) => {
   }
   if (path === "/api/v1/transactions/tx-abc") return reply(PENDING);
   if (path === "/api/v1/transactions/tx-run") return reply(RUNNING);
+  if (path === "/api/v1/transactions/tx-done") return reply(DONE);
   if (path === "/api/v1/trigger-sync") return reply({ transaction_id: "tx-run" });
   if (path === "/api/v1/regenerate-asset") {
     return reply({ assets: ASSETS, style_rules_applied: ["rule-1"] });
@@ -298,6 +371,17 @@ globalThis.fetch = async (path, options = {}) => {
       return reply({ rule_id: ruleId, state: "DELETED" });
     }
     return reply({});
+  }
+  /* The three lists of the sideboard. `js/rail.js` reads each one once and writes
+     the answer to the rail, the drawer, and the library. */
+  if (path.startsWith("/api/v1/transactions?user_id=")) {
+    return reply(HISTORY);
+  }
+  if (path.startsWith("/api/v1/bullets?user_id=")) {
+    return reply(BULLETS);
+  }
+  if (path.startsWith("/api/v1/social-drafts?user_id=")) {
+    return reply(DRAFTS);
   }
   return reply({ detail: `The harness has no route for ${path}` }, 404);
 };
@@ -370,8 +454,64 @@ check(
     !/^\d{4}-\d{2}-\d{2}T/.test(got) && /2026/.test(got) && /(GMT|UTC|[A-Z]{3,4})/.test(got),
 );
 
-/* --- The ledger of the six nodes --------------------------------- */
+/* --- The three lists of the sideboard ---------------------------- */
+
+/* One row of a list is `li > (button|div) > (title, meta)`. These three read that
+   shape, so a check below says what it means and not how to walk to it. */
+const row = (listId, at) => el(listId).kids[at].kids[0];
+const rowTitle = (listId, at) => row(listId, at).kids[0].textContent;
+const rowMeta = (listId, at) => row(listId, at).kids[1].textContent;
+
+check("the history holds one line for each run", el("rail-history-list").kids.length, 3);
+check("a history line names the repository", rowTitle("rail-history-list", 0), "owner/name");
 check(
+  "a history line says the status in words, and not as Firestore holds it",
+  rowMeta("rail-history-list", 0),
+  has("pending approval"),
+);
+check(
+  "a line that opens a record is a button, so the keyboard reaches it",
+  row("rail-history-list", 0).tagName,
+  "BUTTON",
+);
+check(
+  "the record that is open is marked, and not by colour alone",
+  row("rail-history-list", 0).attrs["aria-current"],
+  "true",
+);
+check(
+  "no other line carries that mark",
+  row("rail-history-list", 1).attrs["aria-current"],
+  undefined,
+);
+
+/* One load writes to every list that shows the same rows. */
+check("the drawer holds the same lines", el("rail-drawer-history-list").kids.length, 3);
+check("the library holds the same lines", el("lib-history-list").kids.length, 3);
+check(
+  "the showcase holds only the records where the commits went out",
+  el("lib-showcase-list").kids.length,
+  1,
+);
+check("the showcase names that record", rowTitle("lib-showcase-list", 0), "owner/older");
+
+check("the bullets are in the rail", el("rail-bullets-list").kids.length, 1);
+check("a bullet line names the project", rowMeta("rail-bullets-list", 0), has("ProjectSync"));
+check(
+  "a line that only reports is a div, so the keyboard does not stop on it",
+  row("rail-bullets-list", 0).tagName,
+  "DIV",
+);
+check("the bullets are in the library too", el("lib-bullets-list").kids.length, 1);
+
+check("the drafts are in the rail", el("rail-social-list").kids.length, 1);
+check(
+  "a draft line names the platform and the tone",
+  rowMeta("rail-social-list", 0),
+  has("linkedin / professional"),
+);
+
+/* --- The ledger of the six nodes --------------------------------- */check(
   "ledger all reported",
   ledger.kids.map((li) => li.dataset.state).join(","),
   "done,done,done,done,done,done",
@@ -438,6 +578,13 @@ await el("f-card").fire("input");
 check("a clean card does not warn", el("m-card").dataset.warn, "no");
 check("a clean card counts keys", el("m-card").textContent, "valid JSON · 2 keys");
 
+/* How many times the page has read the history. A run that reaches a state which
+   does not change again must read it again, or the sideboard reports the old
+   status of the record that the operator just approved. */
+const historyReads = () =>
+  sent.filter((r) => r.path.startsWith("/api/v1/transactions?user_id=")).length;
+const readsBeforeApproval = historyReads();
+
 el("f-social").value = "An edit from the desk.";
 await el("approve").fire("click");
 
@@ -454,6 +601,7 @@ check("both commits give a slip", slipTitles(), has("Both commits landed"));
 check("the curator proposal gives a slip", slipTitles(), has("The curator proposes a rule"));
 check("approve is on again", el("approve").disabled, false);
 check("the approve label returns", el("approve").textContent, "Approve and commit");
+check("the approval read the sideboard again", historyReads() > readsBeforeApproval, true);
 
 /* --- Write again ------------------------------------------------- */
 await el("regenerate").fire("click");
@@ -515,6 +663,118 @@ check(
 check("the poll line counts", el("poll").textContent, has("Running · 1 check"));
 check("a RUNNING row hides the folios", el("folios").hidden, true);
 check("a RUNNING row turns the buttons off", el("approve").disabled, true);
+
+/* --- The five tabs ----------------------------------------------- */
+
+/*
+  Library and Voice are not steps of the work, so `syncTabs` writes no state on
+  those two. A number on a tab that is not a step would say that the work has five
+  steps, and it has three.
+*/
+check("the intake step is done", el("tab-intake").dataset.state, "done");
+check("the run step is active", el("tab-run").dataset.state, "active");
+check("the library carries no state", el("tab-library").dataset.state, undefined);
+check("the voice carries no state", el("tab-voice").dataset.state, undefined);
+
+await el("tab-library").fire("click");
+check("the library tab opens its panel", el("panel-library").hidden, false);
+check("the panel of the run goes away", el("panel-run").hidden, true);
+check("the library tab is the selected one", el("tab-library").attrs["aria-selected"], "true");
+check("the tab that is open was remembered", store.get("ps.tab"), "library");
+
+/* The right arrow on the last tab comes back to the first one, so the strip is a
+   ring and a key press never reaches a dead end. */
+await el("tab-voice").fire("keydown", { key: "ArrowRight" });
+check("the arrow moves the selection", el("panel-intake").hidden, false);
+await el("tab-library").fire("click");
+
+/* --- The three parts of the library ------------------------------ */
+
+check("the library opens at the bullets", el("lib-view-bullets").hidden, false);
+check("the other two parts wait", el("lib-view-showcase").hidden, true);
+check("the bullets segment is selected", el("lib-tab-bullets").attrs["aria-selected"], "true");
+
+await el("lib-tab-showcase").fire("click");
+check("a press opens the showcase", el("lib-view-showcase").hidden, false);
+check("the bullets go away", el("lib-view-bullets").hidden, true);
+check("the segment that is open was remembered", store.get("ps.lib"), "showcase");
+
+await el("lib-tab-showcase").fire("keydown", { key: "ArrowRight" });
+check("the arrow moves to the history", el("lib-view-history").hidden, false);
+await el("lib-tab-history").fire("keydown", { key: "Home" });
+check("Home comes back to the bullets", el("lib-view-bullets").hidden, false);
+
+/* --- The two widths of the sideboard ----------------------------- */
+
+check("the rail starts open", el("main").dataset.rail, "open");
+check("the width was remembered", store.get("ps.rail"), "open");
+check("the control says the state", el("rail-collapse").attrs["aria-expanded"], "true");
+
+await el("rail-collapse").fire("click");
+check("the control makes the rail narrow", el("main").dataset.rail, "collapsed");
+check("the narrow rail was remembered", store.get("ps.rail"), "collapsed");
+check("the control says the new state", el("rail-collapse").attrs["aria-expanded"], "false");
+check(
+  "the label of the control turns over",
+  el("rail-collapse").attrs["aria-label"],
+  "Make the sideboard wide",
+);
+
+/* Nothing goes away with the narrow rail: each icon opens the rail again at its
+   own list, and the rows are the same rows. */
+await el("rail-mini-bullets").fire("click");
+check("an icon of the narrow rail opens the rail again", el("main").dataset.rail, "open");
+check("the rows are still there", el("rail-bullets-list").kids.length, 1);
+
+/* --- The drawer -------------------------------------------------- */
+
+await el("rail-toggle").fire("click");
+check("the button brings the drawer in", el("rail-drawer").dataset.open, "true");
+check("the drawer is not hidden from a screen reader", el("rail-drawer").attrs["aria-hidden"], "false");
+
+await el("rail-drawer").fire("keydown", { key: "Escape" });
+check("Escape sends the drawer out", el("rail-drawer").dataset.open, "false");
+check("the drawer is hidden again", el("rail-drawer").attrs["aria-hidden"], "true");
+
+await el("rail-toggle").fire("click");
+await el("rail-drawer-close").fire("click");
+check("the close button sends the drawer out", el("rail-drawer").dataset.open, "false");
+
+/* A press on the ground behind the panel closes the drawer, and a press inside
+   the panel does not. The target of the event is what tells the two apart. */
+await el("rail-toggle").fire("click");
+await el("rail-drawer").fire("click", { target: el("rail-drawer-close") });
+check("a press inside the panel keeps the drawer in", el("rail-drawer").dataset.open, "true");
+await el("rail-drawer").fire("click", { target: el("rail-drawer") });
+check("a press on the ground sends it out", el("rail-drawer").dataset.open, "false");
+
+/* --- A line of the history puts a record back on the desk -------- */
+
+await row("rail-history-list", 1).fire("click");
+check("the older record is on the desk", el("txid").textContent, "tx-done");
+check("that record was saved for the next reload", store.get("ps.tx"), "tx-done");
+check("the desk went to the panel that shows it", el("panel-review").hidden, false);
+check("the mark moved to that line", row("rail-history-list", 1).attrs["aria-current"], "true");
+check("the mark left the line that was open", row("rail-history-list", 0).attrs["aria-current"], undefined);
+check("the receipts of that record show", el("receipts").hidden, false);
+/* The first receipt carries a link, so its words are in the link and not in the
+   cell that holds it. */
+check(
+  "the receipt names the commit",
+  el("receipts").kids[0].kids[1].kids[0].textContent,
+  has("a1b2c3d4e5f6"),
+);
+check(
+  "the receipt links that commit",
+  el("receipts").kids[0].kids[1].kids[0].href,
+  has("/commit/a1b2c3d4e5f60718"),
+);
+
+/* A second press on the same line costs no request, because that record is
+   already the record on the desk. */
+const readsBeforeSecond = sent.length;
+await row("rail-history-list", 1).fire("click");
+check("a second press on the same line sends nothing", sent.length, readsBeforeSecond);
 
 /* ------------------------------------------------------------------ */
 

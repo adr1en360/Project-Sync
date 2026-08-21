@@ -29,6 +29,7 @@ EXPECTED_ORDER = [
     "extraction_agent",
     "attach_style_rules",
     "asset_generator_agent",
+    "select_evaluator_input",
     "path_evaluator_agent",
     "persist_transaction",
 ]
@@ -40,7 +41,7 @@ EXPECTED_ORDER = [
 
 
 def test_the_graph_builds_and_the_nodes_are_in_order():
-    """The graph has six nodes, and each node joins to the next one."""
+    """The graph has seven nodes, and each node joins to the next one."""
     workflow = build_phase1_workflow()
 
     assert workflow.name == "projectsync_phase1"
@@ -104,7 +105,9 @@ def test_the_code_nodes_have_the_default_parameter_binding():
         if isinstance(edge.to_node, FunctionNode)
     ]
 
-    assert len(code_nodes) == 3
+    # Four nodes are plain Python: the scan, the style-rule attach, the evaluator
+    # input select, and the persist. The other three are agents.
+    assert len(code_nodes) == 4
     for node in code_nodes:
         assert node.parameter_binding == "state"
 
@@ -430,6 +433,47 @@ def test_a_rule_that_a_person_deletes_leaves_the_list_and_stays_in_the_database(
     assert doc.exists
     assert doc.to_dict()["state"] == RuleState.DELETED.value
     assert doc.to_dict()["text"] == "Name the stack in the first line."
+
+
+# --------------------------------------------------------------------------
+# The bullet bank
+# --------------------------------------------------------------------------
+
+
+def test_a_second_seed_of_one_transaction_writes_no_duplicate(monkeypatch):
+    """A resume runs Phase 1 again under the same transaction id.
+
+    The auto-seed must write the bullets one time only. The guard reads the bank
+    for a bullet of this transaction, and the caller skips the write if one is
+    there. The test proves the guard, so a second approval adds no duplicate.
+    """
+    fake = _FakeFirestore()
+    monkeypatch.setattr(store, "client", lambda: fake)
+
+    assert store.bullets_exist_for_tx("tx1") is False
+
+    written = store.seed_bullets(
+        user_id="u1",
+        tx_id="tx1",
+        project_name="ProjectSync",
+        resume_bullets=["Built a workflow graph.", "Wrote the offline tests."],
+    )
+    assert written == 2
+    assert store.bullets_exist_for_tx("tx1") is True
+
+    # This is the guard that the approval callback runs. With it, the second seed
+    # of the same transaction writes nothing.
+    if not store.bullets_exist_for_tx("tx1"):
+        store.seed_bullets(
+            user_id="u1",
+            tx_id="tx1",
+            project_name="ProjectSync",
+            resume_bullets=["Built a workflow graph.", "Wrote the offline tests."],
+        )
+
+    assert len(store.list_bullets(user_id="u1")) == 2
+    # A different transaction is still free to seed.
+    assert store.bullets_exist_for_tx("tx2") is False
 
 
 # --------------------------------------------------------------------------
