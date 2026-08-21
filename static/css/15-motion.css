@@ -34,8 +34,8 @@
 /*
   The panel of a tab.
 
-  `js/tabs.js` gives the `hidden` attribute to three panels and takes it from
-  one. A browser starts the animations of an element again at the moment that the
+  `js/tabs.js` gives the `hidden` attribute to four panels and takes it from one.
+  A browser starts the animations of an element again at the moment that the
   element comes back onto the page, so this one plays at each change of tab and
   it needs no help from the JavaScript.
 */
@@ -86,23 +86,13 @@
   one starts 180ms after the first one, which is short enough that a person who
   waited for a run does not wait again.
 
-  The stagger comes from `:nth-child` and not from `--i`, because the four cards
-  carry no index in `index.html`. Four rules are shorter than four attributes in
-  the markup. The stepper has six lines and an index that is already there, so it
-  uses the index.
+  The index comes from `--i` on each card in `index.html`, in the same way as the
+  stepper above. One rule with the index is shorter than one rule for each card,
+  and a rule with `:nth-child` counts the position in the parent, which is not the
+  same thing as the number of the folio. `tests/test_review_desk.py` holds `--i`
+  in `INLINE_TOKENS` for this.
 */
 .folio {
   animation: rise var(--dur-medium) var(--ease-decelerate) backwards;
-}
-
-.folio:nth-child(2) {
-  animation-delay: 60ms;
-}
-
-.folio:nth-child(3) {
-  animation-delay: 120ms;
-}
-
-.folio:nth-child(4) {
-  animation-delay: 180ms;
+  animation-delay: calc(var(--i) * 60ms);
 }

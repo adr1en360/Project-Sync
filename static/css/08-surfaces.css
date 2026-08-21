@@ -29,6 +29,38 @@
 }
 
 /* ---------------------------------------------------------------- */
+/* One view of the library                                          */
+/* ---------------------------------------------------------------- */
+
+/*
+  A view of the library is a card that holds one of the three lists.
+
+  The rows inside it are the rows of the sideboard, and `03-shell.css` holds every
+  rule for them, because `js/rail.js` fills the rail, the drawer, and the library
+  from one place and the three must not look like three different things.
+
+  The gap is smaller than the gap of a card, because the title, the note, and the
+  list are one block of reading and not three groups.
+*/
+.lib {
+  gap: var(--sp-3);
+  align-content: start;
+}
+
+.lib__title {
+  font: var(--type-title-md);
+  letter-spacing: var(--track-title-md);
+  color: var(--m3-on-surface);
+}
+
+.lib__note {
+  max-width: 68ch;
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+}
+
+/* ---------------------------------------------------------------- */
 /* The sheet: one transaction                                       */
 /* ---------------------------------------------------------------- */
 

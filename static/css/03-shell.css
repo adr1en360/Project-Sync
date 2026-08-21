@@ -15,6 +15,44 @@
 :root {
   /* The width of the column of work. 54rem is near 864px at the default size. */
   --shell-max: 54rem;
+
+  /*
+    The width of the sideboard.
+
+    A narrow window has no room for it at all, so the base is zero and the two
+    queries below add the rail back as the window becomes wide. The drawer in
+    `16-screens.css` carries the same content at every width where this is zero.
+  */
+  --rail-w: 0px;
+  --rail-w-collapsed: 56px;
+
+  /*
+    The column that the rail takes in the grid of the work.
+
+    This is a second name for the same number, and the reason is the collapse. A
+    rail that goes narrow must give the space to the column of work and must not
+    make the whole page narrower, so the collapse changes this and never
+    `--work-max` below.
+  */
+  --rail-col: var(--rail-w);
+
+  /* The measure of the work: the column, the rail, and the gap between them. The
+     tab strip takes the same measure, so the strip and the work stay in step. */
+  --work-max: calc(var(--shell-max) + var(--rail-w) + var(--sp-6));
+}
+
+/* From 1280px the window holds the rail beside the work. */
+@media (min-width: 80rem) {
+  :root {
+    --rail-w: 248px;
+  }
+}
+
+/* From 1440px the rail takes its full width. */
+@media (min-width: 90rem) {
+  :root {
+    --rail-w: 280px;
+  }
 }
 
 /* ---------------------------------------------------------------- */
@@ -143,11 +181,271 @@
 /* The column of work, and one tab panel                            */
 /* ---------------------------------------------------------------- */
 
+/*
+  The work holds one column below 1280px, and two columns above it: the panel of
+  the open tab, and the sideboard. The measure of the whole stays at `--work-max`
+  in both states, so nothing on the page moves sideways at a change of tab.
+*/
 .work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-6);
   width: 100%;
-  max-width: var(--shell-max);
+  max-width: var(--work-max);
   margin-inline: auto;
   padding: var(--sp-6) var(--sp-4) var(--sp-8);
+}
+
+@media (min-width: 80rem) {
+  .work {
+    grid-template-columns: minmax(0, 1fr) var(--rail-col);
+  }
+
+  .rail {
+    display: flex;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* The sideboard                                                    */
+/* ---------------------------------------------------------------- */
+
+/*
+  The rail is two surfaces, and not one.
+
+  The frame carries the tone of a container, and each list inside it sits one
+  tone lower in a box of its own. So the eye finds where one list stops and the
+  next one starts, and no line and no shadow says it. The radius of the inner box
+  is the radius of the frame less the padding of the frame, because two curves
+  that share a centre must not have the same radius.
+
+  The rail stays in place while the work scrolls, because it reports the state of
+  the desk and a report that scrolls away reports nothing.
+*/
+.rail {
+  display: none;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border: 1px solid var(--m3-outline-variant);
+  border-radius: var(--shape-lg);
+  background: var(--m3-surface-container);
+  height: fit-content;
+  position: sticky;
+  top: var(--sp-6);
+}
+
+/* The bar at the top of the rail. It holds the name and the one control. */
+.rail__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 32px;
+  padding-inline: var(--sp-2);
+}
+
+.rail__name {
+  font: var(--type-label-lg);
+  letter-spacing: 0.5px;
+  color: var(--m3-on-surface-variant);
+  text-transform: uppercase;
+}
+
+.rail__collapse {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-inline-start: auto;
+  border: 0;
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  cursor: pointer;
+  transition:
+    background var(--dur-short) var(--ease-standard),
+    color var(--dur-short) var(--ease-standard),
+    transform var(--dur-medium) var(--ease-emphasized);
+}
+
+.rail__collapse:hover {
+  background: var(--m3-surface-container-high);
+  color: var(--m3-on-surface);
+}
+
+/* ---------------------------------------------------------------- */
+/* The narrow rail                                                  */
+/* ---------------------------------------------------------------- */
+
+/*
+  The collapse takes the rail to 56px and leaves one icon for each list. Nothing
+  goes away: every icon opens the rail again at its own list, and the drawer and
+  the library still hold the same rows.
+
+  `js/rail.js` writes `data-rail` on `main`, and not on the rail, because the
+  grid of the work holds the width of the column and only the element with the
+  grid can change it.
+*/
+.rail__mini {
+  display: none;
+  gap: var(--sp-1);
+  justify-items: center;
+}
+
+.rail__mini-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  cursor: pointer;
+  transition:
+    background var(--dur-short) var(--ease-standard),
+    color var(--dur-short) var(--ease-standard);
+}
+
+.rail__mini-btn:hover {
+  background: var(--m3-surface-container-high);
+  color: var(--m3-on-surface);
+}
+
+.work[data-rail="collapsed"] {
+  --rail-col: var(--rail-w-collapsed);
+}
+
+.work[data-rail="collapsed"] .rail {
+  padding-inline: var(--sp-2);
+}
+
+.work[data-rail="collapsed"] .rail__name,
+.work[data-rail="collapsed"] .rail__section {
+  display: none;
+}
+
+.work[data-rail="collapsed"] .rail__mini {
+  display: grid;
+}
+
+/* The arrow turns over, because it now says "wider" and it said "narrower". */
+.work[data-rail="collapsed"] .rail__collapse {
+  margin-inline: auto;
+  transform: scaleX(-1);
+}
+
+/* ---------------------------------------------------------------- */
+/* One list of the sideboard                                        */
+/* ---------------------------------------------------------------- */
+
+/*
+  A section is the inner surface of the rail. The drawer in `16-screens.css` and
+  the library in `08-surfaces.css` hold the same lists, so every rule from here
+  down serves all three places.
+*/
+.rail__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: calc(var(--shape-lg) - var(--sp-2));
+  background: var(--m3-surface-container-low);
+}
+
+.rail__heading {
+  font: var(--type-label-lg);
+  color: var(--m3-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.rail__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/*
+  A row of a list is a `button` when it opens a record, and a `div` when it only
+  reports. `js/rail.js` chooses. So the two need the same look and only the one
+  that acts takes the hand of the mouse.
+*/
+.rail__item {
+  display: block;
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--shape-sm);
+  background: var(--m3-surface-container);
+  color: var(--m3-on-surface);
+  font: var(--type-body-sm);
+  letter-spacing: var(--track-body-sm);
+  text-align: start;
+  transition: background var(--dur-short) var(--ease-standard);
+}
+
+button.rail__item {
+  cursor: pointer;
+}
+
+button.rail__item:hover {
+  background: var(--m3-surface-container-high);
+}
+
+.rail__item--active {
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+
+.rail__item-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+  The second line of a row is quieter than the first one. The colour comes from a
+  token in both states and never from an opacity, because an opacity over a fill
+  makes a colour that `tests/test_review_desk.py` cannot measure.
+*/
+.rail__item-meta {
+  font: var(--type-label-sm);
+  color: var(--m3-on-surface-variant);
+  margin-top: var(--sp-1);
+}
+
+.rail__item--active .rail__item-meta {
+  color: var(--m3-on-primary-container);
+}
+
+.btn--sm {
+  padding: var(--sp-1) var(--sp-2);
+  font: var(--type-label-sm);
+  gap: var(--sp-1);
+}
+
+.rail__empty {
+  padding: var(--sp-3);
+  text-align: center;
+  color: var(--m3-on-surface-variant);
+  font: var(--type-body-sm);
+}
+
+/*
+  The drawer is off the page at every width where the rail is present.
+
+  Without this rule the drawer is a third cell of the grid of the work on a wide
+  window, and it shows the same three lists a second time. `16-screens.css` gives
+  it a display again below 1280px, and no other file may.
+*/
+.rail__drawer {
+  display: none;
 }
 
 /*

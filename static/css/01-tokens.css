@@ -84,8 +84,8 @@
   --sp-16: 64px;
 
   /* ---- The type scale of M3. The pairs are the size and the line. ---- */
-  --font-plain: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Roboto Mono", ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  --font-plain: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Consolas", monospace;
 
   --type-display-lg: 400 3.5625rem/4rem var(--font-plain);
   --type-display-md: 400 2.8125rem/3.25rem var(--font-plain);

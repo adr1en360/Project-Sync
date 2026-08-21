@@ -1,5 +1,5 @@
 /*
-  The tab strip.
+  The tab strip, and the segmented control inside the library.
 
   Two ideas meet on one element here, and they must stay apart:
 
@@ -12,6 +12,11 @@
 
   `js/tabs.js` writes both. It reads the transaction row for the state, and the
   four values are `idle`, `active`, `done`, and `failed`.
+
+  Only the first three tabs are steps of the work, so only those three carry a
+  number and a state. Library and Voice come after a divider, and they carry
+  neither. A number on a tab that is not a step would say that the work has five
+  steps, and it has three.
 */
 
 .tabs {
@@ -19,16 +24,33 @@
   background: var(--m3-surface-container-low);
 }
 
-/* The strip keeps the same column as the work below it, so the first tab and the
-   first box of the panel start on the same line. */
+/* The strip keeps the same measure as the work below it, so the strip and the
+   work stay in step at every width. `03-shell.css` holds the measure. */
 .tabs__list {
   display: flex;
   justify-content: center;
   gap: var(--sp-1);
   width: 100%;
-  max-width: var(--shell-max);
+  max-width: var(--work-max);
   margin-inline: auto;
   padding-inline: var(--sp-4);
+}
+
+/*
+  The divider between the three steps and the two references.
+
+  It is a rule of one hairline, and it carries `aria-hidden`, because a reader
+  with a screen reader gets the same grouping from the order of the tabs and from
+  the numbers on the first three. The height is less than the height of a tab, so
+  the line reads as a break in the row and not as a border of a box.
+*/
+.tabs__divider {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  margin-inline: var(--sp-2);
+  background: var(--m3-outline-variant);
 }
 
 /* ---------------------------------------------------------------- */
@@ -171,4 +193,58 @@
   box-shadow:
     0 0 0 1px var(--m3-surface-container-low),
     0 0 0 3px var(--m3-error);
+}
+
+/* ---------------------------------------------------------------- */
+/* The segmented control inside the library                         */
+/* ---------------------------------------------------------------- */
+
+/*
+  The library holds three lists, and the three are one group. So they take a
+  segmented control inside the panel, and not three more tabs at the top of the
+  page.
+
+  The control is a second `tablist`, and `js/library.js` writes `aria-selected` on
+  the buttons and `hidden` on the views. It is not the strip above: a segment has
+  a fill when it is the open one, and no bar under it, because a bar under a
+  segment would read as a second tab strip.
+
+  The track sits above the panel and above the card of the open view, and the open
+  segment sits on the secondary container, so a person finds the open segment by
+  fill and by colour. The padding of the track is 4px, which is wider than the 2px
+  offset of the focus ring in `02-reset.css`, so the ring of a segment stays inside
+  the track.
+*/
+.seg {
+  display: inline-flex;
+  align-self: start;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border-radius: var(--shape-full);
+  background: var(--m3-surface-container);
+}
+
+.seg__btn {
+  min-height: 36px;
+  padding: var(--sp-2) var(--sp-4);
+  border: 0;
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--m3-on-surface-variant);
+  font: var(--type-label-lg);
+  letter-spacing: var(--track-label-lg);
+  cursor: pointer;
+  transition:
+    background var(--dur-short) var(--ease-standard),
+    color var(--dur-short) var(--ease-standard);
+}
+
+.seg__btn:hover {
+  background: var(--m3-surface-container-high);
+  color: var(--m3-on-surface);
+}
+
+.seg__btn[aria-selected="true"] {
+  background: var(--m3-secondary-container);
+  color: var(--m3-on-secondary-container);
 }

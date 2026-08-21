@@ -1,14 +1,15 @@
 /*
   The narrow window.
 
-  The page is one column at every width, so it needs no layout for a wide screen.
-  This file takes things away as the window becomes narrow, in the order that
-  costs the operator least:
+  The page is one column below 1280px, so the layout for a wide screen lives in
+  `03-shell.css` and this file takes things away as the window becomes narrow, in
+  the order that costs the operator least:
 
-    1. The space around the work.
-    2. The second column of a pair of fields.
-    3. The second column of a folio and of a rule.
-    4. The number on a tab, which the icon and the word already say.
+    1. The sideboard becomes a drawer that comes in from the right.
+    2. The space around the work.
+    3. The second column of a pair of fields.
+    4. The second column of a folio and of a rule.
+    5. The number on a tab, which the icon and the word already say.
 
   Nothing here hides a value, a state, or a control. A window of 320px shows the
   same information as a window of 1600px.
@@ -37,7 +38,7 @@
   }
 
   /*
-    The four tabs can scroll from side to side. A tab that shrinks below its own
+    The five tabs can scroll from side to side. A tab that shrinks below its own
     word is a tab that nobody can read, so the row scrolls instead.
   */
   .tabs__list {
@@ -49,13 +50,13 @@
     padding-inline: var(--sp-3);
   }
 
-  /* The numeral of a folio goes above the title, so the title keeps the full
+  /* The numeral of a folio goes above the draft, so the draft keeps the full
      width of the card. */
   .folio {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .folio__head {
+  .folio__core {
     grid-column: 1;
     grid-row: 2;
   }
@@ -128,5 +129,116 @@
   .facts,
   .receipts {
     flex-direction: column;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* The drawer, and the button that opens it                         */
+/* ---------------------------------------------------------------- */
+
+/*
+  The button waits, out of sight, until the query below asks for it. The base rule
+  comes first, because the rule in the query has the same weight and a rule that
+  comes later would win over it.
+*/
+.rail__toggle {
+  display: none;
+  min-height: 40px;
+  width: 40px;
+  border-radius: var(--shape-full);
+  background: var(--m3-surface-container);
+  color: var(--m3-on-surface);
+  border: 1px solid var(--m3-outline-variant);
+}
+
+/*
+  Below 1280px there is no room for the rail beside the work, so the same three
+  lists come in over the work from the right.
+
+  `03-shell.css` holds `display: none` on the drawer, and this is the one block
+  that gives it a display again. The two widths must never both be on: a drawer
+  with a display on a wide window becomes a third cell of the grid of the work,
+  and the operator then reads the same three lists twice.
+*/
+@media (max-width: 79.99rem) {
+  .rail__drawer {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--dur-medium) var(--ease-decelerate),
+      visibility var(--dur-medium) var(--ease-decelerate);
+  }
+
+  .rail__drawer[data-open="true"] {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* The panel takes the tone of the frame of the rail, so each list inside it
+     keeps the same two surfaces that the rail gives it. */
+  .rail__drawer-inner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    background: var(--m3-surface-container);
+    border-inline-start: 1px solid var(--m3-outline-variant);
+    padding: var(--sp-6) var(--sp-3) var(--sp-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform var(--dur-medium) var(--ease-decelerate);
+  }
+
+  .rail__drawer[data-open="true"] .rail__drawer-inner {
+    transform: translateX(0);
+  }
+
+  .rail__drawer-close {
+    position: absolute;
+    top: var(--sp-3);
+    right: var(--sp-3);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--shape-full);
+    background: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+    border: 1px solid var(--m3-outline-variant);
+  }
+
+  .rail__drawer-close::before,
+  .rail__drawer-close::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 2px;
+    border-radius: var(--shape-full);
+    background: currentColor;
+  }
+
+  .rail__drawer-close::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .rail__drawer-close::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  /* The button that opens the drawer is in the bar at the top, and it shows only
+     at the widths where the rail itself is away. */
+  .rail__toggle {
+    display: grid;
+    place-items: center;
   }
 }

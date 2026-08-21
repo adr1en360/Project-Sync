@@ -6,10 +6,21 @@
   person must be able to find the number on the screen. The numeral is a small
   mark beside the title, and not a large figure in a corner.
 
+  A folio is two surfaces, and not one. The frame carries the numeral and one
+  tone, and the core inside it carries the draft one tone lower. So the eye finds
+  the edge of the draft with no shadow and no line of its own, and the numeral
+  sits on the frame in the way that a plate number sits on a frame.
+
   Every box is a real `textarea`. An operator can edit a draft before the
   approval, and the edits go to the service with that approval. So the box must
   look like a box that a person can type in, and it takes the same border and the
   same lowest tone as a field on the intake panel.
+
+  The three tones go from the outside in, and no two of them are the same:
+
+    frame   `--m3-surface-container`
+    core    `--m3-surface-container-low`
+    draft   `--m3-surface-container-lowest`
 */
 
 .folios {
@@ -18,13 +29,17 @@
 }
 
 /*
-  A folio is also a card, so it takes the border, the radius, and the tone from
-  `08-surfaces.css`. It adds a column for the numeral. The row gap is smaller
-  than the card default, because the meter belongs to the box above it.
+  A folio is also a card, so it takes the border from `08-surfaces.css`. It adds
+  the frame: a wider radius, a higher tone, and a padding of one step, which is
+  the whole width of the frame.
 */
 .folio {
-  grid-template-columns: auto 1fr;
-  gap: var(--sp-3) var(--sp-4);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2);
+  border-radius: var(--shape-lg);
+  background: var(--m3-surface-container);
 }
 
 .folio::before {
@@ -35,11 +50,29 @@
   place-items: center;
   width: 28px;
   height: 28px;
+  margin: var(--sp-2);
   border-radius: var(--shape-sm);
   background: var(--m3-secondary-container);
   color: var(--m3-on-secondary-container);
   font: var(--type-label-md);
   letter-spacing: var(--track-label-md);
+}
+
+/*
+  The core: the surface that holds the draft.
+
+  The radius is the radius of the frame less the padding of the frame. Two curves
+  that share a centre and share a radius do not read as two curves, and the
+  purpose of the frame is that a person sees two.
+*/
+.folio__core {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: calc(var(--shape-lg) - var(--sp-2));
+  background: var(--m3-surface-container-low);
 }
 
 /* ---------------------------------------------------------------- */
@@ -53,8 +86,6 @@
 */
 .folio__head {
   display: grid;
-  grid-column: 2;
-  grid-row: 1;
   grid-template-columns: 1fr auto;
   align-items: start;
   gap: var(--sp-1) var(--sp-3);
