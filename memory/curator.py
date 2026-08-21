@@ -22,6 +22,7 @@ from google.adk import Agent
 from google.genai import types as genai_types
 from pydantic import BaseModel, Field
 
+import adk_runtime
 import config
 import store
 from models import AssetSource, RuleSource, StyleRule
@@ -240,6 +241,33 @@ def save_proposed_rules(
             )
         )
     return saved
+
+
+async def _run_curator(user_id: str, transaction_id: str) -> list[str]:
+    """Look for a style pattern in past approvals, and propose a rule.
+
+    Every rule that this step writes is `PROPOSED`. A person must click one time
+    to make a rule `ACTIVE`.
+
+    The function gives an empty list if the person has too few completed rows. Two
+    rows are the minimum, because one project is not a pattern.
+    """
+    prompt = build_curator_prompt(user_id)
+    if prompt is None:
+        return []
+
+    text = await adk_runtime.run_agent_for_text(
+        build_rule_curator_agent(),
+        prompt,
+        user_id=user_id,
+        session_id=f"curator-{store.new_id()}",
+    )
+
+    if not text.strip():
+        return []
+    proposed = ProposedRules.model_validate_json(text)
+    saved = save_proposed_rules(user_id, proposed.rules, transaction_id)
+    return [rule.text for rule in saved]
 
 
 async def run_curator_with_defaults(user_id: str, transaction_id: str) -> list[str]:

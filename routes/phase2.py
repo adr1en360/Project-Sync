@@ -12,7 +12,6 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-import adk_runtime
 import store
 from memory import curator
 from models import ApprovalRequest, AssetSource, AssetVersion, TransactionStatus
@@ -21,33 +20,6 @@ from sync import github as github_sync
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["phase 2"])
-
-
-async def _run_curator(user_id: str, transaction_id: str) -> list[str]:
-    """Look for a style pattern in past approvals, and propose a rule.
-
-    Every rule that this step writes is `PROPOSED`. A person must click one time
-    to make a rule `ACTIVE`.
-
-    The function gives an empty list if the person has too few completed rows. Two
-    rows are the minimum, because one project is not a pattern.
-    """
-    prompt = curator.build_curator_prompt(user_id)
-    if prompt is None:
-        return []
-
-    text = await adk_runtime.run_agent_for_text(
-        curator.build_rule_curator_agent(),
-        prompt,
-        user_id=user_id,
-        session_id=f"curator-{store.new_id()}",
-    )
-
-    if not text.strip():
-        return []
-    proposed = curator.ProposedRules.model_validate_json(text)
-    saved = curator.save_proposed_rules(user_id, proposed.rules, transaction_id)
-    return [rule.text for rule in saved]
 
 
 @router.post("/approval-callback")
@@ -98,7 +70,9 @@ async def approval_callback(request: ApprovalRequest) -> dict:
         assets=assets,
         source=source,
         created_at=store.now_iso(),
-        style_rules_applied=transaction.style_rules_applied if source == AssetSource.GENERATED else [],
+        style_rules_applied=(
+            transaction.style_rules_applied if source == AssetSource.GENERATED else []
+        ),
     )
     versions = [version.model_dump(mode="json") for version in transaction.asset_versions]
     versions.append(new_version.model_dump(mode="json"))
@@ -112,16 +86,46 @@ async def approval_callback(request: ApprovalRequest) -> dict:
         ),
         doc_commit_sha=results.doc_commit_sha,
         card_commit_sha=results.card_commit_sha,
-        error_message=results.doc_error or results.card_error,
         asset_versions=versions,
         style_rules_applied=transaction.style_rules_applied,
         completed_at=store.now_iso() if both_done else None,
     )
 
+    # Write the error field on its own, and not through `_update`. `_update` drops
+    # a `None`, so a success would keep a stale error from an earlier partial run.
+    # A direct write puts `None` on success, which clears the old error, and puts
+    # the real error on a partial result.
+    store.update_transaction(
+        request.transaction_id,
+        error_message=results.doc_error or results.card_error,
+    )
+
+    # Fill the bullet bank from the approved assets, but only when both commits
+    # land. The commits are already written, so a seed failure must not fail the
+    # approval. The guard stops a duplicate on a resume, which runs Phase 1 again
+    # under the same transaction id.
+    if both_done and assets.resume_bullets:
+        try:
+            if not store.bullets_exist_for_tx(request.transaction_id):
+                store.seed_bullets(
+                    user_id=transaction.user_id,
+                    tx_id=request.transaction_id,
+                    project_name=(
+                        transaction.metadata.project_name
+                        if transaction.metadata
+                        else transaction.repo_name
+                    ),
+                    resume_bullets=assets.resume_bullets,
+                )
+        except Exception:
+            logger.exception("The bullet auto-seed failed. The approval stands.")
+
     proposed: list[str] = []
     try:
         # Use the new function that also checks for default rule proposals
-        proposed = await curator.run_curator_with_defaults(transaction.user_id, request.transaction_id)
+        proposed = await curator.run_curator_with_defaults(
+            transaction.user_id, request.transaction_id
+        )
     # The curator is an extra, and the commits are already written. A failure here
     # must not fail the approval.
     except Exception:
