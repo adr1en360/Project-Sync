@@ -27,6 +27,8 @@ the interface together, so the deploy stays at one Cloud Run service.
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -36,15 +38,41 @@ from fastapi.staticfiles import StaticFiles
 from google.auth.exceptions import DefaultCredentialsError
 
 import config
-from routes import phase1, phase2, regenerate, rules
+import store
+from routes import bullets, phase1, phase2, regenerate, rules, social, transactions
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Sweep stranded runs at start. Then start the application.
+
+    Cloud Run goes to zero between requests. A run that stopped because the
+    container was recycled stays at RUNNING for ever, because no code writes its
+    end. Each cold start sweeps these rows to FAILED_GENERATION, so the list of
+    runs does not fill with runs that cannot finish.
+
+    A machine with no Firestore credentials must still start. So a failure of the
+    sweep goes to the log, and the application starts.
+    """
+    try:
+        swept = store.sweep_stranded_running()
+        if swept:
+            logger.info("The start sweep changed %d stranded run(s).", swept)
+    # A machine with no credentials, or a Firestore that is down, must not stop
+    # the start. The sweep is a cleanup step, and not a part of any request.
+    except Exception:
+        logger.warning("The start sweep did not run.", exc_info=True)
+    yield
+
 
 app = FastAPI(
     title="ProjectSync",
     description="Turns a finished GitHub repository into career-ready outputs.",
     version="0.1.0",
+    lifespan=_lifespan,
 )
 
 # The interface comes from this same service, so a browser needs no CORS rule for
@@ -70,6 +98,9 @@ app.include_router(phase1.router)
 app.include_router(regenerate.router)
 app.include_router(phase2.router)
 app.include_router(rules.router)
+app.include_router(transactions.router)
+app.include_router(bullets.router)
+app.include_router(social.router)
 
 
 @app.exception_handler(DefaultCredentialsError)
