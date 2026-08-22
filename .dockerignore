@@ -53,6 +53,12 @@ desktop.ini
 .firestore-emulator/
 scratch/
 
+# The interface build files. The first stage of the Dockerfile makes both of
+# these itself. The `node_modules` folder also holds binary files for the wrong
+# platform, and it is large.
+web/node_modules/
+web/dist/
+
 # Docker files themselves.
 Dockerfile
 .dockerignore

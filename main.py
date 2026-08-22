@@ -19,9 +19,12 @@ makes the application, adds the middleware, mounts the static files, and include
 each router. Two routes stay here, because they belong to the application and not
 to one phase: the review desk at `/` and the health check at `/healthz`.
 
-This module also serves the review desk in `static/`. That interface is plain
-HTML, CSS, and JavaScript, with no build step. One container holds the API and
+This module also serves the interface. Vite makes a React application into
+`web/dist`, and this module sends those files. One container holds the API and
 the interface together, so the deploy stays at one Cloud Run service.
+
+The old desk in `static/` stays available while the rebuild is in progress. A
+machine that did not run the Vite build gets the old desk at `/`.
 """
 
 from __future__ import annotations
@@ -87,10 +90,18 @@ if config.ALLOWED_ORIGINS:
         allow_headers=["Content-Type"],
     )
 
-# The review desk. The files are plain HTML, CSS, and JavaScript, so there is no
-# build step and the container needs no Node.
+# The old review desk. The React interface replaces it, and this mount stays
+# until the last stage of the rebuild removes the folder.
 _STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+# The React interface. Vite writes the files to `web/dist`, and the build runs
+# before the deploy. The mount goes on only if the folder is present, because a
+# machine that did not run the build must still start.
+_WEB_DIST = Path(__file__).parent / "web" / "dist"
+_WEB_ASSETS = _WEB_DIST / "assets"
+if _WEB_ASSETS.is_dir():
+    app.mount("/assets", StaticFiles(directory=_WEB_ASSETS), name="assets")
 
 # Each router carries its own `/api/v1` prefix, so the order of these four lines
 # changes nothing. No path in one router hides a path in another.
@@ -133,11 +144,17 @@ def _no_credentials(request: Request, error: DefaultCredentialsError) -> JSONRes
 
 @app.get("/", include_in_schema=False)
 def review_desk() -> FileResponse:
-    """Give the review desk.
+    """Give the interface.
 
     The route is explicit and not a mount at the root path. A mount at the root
     path can hide an API route, and this way the order of the routes is clear.
+
+    The React page comes first. A machine that did not run the Vite build gets
+    the old desk, so the interface works at each step of the rebuild.
     """
+    react_page = _WEB_DIST / "index.html"
+    if react_page.is_file():
+        return FileResponse(react_page)
     return FileResponse(_STATIC_DIR / "index.html")
 
 
