@@ -18,6 +18,11 @@ import '@fontsource/geist-mono/latin-500.css'
 import './styles/tokens.css'
 import './index.css'
 
+// The frame, the components and the movement. Each one reads the tokens above.
+import './styles/shell.css'
+import './styles/ui.css'
+import './styles/motion.css'
+
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

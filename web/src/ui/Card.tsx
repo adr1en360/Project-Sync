@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /**
  * A card.
@@ -13,10 +13,13 @@ type Props = {
   note?: ReactNode;
   live?: boolean;
   className?: string;
+  style?: CSSProperties;
   children: ReactNode;
 };
 
-export function Card({ title, note, live = false, className, children }: Props) {
+export function Card(
+  { title, note, live = false, className, style, children }: Props,
+) {
   const classes = ["card"];
   if (live) {
     classes.push("card-live");
@@ -26,7 +29,7 @@ export function Card({ title, note, live = false, className, children }: Props) 
   }
 
   return (
-    <section className={classes.join(" ")}>
+    <section className={classes.join(" ")} style={style}>
       {title !== undefined && (
         <header className="card-head">
           <h2 className="card-title">{title}</h2>
