@@ -136,6 +136,16 @@ body,
   }
 }
 
+/* The verdict of the review desk is the one place a stamp lands.
+ *
+ * The animation runs when the element mounts. A poll that gives the same verdict
+ * again is a new render and not a new element, so the stamp does not land twice.
+ * `both` holds the last frame, because a stamp that fades out is a stamp that a
+ * person cannot read. */
+.stamp {
+  animation: stamp-in var(--dur-base) var(--ease-out) both;
+}
+
 /* #13 The menu. The list comes down a short distance under the button that
  * opened it, so the eye does not have to find it. */
 @keyframes menu-in {
@@ -170,5 +180,51 @@ body,
 
   .reveal > .reveal-body {
     transition: none;
+  }
+}
+/* #4 The mark of a step cross-fades when the state of the node changes.
+   React gives the mark a new key for each state, so the element is new and the
+   animation plays one time. A node at work keeps its own loop, so it is left
+   out here. The left rule of the row grows by a transition, in `ui.css`. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.node-row .mark:not(.mark-work) {
+  animation: fade-in var(--dur-fast) var(--ease-out) both;
+}
+
+/* #16 The step hand-off.
+   The product moves a person from one step to the next by itself, so the number
+   of the step that opened draws its own underline. The animation starts when the
+   attribute changes, which is the moment of the move, and the outgoing pane
+   leaves at the same time by #7. */
+.tab-index {
+  position: relative;
+}
+
+.tab[aria-current="page"] .tab-index::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -2px;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: draw-under var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes draw-under {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }

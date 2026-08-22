@@ -77,6 +77,22 @@
   color: var(--ink);
 }
 
+/* A quiet button that carries a word must read as a button before the pointer
+ * arrives, so it keeps the rule of every other button and drops only the fill.
+ * Without this the control is text until a person finds it by chance.
+ *
+ * The version with an icon and no word keeps no rule. It sits in the masthead,
+ * which draws its own rule under the whole row, and a box around each icon
+ * crowds that row. Both of those are named here and not left to the order of
+ * the file, because this file has no test for its order. */
+.btn-quiet:not(.btn-icon):not(.menu-trigger) {
+  border-color: var(--paper-edge);
+}
+
+.btn-quiet:not(.btn-icon):not(.menu-trigger):hover:not(:disabled) {
+  border-color: var(--ink-faint);
+}
+
 .btn-danger {
   border-color: transparent;
   background: var(--fail);
@@ -470,4 +486,182 @@ kbd {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+/* One step of the run. Stage F4.
+   The row is a grid of three: the mark, the sentence, and the state. The left
+   rule grows when the node leaves the waiting state, which is animation #4 in
+   `motion.css`. The rule is a pseudo-element and not a border, because a border
+   cannot grow without a change of layout. */
+.node-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0 var(--sp-3) var(--sp-3);
+  border-top: var(--rule) solid var(--paper-edge);
+}
+
+.node-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: var(--rule);
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: top center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.node-row:not([data-state="wait"])::before {
+  transform: scaleY(1);
+}
+
+.node-row[data-state="pass"]::before {
+  background: var(--pass);
+}
+
+.node-row[data-state="fail"]::before {
+  background: var(--fail);
+}
+
+.node-row[data-state="hold"]::before {
+  background: var(--hold);
+}
+
+/* The times of two nodes sit under each other, so the digits must not move. */
+.node-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The list of the node rows. The skeleton of the list takes the same class as
+ * the list, so the page does not move when the rows arrive. */
+.node-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-1);
+}
+
+/* ============================================================
+   The review desk
+   ============================================================ */
+
+/* A box of many lines grows and shrinks by hand only, so a folio of four drafts
+   holds still while a person reads it. */
+.field-area {
+  resize: vertical;
+  min-height: calc(var(--target-min) * 2);
+  line-height: 1.6;
+}
+
+/* Two short fields of one card sit side by side while there is room for both. */
+.folio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--sp-3) var(--sp-4);
+}
+
+/* The head of a part inside a card. It is under the title of the card, so it is
+   small and quiet and it is still a heading. */
+.folio-sub {
+  margin: var(--sp-4) 0 var(--sp-2);
+  font-family: var(--font-sans);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.plain-list {
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0 0 var(--sp-3);
+  padding-left: var(--sp-5);
+  color: var(--ink-quiet);
+}
+
+/* A term and its value, in two columns that do not move with the text. */
+.pair-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-2) var(--sp-4);
+  margin: 0 0 var(--sp-4);
+}
+
+.pair-list dt {
+  font-size: var(--step--1);
+  color: var(--ink-quiet);
+}
+
+.pair-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.receipt {
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-4);
+  border-bottom: var(--rule) solid var(--paper-edge);
+}
+
+.receipt-head {
+  margin: 0 0 var(--sp-3);
+}
+
+/* A row of controls that wraps instead of running off the card. */
+.row-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: center;
+  margin-top: var(--sp-3);
+}
+
+.rule-list {
+  display: grid;
+  gap: 0;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule-row {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4) 0;
+  border-top: var(--rule) solid var(--paper-edge);
+}
+
+.rule-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.rule-text {
+  margin: 0;
+}
+
+.rule-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+  margin: 0;
+  font-size: var(--step--1);
+}
+
+.rule-row .row-controls {
+  margin-top: 0;
+  gap: var(--sp-2);
+}
+
+.rule-new {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: var(--rule) solid var(--paper-edge);
 }
