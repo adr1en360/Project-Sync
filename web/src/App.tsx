@@ -1,4 +1,10 @@
-import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { getHealth, type Health } from "./api/client";
 import { useHashRoute } from "./hooks/useHashRoute";
 import { useInternals } from "./hooks/useInternals";
@@ -10,8 +16,9 @@ import { Review } from "./screens/Review";
 import { Run } from "./screens/Run";
 import { Voice } from "./screens/Voice";
 import { TABS, type TabId } from "./nav";
-import { Button } from "./ui/Button";
+import { Menu, type MenuItem } from "./ui/Menu";
 import { Switch } from "./ui/Switch";
+import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
 
 /**
  * The shell: the masthead, the six tabs, the three controls, and the canvas
@@ -21,10 +28,27 @@ import { Switch } from "./ui/Switch";
  * screen works and the service needs no catch-all route.
  */
 
+/** The sentence of the product. It is the same sentence as the submission. */
+const TAGLINE = "Turn shipped code into career assets in one click";
+
 const MODE_WORD: Record<Mode, string> = {
   system: "Follow the machine",
   light: "Light",
   dark: "Dark",
+};
+
+/**
+ * The icon of each mode.
+ *
+ * The control is an icon and no word, because the masthead holds six tabs and
+ * three controls, and the word was the widest thing in it. The mode is still in
+ * the name of the button and in the tooltip, so nothing is lost to a screen
+ * reader or to a slow pointer.
+ */
+const MODE_ICON: Record<Mode, () => ReactNode> = {
+  system: () => <AutoIcon />,
+  light: () => <SunIcon />,
+  dark: () => <MoonIcon />,
 };
 
 const HUE_WORD: Record<Hue, string> = {
@@ -32,6 +56,12 @@ const HUE_WORD: Record<Hue, string> = {
   violet: "Violet",
   rose: "Rose",
 };
+
+const HUE_ITEMS: readonly MenuItem[] = HUES.map((name) => ({
+  id: name,
+  label: HUE_WORD[name],
+  hue: HUE_NUMBER[name],
+}));
 
 type ScreenProps = {
   internals: boolean;
@@ -46,7 +76,7 @@ type ScreenProps = {
  */
 const SCREEN: Record<TabId, (props: ScreenProps) => ReactNode> = {
   intake: () => <Intake />,
-  run: () => <Run />,
+  run: ({ internals }) => <Run internals={internals} />,
   review: () => <Review />,
   portfolio: () => <Portfolio />,
   library: ({ internals }) => <Library internals={internals} />,
@@ -64,7 +94,7 @@ export default function App() {
         <div className="brand">
           <span className="brand-mark" aria-hidden="true" />
           <span>ProjectSync</span>
-          <span className="brand-quiet">the gate before you publish</span>
+          <span className="brand-quiet">{TAGLINE}</span>
         </div>
 
         <nav className="nav" aria-label="Screens">
@@ -89,28 +119,36 @@ export default function App() {
         </nav>
 
         <div className="controls">
-          <Button
-            tone="quiet"
+          <button
+            type="button"
+            className="btn btn-quiet btn-icon"
             onClick={cycleMode}
-            title="Follow the machine, then light, then dark"
+            aria-label={`Theme: ${MODE_WORD[mode]}`}
+            title={`Theme: ${MODE_WORD[mode]}. Press for the next one.`}
           >
-            <span className="quiet">Theme</span> {MODE_WORD[mode]}
-          </Button>
+            {MODE_ICON[mode]()}
+          </button>
 
-          <div className="hue-set" role="group" aria-label="Accent colour">
-            {HUES.map((name) => (
-              <button
-                key={name}
-                type="button"
+          <Menu
+            ariaLabel={`Accent colour: ${HUE_WORD[hue]}`}
+            items={HUE_ITEMS}
+            current={hue}
+            onPick={(id) => {
+              // The list holds the three names, so a value that is not one of
+              // them cannot arrive. The search keeps the type without a cast.
+              const next = HUES.find((name) => name === id);
+              if (next !== undefined) {
+                setHue(next);
+              }
+            }}
+            trigger={
+              <span
                 className="hue-dot"
-                style={{ "--dot-h": HUE_NUMBER[name] } as CSSProperties}
-                aria-pressed={name === hue}
-                aria-label={HUE_WORD[name]}
-                title={HUE_WORD[name]}
-                onClick={() => setHue(name)}
+                aria-hidden="true"
+                style={{ "--dot-h": HUE_NUMBER[hue] } as CSSProperties}
               />
-            ))}
-          </div>
+            }
+          />
 
           <Switch
             pressed={internals}

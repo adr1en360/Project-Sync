@@ -8,8 +8,9 @@ import { TABS } from "./nav";
  * The shell.
  *
  * The tests are the promise of stage F3: every screen opens, the theme moves
- * through the three modes, a preset changes the hue, the internals appear and
- * go away again, and the three choices come back after a reload.
+ * through the three modes, the accent menu changes the hue and answers the
+ * keyboard, the internals appear and go away again on the shell and on the run
+ * screen, and the three choices come back after a reload.
  */
 
 const OK = {
@@ -93,20 +94,58 @@ it("moves the theme through the three modes", async () => {
   expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
 });
 
-it("changes the hue with a preset", async () => {
+/** The button of the accent menu. Its name carries the value that is on. */
+function accentMenu(current: string) {
+  return screen.getByRole("button", { name: `Accent colour: ${current}` });
+}
+
+it("changes the hue with the accent menu", async () => {
   const person = userEvent.setup();
   render(<App />);
 
-  await person.click(screen.getByRole("button", { name: "Rose" }));
+  await person.click(accentMenu("Azure"));
+  await person.click(screen.getByRole("menuitemradio", { name: "Rose" }));
+
   expect(document.documentElement.getAttribute("data-hue")).toBe("rose");
-  expect(screen.getByRole("button", { name: "Rose" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  // The menu closes after a choice, and the button now names Rose.
+  expect(screen.queryByRole("menu")).toBeNull();
+  expect(accentMenu("Rose")).toBeInTheDocument();
 
   // Azure is the value of the token file, so it writes no attribute.
-  await person.click(screen.getByRole("button", { name: "Azure" }));
+  await person.click(accentMenu("Rose"));
+  await person.click(screen.getByRole("menuitemradio", { name: "Azure" }));
   expect(document.documentElement.hasAttribute("data-hue")).toBe(false);
+});
+
+it("closes the accent menu with Esc and gives the focus back", async () => {
+  const person = userEvent.setup();
+  render(<App />);
+  const opener = accentMenu("Azure");
+
+  await person.click(opener);
+  expect(screen.getByRole("menu")).toBeInTheDocument();
+
+  await person.keyboard("{Escape}");
+
+  expect(screen.queryByRole("menu")).toBeNull();
+  expect(opener).toHaveFocus();
+});
+
+it("shows the name of each node on the run screen with internals on", async () => {
+  const person = userEvent.setup();
+  render(<App />);
+
+  await person.click(tabControl("Run"));
+
+  // The name is in the page and the reveal is shut, so nothing reads it.
+  const reveal = () =>
+    screen.getByText("scan_github_repository").closest(".reveal");
+  expect(reveal()).toHaveAttribute("aria-hidden", "true");
+
+  await person.click(screen.getByRole("button", { name: "Internals" }));
+
+  expect(reveal()).not.toHaveAttribute("aria-hidden");
+  expect(screen.getByText("persist_transaction")).toBeInTheDocument();
 });
 
 it("reveals the internals and hides them again", async () => {
