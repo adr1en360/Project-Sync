@@ -2,7 +2,7 @@
  * The store of the choices of a person.
  *
  * The three choices of the interface are the mode, the accent preset and the
- * internals switch. Each one goes in `localStorage`, so the choice comes back
+ * "Show more" control. Each one goes in `localStorage`, so the choice comes back
  * after a reload.
  *
  * Every call is inside a `try`. A browser can refuse storage in a private
