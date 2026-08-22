@@ -15,16 +15,17 @@ The status endpoint polls. A graph workflow does not support live streaming, so
 the client asks again and does not hold a stream open.
 
 The endpoints are in the `routes` package, one module for each group. This module
-makes the application, adds the middleware, mounts the static files, and includes
-each router. Two routes stay here, because they belong to the application and not
-to one phase: the review desk at `/` and the health check at `/healthz`.
+makes the application, adds the middleware, mounts the built interface, and
+includes each router. Two routes stay here, because they belong to the
+application and not to one phase: the interface at `/` and the health check at
+`/healthz`.
 
 This module also serves the interface. Vite makes a React application into
 `web/dist`, and this module sends those files. One container holds the API and
 the interface together, so the deploy stays at one Cloud Run service.
 
-The old desk in `static/` stays available while the rebuild is in progress. A
-machine that did not run the Vite build gets the old desk at `/`.
+A machine that did not run the Vite build has no page to send, and `/` then
+answers 503 with the command that makes the files.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -90,11 +91,6 @@ if config.ALLOWED_ORIGINS:
         allow_headers=["Content-Type"],
     )
 
-# The old review desk. The React interface replaces it, and this mount stays
-# until the last stage of the rebuild removes the folder.
-_STATIC_DIR = Path(__file__).parent / "static"
-app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
-
 # The React interface. Vite writes the files to `web/dist`, and the build runs
 # before the deploy. The mount goes on only if the folder is present, because a
 # machine that did not run the build must still start.
@@ -143,19 +139,26 @@ def _no_credentials(request: Request, error: DefaultCredentialsError) -> JSONRes
 
 
 @app.get("/", include_in_schema=False)
-def review_desk() -> FileResponse:
+def interface() -> FileResponse:
     """Give the interface.
 
     The route is explicit and not a mount at the root path. A mount at the root
     path can hide an API route, and this way the order of the routes is clear.
 
-    The React page comes first. A machine that did not run the Vite build gets
-    the old desk, so the interface works at each step of the rebuild.
+    Vite writes the page, and the build runs before the deploy. A machine with no
+    build gets a 503 that names the command, because a stack trace about an absent
+    file does not say what to do.
     """
-    react_page = _WEB_DIST / "index.html"
-    if react_page.is_file():
-        return FileResponse(react_page)
-    return FileResponse(_STATIC_DIR / "index.html")
+    page = _WEB_DIST / "index.html"
+    if not page.is_file():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The interface is not built. Run `npm ci` and `npm run build` in "
+                "`web/`, then start the service again."
+            ),
+        )
+    return FileResponse(page)
 
 
 @app.get("/healthz")
