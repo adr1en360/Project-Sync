@@ -125,34 +125,9 @@
   gap: var(--sp-2);
 }
 
-/* The three presets of the accent hue. Each one is a small square of its own
- * colour, so the choice shows the result. */
-.hue-set {
-  display: flex;
-  gap: var(--sp-1);
-  padding: var(--sp-1);
-  border: var(--rule) solid var(--paper-edge);
-  border-radius: var(--r-pill);
-}
-
-.hue-dot {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: var(--rule) solid transparent;
-  border-radius: 50%;
-  background: oklch(0.55 0.15 var(--dot-h));
-  cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-
-.hue-dot:hover {
-  transform: scale(1.12);
-}
-
-.hue-dot[aria-pressed="true"] {
-  border-color: var(--ink);
-}
+/* The three presets of the accent hue live in a menu now, and `ui.css` holds
+ * the swatch. Three buttons and a word for the theme were the widest part of
+ * the masthead, and the tabs had to give up the space. */
 
 /* ---- The canvas ---- */
 
@@ -209,6 +184,14 @@
 }
 
 /* ---- The narrow screens ---- */
+
+/* The sentence of the product goes out first. The tabs are the way through the
+ * product and the sentence is not, so the tabs keep the space. */
+@media (max-width: 1240px) {
+  .brand-quiet {
+    display: none;
+  }
+}
 
 /* The side column goes under the main column. It is one column of content and
  * not a drawer, so nothing is out of reach. */

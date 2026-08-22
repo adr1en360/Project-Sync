@@ -359,6 +359,91 @@ kbd {
   background: currentcolor;
 }
 
+/* ---- The icon button ---- */
+
+/* A button with an icon and no word. The name of the control carries the word,
+ * so the masthead keeps the space and a screen reader keeps the meaning. The
+ * square is 34px, which is over the 24px that WCAG 2.5.8 asks for. */
+.btn-icon {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+}
+
+/* ---- The menu ---- */
+
+.menu-wrap {
+  position: relative;
+}
+
+.menu-trigger {
+  gap: var(--sp-2);
+  min-height: 34px;
+  padding: 0 var(--sp-2);
+}
+
+/* The list sits over the page and not in the flow, so the masthead does not
+ * change height when the list opens. */
+.menu-pop {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 1px;
+  min-width: 11rem;
+  padding: var(--sp-2);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-md);
+  background: var(--paper-raised);
+  animation: menu-in var(--dur-fast) var(--ease-out) both;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-quiet);
+  font: inherit;
+  font-size: var(--step--1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+.menu-item[aria-checked="true"] {
+  color: var(--ink);
+}
+
+/* The mark of the value that is on. It is a second channel beside the colour
+ * of the text, so the choice does not depend on a colour. */
+.menu-mark {
+  margin-left: auto;
+  color: var(--accent);
+}
+
+/* The swatch of an accent preset. It shows the result of the choice, and a
+ * word cannot do that. */
+.hue-dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: oklch(0.55 0.15 var(--dot-h));
+}
+
 /* ---- Small helpers ---- */
 
 .mono {
