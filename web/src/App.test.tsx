@@ -9,8 +9,8 @@ import { TABS } from "./nav";
  *
  * The tests are the promise of stage F3: every screen opens, the theme moves
  * through the three modes, the accent menu changes the hue and answers the
- * keyboard, the internals appear and go away again on the shell and on the run
- * screen, and the three choices come back after a reload.
+ * keyboard, the run screen shows the name of each node and no other screen
+ * offers that control, and the choices come back after a reload.
  */
 
 const OK = {
@@ -50,6 +50,11 @@ afterEach(() => {
 
 function tabControl(label: string) {
   return screen.getByRole("button", { name: new RegExp(label) });
+}
+
+/** The control of the run screen. It must exist on that screen only. */
+function showMore() {
+  return screen.queryByRole("button", { name: "Show more" });
 }
 
 it("opens every screen", async () => {
@@ -131,7 +136,21 @@ it("closes the accent menu with Esc and gives the focus back", async () => {
   expect(opener).toHaveFocus();
 });
 
-it("shows the name of each node on the run screen with internals on", async () => {
+it("offers the Show more control on the run screen only", async () => {
+  const person = userEvent.setup();
+  render(<App />);
+
+  // Intake is the first screen, and it has no detail to show.
+  expect(showMore()).toBeNull();
+
+  await person.click(tabControl("Run"));
+  expect(showMore()).toBeInTheDocument();
+
+  await person.click(tabControl("Library"));
+  expect(showMore()).toBeNull();
+});
+
+it("shows the name of each node when Show more is on", async () => {
   const person = userEvent.setup();
   render(<App />);
 
@@ -142,46 +161,32 @@ it("shows the name of each node on the run screen with internals on", async () =
     screen.getByText("scan_github_repository").closest(".reveal");
   expect(reveal()).toHaveAttribute("aria-hidden", "true");
 
-  await person.click(screen.getByRole("button", { name: "Internals" }));
+  const control = showMore();
+  if (control === null) {
+    throw new Error("The run screen must hold the Show more control.");
+  }
+  await person.click(control);
 
   expect(reveal()).not.toHaveAttribute("aria-hidden");
   expect(screen.getByText("persist_transaction")).toBeInTheDocument();
 });
 
-it("reveals the internals and hides them again", async () => {
+it("keeps the choices after a reload", async () => {
   const person = userEvent.setup();
-  render(<App />);
-
-  expect(screen.queryByRole("region", { name: "Service" })).toBeNull();
-
-  await person.click(screen.getByRole("button", { name: "Internals" }));
-  expect(await screen.findByRole("region", { name: "Service" })).toHaveTextContent(
-    "gemini-3.5-flash",
-  );
-
-  await person.click(screen.getByRole("button", { name: "Internals" }));
-  expect(screen.queryByRole("region", { name: "Service" })).toBeNull();
-});
-
-it("keeps the three choices after a reload", async () => {
   window.localStorage.setItem("projectsync.mode", "dark");
   window.localStorage.setItem("projectsync.hue", "rose");
-  window.localStorage.setItem("projectsync.internals", "on");
+  window.localStorage.setItem("projectsync.showmore", "on");
 
   render(<App />);
 
   expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   expect(document.documentElement.getAttribute("data-hue")).toBe("rose");
-  expect(await screen.findByRole("region", { name: "Service" })).toBeInTheDocument();
-});
 
-it("shows the model that the service reports", async () => {
-  const person = userEvent.setup();
-  render(<App />);
-
-  await person.click(screen.getByRole("button", { name: "Internals" }));
-
-  expect(await screen.findByText("gemini-3.5-flash")).toBeInTheDocument();
+  await person.click(tabControl("Run"));
+  expect(showMore()).toHaveAttribute("aria-pressed", "true");
+  expect(
+    screen.getByText("scan_github_repository").closest(".reveal"),
+  ).not.toHaveAttribute("aria-hidden");
 });
 
 it("shows the detail text when the service refuses", async () => {

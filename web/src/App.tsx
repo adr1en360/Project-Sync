@@ -5,9 +5,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { getHealth, type Health } from "./api/client";
+import { getHealth } from "./api/client";
 import { useHashRoute } from "./hooks/useHashRoute";
-import { useInternals } from "./hooks/useInternals";
 import { HUES, HUE_NUMBER, useTheme, type Hue, type Mode } from "./hooks/useTheme";
 import { Intake } from "./screens/Intake";
 import { Library } from "./screens/Library";
@@ -17,12 +16,15 @@ import { Run } from "./screens/Run";
 import { Voice } from "./screens/Voice";
 import { TABS, type TabId } from "./nav";
 import { Menu, type MenuItem } from "./ui/Menu";
-import { Switch } from "./ui/Switch";
 import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
 
 /**
- * The shell: the masthead, the six tabs, the three controls, and the canvas
- * that holds one screen.
+ * The shell: the masthead, the six tabs, the two controls, and the canvas that
+ * holds one screen.
+ *
+ * The masthead holds only what acts on every screen, which is the theme and the
+ * accent colour. A control that acts on one screen lives on that screen. The
+ * run screen owns its "Show more" control for this reason.
  *
  * There is no router. The tab is the state of the hash, so a link to one
  * screen works and the service needs no catch-all route.
@@ -40,10 +42,10 @@ const MODE_WORD: Record<Mode, string> = {
 /**
  * The icon of each mode.
  *
- * The control is an icon and no word, because the masthead holds six tabs and
- * three controls, and the word was the widest thing in it. The mode is still in
- * the name of the button and in the tooltip, so nothing is lost to a screen
- * reader or to a slow pointer.
+ * The control is an icon and no word, because the masthead holds six tabs, and
+ * the word was the widest thing in it. The mode is still in the name of the
+ * button and in the tooltip, so nothing is lost to a screen reader or to a slow
+ * pointer.
  */
 const MODE_ICON: Record<Mode, () => ReactNode> = {
   system: () => <AutoIcon />,
@@ -63,10 +65,6 @@ const HUE_ITEMS: readonly MenuItem[] = HUES.map((name) => ({
   hue: HUE_NUMBER[name],
 }));
 
-type ScreenProps = {
-  internals: boolean;
-};
-
 /**
  * One screen for each tab.
  *
@@ -74,18 +72,17 @@ type ScreenProps = {
  * tab has no screen. This is the same rule that `labels.ts` follows for the
  * copy of each state.
  */
-const SCREEN: Record<TabId, (props: ScreenProps) => ReactNode> = {
+const SCREEN: Record<TabId, () => ReactNode> = {
   intake: () => <Intake />,
-  run: ({ internals }) => <Run internals={internals} />,
+  run: () => <Run />,
   review: () => <Review />,
   portfolio: () => <Portfolio />,
-  library: ({ internals }) => <Library internals={internals} />,
+  library: () => <Library />,
   voice: () => <Voice />,
 };
 
 export default function App() {
   const { mode, hue, setHue, cycleMode } = useTheme();
-  const { internals, toggleInternals } = useInternals();
   const { tab, go } = useHashRoute();
 
   return (
@@ -149,14 +146,6 @@ export default function App() {
               />
             }
           />
-
-          <Switch
-            pressed={internals}
-            onToggle={toggleInternals}
-            title="Show the name of each node of the graph and the time it took"
-          >
-            Internals
-          </Switch>
         </div>
       </header>
 
@@ -164,9 +153,9 @@ export default function App() {
         {/* The key makes React put a new element here for each tab, and the
             `pane` class then plays the entry of the screen. */}
         <div className="pane" key={tab}>
-          {SCREEN[tab]({ internals })}
+          {SCREEN[tab]()}
         </div>
-        <ServiceLine internals={internals} />
+        <ServiceLine />
       </main>
     </div>
   );
@@ -175,21 +164,20 @@ export default function App() {
 /**
  * The state of the service.
  *
- * A failure is shown to every person, because a person cannot use the product
- * if the service is down. The other numbers are for a person who asked for the
- * internals, so they sit inside the reveal.
+ * Only a failure is shown, because a person cannot use the product if the
+ * service is down. The model and the configuration were here until 2026-08-22,
+ * behind a switch, and they told a person nothing they could act on. Stage F4
+ * reads this same call again for the fixture badge, which is a fact a person
+ * does act on, because it says whether a run costs a model call.
  */
-function ServiceLine({ internals }: ScreenProps) {
-  const [health, setHealth] = useState<Health | null>(null);
+function ServiceLine() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
     getHealth().then(
-      (value) => {
-        if (live) {
-          setHealth(value);
-        }
+      () => {
+        // The service answered. There is nothing to say.
       },
       (reason: unknown) => {
         if (live) {
@@ -202,50 +190,13 @@ function ServiceLine({ internals }: ScreenProps) {
     };
   }, []);
 
-  if (error !== null) {
-    return (
-      <p className="field-error" role="alert" style={{ marginTop: "var(--sp-10)" }}>
-        The service did not answer. {error}
-      </p>
-    );
+  if (error === null) {
+    return null;
   }
 
   return (
-    <div
-      className="reveal"
-      data-open={internals ? "true" : "false"}
-      aria-hidden={internals ? undefined : true}
-    >
-      <div className="reveal-body">
-        <section
-          aria-label="Service"
-          className="mono faint"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "var(--sp-4)",
-            margin: "var(--sp-10) 0 0",
-            fontSize: "var(--step--1)",
-          }}
-        >
-          {health === null ? (
-            <span>waiting for the service</span>
-          ) : (
-            <>
-              <span>service {health.status}</span>
-              <span>
-                model <span>{health.model}</span>
-              </span>
-              <span>vertex {health.use_vertex_ai ? "on" : "off"}</span>
-              <span>
-                {health.missing_config.length === 0
-                  ? "config complete"
-                  : `missing ${health.missing_config.join(" ")}`}
-              </span>
-            </>
-          )}
-        </section>
-      </div>
-    </div>
+    <p className="field-error" role="alert" style={{ marginTop: "var(--sp-10)" }}>
+      The service did not answer. {error}
+    </p>
   );
 }
