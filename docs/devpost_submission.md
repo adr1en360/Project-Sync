@@ -3,6 +3,15 @@
 Draft for the Taskmaster track, All Things Agentic Hackathon. Paste each section into
 the matching Devpost field. Written 2026-08-21.
 
+## Tagline
+
+> Turn shipped code into career assets in one click
+
+This is the tagline in the Devpost form, and it is the sentence in the masthead of the
+interface. The two were different until 2026-08-22, when the interface said something
+else. Keep them the same. The tagline belongs in this file so a change happens in one
+place.
+
 ## Inspiration
 
 I build a lot of projects. Hackathon entries, side tools, things I start on a weekend
