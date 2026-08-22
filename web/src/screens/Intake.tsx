@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
+import { triggerSync } from "../api/client";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
@@ -8,11 +9,54 @@ import { ScreenHead } from "./ScreenHead";
 /**
  * Step 1. The repository.
  *
- * Stage F3 gives the shape of the screen and the controls. Stage F4 joins the
- * form to `POST /sync` and moves the person to the run screen.
+ * The form sends `POST /api/v1/trigger-sync`, and the service answers at once
+ * with the id of the transaction. The graph then runs behind the request, so
+ * this screen hands the id to the shell and the shell opens the run screen.
+ *
+ * The field sends the text as the person wrote it. The service accepts every
+ * form, from `owner/name` to a deep URL, and it holds the one judgement of what
+ * a repository name is. A second judgement here could only disagree with it.
  */
 
-export function Intake() {
+type Props = {
+  /** Called with the id of the transaction when the service accepts the form. */
+  onStarted: (txId: string) => void;
+};
+
+export function Intake({ onStarted }: Props) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  function submit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const repo = value.trim();
+    if (repo === "") {
+      setError("Give the owner and the name of a repository.");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    triggerSync(repo).then(
+      (started) => {
+        setBusy(false);
+        onStarted(started.transaction_id);
+      },
+      (reason: unknown) => {
+        setBusy(false);
+        setError(reason instanceof Error ? reason.message : String(reason));
+      },
+    );
+  }
+
+  function keyDown(event: KeyboardEvent<HTMLInputElement>): void {
+    if (event.key === "Escape") {
+      setValue("");
+      setError(null);
+    }
+  }
+
   return (
     <>
       <ScreenHead
@@ -26,7 +70,9 @@ export function Intake() {
           className="wide"
           style={{ "--index": 0 } as CSSProperties}
         >
-          <div style={{ display: "grid", gap: "var(--sp-5)" }}>
+          {/* A form, so Enter in the field starts the run and the browser gives
+              the keyboard path for nothing. */}
+          <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-5)" }}>
             <Field
               label="Owner and name"
               placeholder="owner/repository"
@@ -34,16 +80,20 @@ export function Intake() {
               autoComplete="off"
               spellCheck={false}
               help="A public repository, or a private one that your token can read."
+              error={error ?? undefined}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              onKeyDown={keyDown}
             />
             <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}>
-              <Button tone="primary" disabled>
-                Read the repository
+              <Button type="submit" tone="primary" busy={busy}>
+                {busy ? "Reading the repository" : "Read the repository"}
               </Button>
               <span className="faint" style={{ fontSize: "var(--step--1)" }}>
-                Stage F4 joins this control to the service.
+                The run stops before anything is published.
               </span>
             </div>
-          </div>
+          </form>
         </Card>
 
         <Card title="What happens next" style={{ "--index": 1 } as CSSProperties}>

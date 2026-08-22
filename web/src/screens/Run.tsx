@@ -1,6 +1,12 @@
+import { useEffect, useRef } from "react";
+import type { TransactionStatus } from "../api/types";
 import { useShowMore } from "../hooks/useShowMore";
+import { useTransaction } from "../hooks/useTransaction";
+import { GRAPH_NAME, NODE_ORDER, STATUS, STATUS_TONE } from "../labels";
+import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Mark } from "../ui/Mark";
+import { Skeleton } from "../ui/Skeleton";
 import { Switch } from "../ui/Switch";
 import { Tag } from "../ui/Tag";
 import { ScreenHead } from "./ScreenHead";
@@ -8,39 +14,68 @@ import { ScreenHead } from "./ScreenHead";
 /**
  * Step 2. The graph at work.
  *
- * The seven rows are the seven nodes of the Phase 1 graph. Stage F3 shows the
- * rows, the marks and the name of each node. Stage F4 drives them from
- * `GET /transactions/{id}/events`, and it brings the cancel control and the
- * resume control with it.
+ * The seven rows are the seven nodes of the Phase 1 graph, and they come from
+ * `GET /transactions/{id}/events`. The order is the order of the graph, so the
+ * rows stand still and the marks move.
+ *
+ * The two controls of a run are here, and each one shows only in the state that
+ * the service accepts for it. `useTransaction` holds that rule.
+ *
+ * With no id in the address the screen still lists the seven steps, all of them
+ * waiting. The steps are what the product does, so they are worth reading before
+ * a run exists.
  *
  * The screen holds its own "Show more" control. Off, each row is one short
- * sentence. On, each row also shows the name of the node that does the work,
- * and the rail names the graph. Stage F4 adds the time of each node to the
- * same reveal.
+ * sentence. On, each row also shows the name of the node and the time it took,
+ * and the rail names the graph and counts the events.
  */
 
-type State = "pass" | "work" | "wait";
-
-const STEPS: readonly { label: string; node: string; state: State }[] = [
-  { label: "Read the repository", node: "scan_github_repository", state: "pass" },
-  { label: "Understand the project", node: "extraction_agent", state: "pass" },
-  { label: "Attach your voice rules", node: "attach_style_rules", state: "work" },
-  { label: "Write the four drafts", node: "asset_generator_agent", state: "wait" },
-  { label: "Choose what to check", node: "select_evaluator_input", state: "wait" },
-  { label: "Check it is safe to show", node: "path_evaluator_agent", state: "wait" },
-  { label: "Save it and stop for you", node: "persist_transaction", state: "wait" },
-];
-
-const WORD: Record<State, string> = {
-  pass: "Done",
-  work: "At work",
-  wait: "Waiting",
+type Props = {
+  /** The transaction id from the address, or null when no run is open. */
+  txId: string | null;
+  /** Say something that a person did not ask to happen. */
+  announce: (text: string) => void;
+  /** Open the review desk. Called when the run stops and waits for a person. */
+  onDone: (txId: string) => void;
 };
 
-export function Run() {
+/** Show a time that a person can read. Under a second still reads as a time. */
+function seconds(ms: number): string {
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+export function Run({ txId, announce, onDone }: Props) {
   const { more, toggleMore } = useShowMore();
   const open = more ? "true" : "false";
   const shut = more ? undefined : true;
+  const { tx, rows, events, done, error, loading, busy, canCancel, canResume, cancel, resume } =
+    useTransaction(txId);
+
+  const status = tx?.status ?? null;
+
+  /**
+   * The state that this screen showed before the state it shows now.
+   *
+   * The move to the review desk needs the change and not the state. A person who
+   * comes back to this screen after a run finished must stay on it, so the move
+   * fires only at the moment the run leaves RUNNING while they watch.
+   */
+  const before = useRef<TransactionStatus | null>(null);
+
+  // The end of a run is a change that a person did not ask for at that moment,
+  // so it is said out loud. A run that stops and waits also opens the next step,
+  // because the three steps carry the person and need no tab press.
+  useEffect(() => {
+    const last = before.current;
+    before.current = status;
+    if (status === null || status === "RUNNING") {
+      return;
+    }
+    announce(`The run is finished. ${STATUS[status]}.`);
+    if (last === "RUNNING" && status === "PENDING_APPROVAL" && txId !== null) {
+      onDone(txId);
+    }
+  }, [status, txId, announce, onDone]);
 
   return (
     <>
@@ -62,50 +97,71 @@ export function Run() {
       </div>
 
       <div className="layout">
-        <Card title="The steps" note="An example, until stage F4">
-          <ol
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              display: "grid",
-              gap: "var(--sp-1)",
-            }}
-          >
-            {STEPS.map((step) => (
-              <li
-                key={step.node}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr auto",
-                  alignItems: "start",
-                  gap: "var(--sp-3)",
-                  padding: "var(--sp-3) 0",
-                  borderTop: "var(--rule) solid var(--paper-edge)",
-                }}
-              >
-                <Mark state={step.state} />
-                <div style={{ minWidth: 0 }}>
-                  <span>{step.label}</span>
-                  {/* The name of the node. The reveal keeps it out of the page
-                      when the control is off, so the row is one sentence. */}
-                  <div className="reveal" data-open={open} aria-hidden={shut}>
-                    <div className="reveal-body">
-                      <span
-                        className="mono faint"
-                        style={{ display: "block", fontSize: "var(--step--1)" }}
-                      >
-                        {step.node}
-                      </span>
+        <Card
+          title="The steps"
+          note={
+            loading
+              ? "Reading"
+              : txId === null
+                ? "No run yet"
+                : `${done} of ${NODE_ORDER.length} done`
+          }
+        >
+          {/* While the first read is out, the rows are a skeleton of themselves.
+              The fold of an empty log gives seven waiting rows, so without this
+              a person who opens a run that already finished reads a run that has
+              not started, for as long as the service takes to answer. */}
+          {loading ? (
+            <ol className="node-list" aria-busy="true">
+              {NODE_ORDER.map((node) => (
+                <li key={node} className="node-row" data-state="wait">
+                  <Skeleton width="0.7rem" height="0.7rem" radius="999px" />
+                  <Skeleton width="11rem" height="0.9rem" />
+                  <Skeleton width="3.5rem" height="0.9rem" />
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <ol className="node-list">
+              {rows.map((row) => (
+                <li key={row.node} className="node-row" data-state={row.state}>
+                  {/* The key is the state, so React puts a new element here when
+                      the state changes and the mark can fade in. */}
+                  <Mark key={row.state} state={row.state} />
+                  <div style={{ minWidth: 0 }}>
+                    <span>{row.label}</span>
+                    {/* The name of the node. The reveal keeps it out of the page
+                        when the control is off, so the row is one sentence. */}
+                    <div className="reveal" data-open={open} aria-hidden={shut}>
+                      <div className="reveal-body">
+                        <span
+                          className="mono faint"
+                          style={{ display: "block", fontSize: "var(--step--1)" }}
+                        >
+                          {row.node}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span className="faint" style={{ fontSize: "var(--step--1)" }}>
-                  {WORD[step.state]}
-                </span>
-              </li>
-            ))}
-          </ol>
+                  <div style={{ textAlign: "right" }}>
+                    <span className="faint" style={{ fontSize: "var(--step--1)" }}>
+                      {row.word}
+                    </span>
+                    <div className="reveal" data-open={open} aria-hidden={shut}>
+                      <div className="reveal-body">
+                        <span
+                          className="mono faint node-time"
+                          style={{ display: "block", fontSize: "var(--step--1)" }}
+                        >
+                          {row.ms === null ? "" : seconds(row.ms)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
         </Card>
 
         <aside className="rail">
@@ -123,13 +179,63 @@ export function Run() {
           >
             <dt className="quiet">State</dt>
             <dd style={{ margin: 0 }}>
-              <Tag tone="hold">Waiting for you</Tag>
+              {status === null ? (
+                <span className="faint">{loading ? "Reading" : "No run yet"}</span>
+              ) : (
+                <Tag tone={STATUS_TONE[status]}>{STATUS[status]}</Tag>
+              )}
+            </dd>
+            <dt className="quiet">Repository</dt>
+            <dd className="mono" style={{ margin: 0, overflowWrap: "anywhere" }}>
+              {tx?.repo_name ?? "not started"}
             </dd>
             <dt className="quiet">Transaction</dt>
-            <dd className="mono" style={{ margin: 0 }}>
-              not started
+            <dd className="mono" style={{ margin: 0, overflowWrap: "anywhere" }}>
+              {txId ?? "not started"}
             </dd>
           </dl>
+
+          {(canCancel || canResume) && (
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--sp-3)",
+                marginTop: "var(--sp-5)",
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Each control shows only in a state that the service accepts,
+                  so neither one can be answered with 409. */}
+              {canCancel && (
+                <Button tone="quiet" busy={busy} onClick={cancel}>
+                  Stop the run
+                </Button>
+              )}
+              {canResume && (
+                <Button tone="primary" busy={busy} onClick={resume}>
+                  Run it again
+                </Button>
+              )}
+            </div>
+          )}
+
+          {canResume && (
+            <p className="quiet" style={{ fontSize: "var(--step--1)" }}>
+              A new run starts at the first step and keeps this transaction id.
+            </p>
+          )}
+
+          {tx?.error_message != null && tx.error_message !== "" && (
+            <p className="field-error" style={{ marginTop: "var(--sp-4)" }}>
+              {tx.error_message}
+            </p>
+          )}
+
+          {error !== null && (
+            <p className="field-error" role="alert" style={{ marginTop: "var(--sp-4)" }}>
+              {error}
+            </p>
+          )}
 
           <div className="reveal" data-open={open} aria-hidden={shut}>
             <div className="reveal-body">
@@ -144,11 +250,15 @@ export function Run() {
               >
                 <dt className="quiet">Graph</dt>
                 <dd className="mono faint" style={{ margin: 0 }}>
-                  projectsync_phase1
+                  {GRAPH_NAME}
                 </dd>
                 <dt className="quiet">Nodes</dt>
                 <dd className="mono faint" style={{ margin: 0 }}>
-                  {STEPS.length}
+                  {NODE_ORDER.length}
+                </dd>
+                <dt className="quiet">Events</dt>
+                <dd className="mono faint" style={{ margin: 0 }}>
+                  {events.length}
                 </dd>
               </dl>
             </div>

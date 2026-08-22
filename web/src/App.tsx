@@ -1,12 +1,12 @@
 import {
   Fragment,
-  useEffect,
+  useCallback,
   useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { getHealth } from "./api/client";
 import { useHashRoute } from "./hooks/useHashRoute";
+import { useHealth } from "./hooks/useHealth";
 import { HUES, HUE_NUMBER, useTheme, type Hue, type Mode } from "./hooks/useTheme";
 import { Intake } from "./screens/Intake";
 import { Library } from "./screens/Library";
@@ -16,6 +16,7 @@ import { Run } from "./screens/Run";
 import { Voice } from "./screens/Voice";
 import { TABS, type TabId } from "./nav";
 import { Menu, type MenuItem } from "./ui/Menu";
+import { Tag } from "./ui/Tag";
 import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
 
 /**
@@ -27,7 +28,9 @@ import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
  * run screen owns its "Show more" control for this reason.
  *
  * There is no router. The tab is the state of the hash, so a link to one
- * screen works and the service needs no catch-all route.
+ * screen works and the service needs no catch-all route. The hash also carries
+ * the id of the transaction, which gives the automatic move from one step to the
+ * next, a link to one run, and a reload that keeps its place, from one mechanism.
  */
 
 /** The sentence of the product. It is the same sentence as the submission. */
@@ -65,25 +68,84 @@ const HUE_ITEMS: readonly MenuItem[] = HUES.map((name) => ({
   hue: HUE_NUMBER[name],
 }));
 
-/**
- * One screen for each tab.
- *
- * The record is over the type of the tab, so the compiler fails the build if a
- * tab has no screen. This is the same rule that `labels.ts` follows for the
- * copy of each state.
- */
-const SCREEN: Record<TabId, () => ReactNode> = {
-  intake: () => <Intake />,
-  run: () => <Run />,
-  review: () => <Review />,
-  portfolio: () => <Portfolio />,
-  library: () => <Library />,
-  voice: () => <Voice />,
-};
-
 export default function App() {
   const { mode, hue, setHue, cycleMode } = useTheme();
-  const { tab, go } = useHashRoute();
+  const { tab, param, go } = useHashRoute();
+  const { health, error: healthError } = useHealth();
+
+  /** What was said out loud after a move that a person did not ask for. */
+  const [note, setNote] = useState("");
+
+  /**
+   * The run that is open.
+   *
+   * The id lives in the hash, and a tab press writes a hash with no id, so the
+   * shell remembers the last one. Without this, a person who opens another tab
+   * and comes back to the run screen loses the run they were watching.
+   *
+   * The first value comes from the address, so a link that a person pastes
+   * opens its run. After that only an event writes it: the start of a run, or
+   * the press of a tab. The address always wins while the run screen is open,
+   * so the screen cannot show a run that the address does not name.
+   */
+  const [openTx, setOpenTx] = useState<string | null>(() =>
+    tab === "run" ? param : null,
+  );
+  const txOnScreen = param ?? openTx;
+
+  const announce = useCallback((text: string) => {
+    setNote(text);
+  }, []);
+
+  /**
+   * Move to the run screen with the id that the service gave.
+   *
+   * The three steps carry the person, so a repository that the service accepts
+   * opens the next step by itself. The move is said out loud, because a person
+   * did not ask for it. A tab press after the move wins, because it writes the
+   * hash last, and an automatic move never fights a deliberate one.
+   */
+  const startRun = useCallback(
+    (txId: string) => {
+      setOpenTx(txId);
+      setNote("The service accepted the repository. The run screen is open.");
+      go("run", txId);
+    },
+    [go],
+  );
+
+  /**
+   * Move to the review desk, with the id of the run that waits.
+   *
+   * The run screen decides the moment and this decides where, because only the
+   * run screen knows that the state changed while the person watched. The id
+   * goes in the address, so the review desk knows which run it opens and a link
+   * to it works.
+   */
+  const openReview = useCallback(
+    (txId: string) => {
+      setOpenTx(txId);
+      setNote("The run is finished and it waits for you. The review desk is open.");
+      go("review", txId);
+    },
+    [go],
+  );
+
+  /**
+   * One screen for each tab.
+   *
+   * The record is over the type of the tab, so the compiler fails the build if a
+   * tab has no screen. This is the same rule that `labels.ts` follows for the
+   * copy of each state.
+   */
+  const screen: Record<TabId, () => ReactNode> = {
+    intake: () => <Intake onStarted={startRun} />,
+    run: () => <Run txId={txOnScreen} announce={announce} onDone={openReview} />,
+    review: () => <Review txId={txOnScreen} />,
+    portfolio: () => <Portfolio />,
+    library: () => <Library />,
+    voice: () => <Voice />,
+  };
 
   return (
     <div className="shell">
@@ -104,7 +166,14 @@ export default function App() {
                 type="button"
                 className="tab"
                 aria-current={item.id === tab ? "page" : undefined}
-                onClick={() => go(item.id)}
+                onClick={() =>
+                  go(
+                    item.id,
+                    (item.id === "run" || item.id === "review") && txOnScreen !== null
+                      ? txOnScreen
+                      : undefined,
+                  )
+                }
               >
                 {item.step !== undefined && (
                   <span className="tab-index">{item.step}</span>
@@ -116,6 +185,15 @@ export default function App() {
         </nav>
 
         <div className="controls">
+          {/* A run in fixture mode costs no model call. A free run and a paid run
+              look the same on the screen, and the free tier gives 20 requests a
+              day, so the difference is said in the masthead. */}
+          {health?.fixture_mode === true && (
+            <span title="The service answers from a fixture. A run costs no model call.">
+              <Tag tone="accent">No model calls</Tag>
+            </span>
+          )}
+
           <button
             type="button"
             className="btn btn-quiet btn-icon"
@@ -150,53 +228,27 @@ export default function App() {
       </header>
 
       <main className="canvas">
+        {/* A move that a person did not ask for is said here, and nowhere else.
+            The region is always in the page, because a region that arrives with
+            its text is not read out. */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {note}
+        </p>
+
         {/* The key makes React put a new element here for each tab, and the
             `pane` class then plays the entry of the screen. */}
         <div className="pane" key={tab}>
-          {SCREEN[tab]()}
+          {screen[tab]()}
         </div>
-        <ServiceLine />
+
+        {/* Only a failure of the service is shown. A person cannot act on the
+            model or on the configuration, so neither is reported. */}
+        {healthError !== null && (
+          <p className="field-error" role="alert" style={{ marginTop: "var(--sp-10)" }}>
+            The service did not answer. {healthError}
+          </p>
+        )}
       </main>
     </div>
-  );
-}
-
-/**
- * The state of the service.
- *
- * Only a failure is shown, because a person cannot use the product if the
- * service is down. The model and the configuration were here until 2026-08-22,
- * behind a switch, and they told a person nothing they could act on. Stage F4
- * reads this same call again for the fixture badge, which is a fact a person
- * does act on, because it says whether a run costs a model call.
- */
-function ServiceLine() {
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    getHealth().then(
-      () => {
-        // The service answered. There is nothing to say.
-      },
-      (reason: unknown) => {
-        if (live) {
-          setError(reason instanceof Error ? reason.message : String(reason));
-        }
-      },
-    );
-    return () => {
-      live = false;
-    };
-  }, []);
-
-  if (error === null) {
-    return null;
-  }
-
-  return (
-    <p className="field-error" role="alert" style={{ marginTop: "var(--sp-10)" }}>
-      The service did not answer. {error}
-    </p>
   );
 }
