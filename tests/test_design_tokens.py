@@ -11,8 +11,9 @@ guarantees of that program:
   the accent moves, the signal colours do not, and the accent keeps a chroma that
   reads as a colour.
 
-These tests take the contrast half of `tests/test_review_desk.py`. They do not
-take its id contract tests, because a React build has no id contract to break.
+These tests took the contrast half of the suite of the old interface. They did
+not take its id contract tests, because a React build has no id contract to
+break, and that suite is now deleted.
 """
 
 from __future__ import annotations
@@ -275,10 +276,10 @@ def test_the_neutrals_are_grey() -> None:
 
 
 def test_no_name_of_the_old_palette_is_here() -> None:
-    """The new palette shares no role name with the palette of `static/`.
+    """No name of the old palette comes back.
 
-    The two files live at the same time until stage F10. A shared name would make
-    one of them change the other one.
+    The palette of the old interface put `--m3-` in front of each role name. Those
+    files are deleted, so this test holds the history of the repository out.
     """
     assert "--m3-" not in CSS
 

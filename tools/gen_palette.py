@@ -48,9 +48,9 @@ The output goes to `web/src/styles/tokens.css`. Do not edit that file by hand.
 `tests/test_design_tokens.py` compares the file with the output of this program,
 so a hand edit makes the test suite fail.
 
-This file replaces nothing. `tools/gen_m3_palette.py` keeps the old palette of
-`static/`. The two files share no colour name and no output path, and the old one
-goes out with that folder at the last stage of the rebuild.
+This file is the only palette program. The old one, `tools/gen_m3_palette.py`,
+went out with the `static/` folder that it wrote to. No token name is shared with
+it, so nothing of the old palette can come back by accident.
 
 Run:
     uv run python tools/gen_palette.py            # writes the report
