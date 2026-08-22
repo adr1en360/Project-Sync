@@ -65,7 +65,7 @@ turn it back on later.
 
 ## How we built it
 
-Phase 1 is an ADK 2.0 graph `Workflow` with six nodes. Three are plain Python and three
+Phase 1 is an ADK 2.0 graph `Workflow` with seven nodes. Four are plain Python and three
 are LLM agents:
 
 ```
@@ -74,11 +74,12 @@ START
   -> extraction_agent         agent   structured metadata, output_schema
   -> attach_style_rules       code    reads ACTIVE rules from Firestore
   -> asset_generator_agent    agent   all four assets in one pass
+  -> select_evaluator_input   code    gives the evaluator the repository facts, not the drafts
   -> path_evaluator_agent     agent   publish-readiness verdict
   -> persist_transaction      code    writes PENDING_APPROVAL to Firestore
 ```
 
-The three-code-to-three-agent ratio is deliberate. Filtering a repository is exact work and
+The four-code-to-three-agent ratio is deliberate. Filtering a repository is exact work and
 a model does it worse, so the scan is code: it drops ignored directories and binary
 extensions, caps a single file at 100 KB and the whole payload at 400 KB, and keeps at most
 40 files. That filter runs before the request, not after, because a large repo will

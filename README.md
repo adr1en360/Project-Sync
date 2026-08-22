@@ -24,8 +24,9 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 - **A memory you can audit.** Style rules live in Firestore, are read fresh on
   every run, and start as `PROPOSED` — a rule only takes effect after you turn it
   on. Each transaction records which rules produced its draft.
-- **Deterministic steps stay deterministic.** Three of the six nodes are plain
-  Python: the repository scan, the rule lookup, and the Firestore write. No model
+- **Deterministic steps stay deterministic.** Four of the seven nodes are plain
+  Python: the repository scan, the rule lookup, the choice of what the evaluator
+  reads, and the Firestore write. No model
   is asked to do exact work.
 - **A review desk, not a dashboard.** The interface at `/` shows the seven graph
   nodes as a ledger, the four drafts as editable folios, and the verdict as a

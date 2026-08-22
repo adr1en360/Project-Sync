@@ -6,7 +6,7 @@ Everything a judge actually sees: the demo video script, the architecture diagra
 Active window: **Aug 28 – Aug 31**. Do not record before the core loop and the fallbacks work.
 
 ## Process
-1. **Architecture diagram** — after the graph runs end to end, not before. Must show the six nodes, both GCP services, the model, and the two commit destinations.
+1. **Architecture diagram** — after the graph runs end to end, not before. Must show the seven nodes, both GCP services, the model, and the two commit destinations.
 2. **Script the 5 scenes** (below). Write the narration out. Time it. It will be too long on the first pass.
 3. **Dry-run the demo three times.** Live scans fail on rate limits and cold starts. Know exactly how long the graph takes before you point a camera at it.
 4. **Record.** ~4 minutes. Live execution, visible GCP console.

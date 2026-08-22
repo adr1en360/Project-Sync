@@ -104,13 +104,13 @@ social draft.
 
 **Narration, roughly:**
 
-> "My hands are off the keyboard. This is an ADK graph workflow on Cloud Run — six nodes.
-> Three of them are ordinary Python: the repository scan, loading my style rules, and the
-> Firestore write. Three are Gemini 3.7 Flash calls. The scan filtered a hundred and
+> "My hands are off the keyboard. This is an ADK graph workflow on Cloud Run — seven nodes.
+> Four of them are ordinary Python: the repository scan, loading my style rules, choosing
+> what the evaluator reads, and the Firestore write. Three are Gemini 3.7 Flash calls. The scan filtered a hundred and
 > forty-two files down to thirty-eight that carry signal, which is why this fits in one
 > context window and does not cost a fortune. Four assets, one generation pass."
 
-**Say "three of the six nodes are plain Python" out loud.** It is the sentence that separates
+**Say "four of the seven nodes are plain Python" out loud.** It is the sentence that separates
 this from a wrapper, and the architecture criterion is 30%.
 
 > ⚠️ **Do not fake a progress stream.** Graph workflows do not support live streaming
