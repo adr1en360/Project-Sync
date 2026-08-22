@@ -77,7 +77,7 @@ body,
   animation: pane-in var(--dur-base) var(--ease-out) both;
 }
 
-/* #15 The internals reveal. The rows of the grid go from no height to the
+/* #15 The reveal of the detail. The rows of the grid go from no height to the
  * height of the content. `visibility` waits for the end of the collapse, so
  * the keyboard cannot reach a control that a person cannot see. */
 .reveal {

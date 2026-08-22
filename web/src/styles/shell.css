@@ -125,6 +125,17 @@
   gap: var(--sp-2);
 }
 
+/* The controls of one screen sit in this row, under the head of the screen.
+ * A control that changes one screen must not show on the other five, so the
+ * masthead holds only the theme and the accent colour. */
+.screen-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
 /* The three presets of the accent hue live in a menu now, and `ui.css` holds
  * the swatch. Three buttons and a word for the theme were the widest part of
  * the masthead, and the tabs had to give up the space. */
