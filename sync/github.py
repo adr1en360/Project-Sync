@@ -133,11 +133,36 @@ def commit_assets(
     """
     results = CommitResults()
     slug = slugify(project_name)
-    client = _client()
+
+    # Fixture mode writes no commit.
+    #
+    # A person must be able to walk the whole product with no model call and no
+    # token, and the approval is the last step of that walk. Without this branch
+    # the walk stops here, because a fixture run has no repository to write to.
+    # The two values say `fixture`, so no one can read one as a commit that a
+    # repository holds.
+    if config.FIXTURE_MODE:
+        results.doc_commit_sha = f"fixture-doc-{slug}"
+        results.card_commit_sha = f"fixture-card-{slug}"
+        logger.info("Fixture mode: no commit is written for %s.", slug)
+        return results
 
     if not config.PORTFOLIO_DATA_REPO:
         results.doc_error = "PORTFOLIO_DATA_REPO is not set."
         results.card_error = "PORTFOLIO_DATA_REPO is not set."
+        return results
+
+    # A token that is absent is a state of the settings, and not a fault of the
+    # request. So it becomes an error on each of the two commits, and not an
+    # exception. The caller then writes PARTIAL and keeps the row, and the person
+    # reads which value to set. Before this guard the error left this function and
+    # left the approval route, and the person got 500 with no sentence.
+    try:
+        client = _client()
+    except CommitError as error:
+        results.doc_error = str(error)
+        results.card_error = str(error)
+        logger.error("No commit can happen: %s", error)
         return results
 
     # Target 1: the documentation sheet goes to the portfolio repository.

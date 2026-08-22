@@ -114,10 +114,21 @@ different host.
 # --------------------------------------------------------------------------
 
 FIXTURE_MODE: bool = os.environ.get("FIXTURE_MODE", "").lower() in ("1", "true", "yes")
-"""When true, run_workflow returns a canned transaction instead of calling the model.
+"""When true, run_workflow walks the graph without a call to the model.
 
 This makes all UI work cost zero model calls. Set FIXTURE_MODE=1 for local
 development and demo rehearsals against the 20 daily requests budget.
+"""
+
+FIXTURE_NODE_DELAY: float = float(os.environ.get("FIXTURE_NODE_DELAY", "0.6"))
+"""The seconds that each node takes in fixture mode.
+
+A fixture run writes the same event log as a real run. The delay makes the
+progress of the run possible to see, and it gives a person the time to press
+cancel. Seven nodes at the default value take about four seconds, where a real
+run takes 30 to 90.
+
+Set the value to 0 in a test. A test does not look at the screen.
 """
 
 

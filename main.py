@@ -173,5 +173,9 @@ def healthz() -> dict:
         "status": "ok",
         "model": config.MODEL,
         "use_vertex_ai": config.USE_VERTEX_AI,
+        # The interface shows a badge when this flag is true. A person must be
+        # able to see that a run costs no model call, because a free run and a
+        # paid run look the same on the screen.
+        "fixture_mode": config.FIXTURE_MODE,
         "missing_config": config.missing_required(),
     }

@@ -17,6 +17,7 @@ curator must answer with an empty list. Only the caller knows which is correct.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -29,7 +30,14 @@ from google.genai import types as genai_types
 
 import config
 import store
-from models import RunEventState
+from models import (
+    AssetSource,
+    AssetVersion,
+    GeneratedAssets,
+    RunEventState,
+    Transaction,
+    TransactionStatus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +126,8 @@ async def run_workflow(
     caller gets an exception only if the run itself stops.
 
     If `config.FIXTURE_MODE` is true, this function does not call the model.
-    Instead it writes a canned transaction to Firestore and returns immediately.
+    Instead it walks the same seven nodes, writes the same event log, and then
+    writes a canned result. See `_run_fixture`.
 
     This function also persists a per-node event log and checks for cooperative
     cancellation between nodes.
@@ -129,48 +138,9 @@ async def run_workflow(
         # Fall back to old behavior without events/cancel
         return await _run_workflow_legacy(node, prompt, user_id, session_id, state)
 
-    # FIXTURE_MODE: serve a canned transaction, zero model calls
+    # FIXTURE_MODE: walk the graph with no call to the model.
     if config.FIXTURE_MODE:
-        fixture_path = Path(__file__).parent / "tests" / "fixtures" / "canned_transaction.json"
-        if fixture_path.exists():
-            with open(fixture_path) as f:
-                canned = json.load(f)
-            # Write the canned transaction to Firestore so the rest of the flow works
-            from models import Transaction, TransactionStatus
-
-            # Keep the tx_id that the caller resolved above. The client polls the
-            # row under the id that the trigger gave it, so the fixture must save
-            # under that same id, and not under the id inside the fixture file. An
-            # overwrite here left the client's row at RUNNING for ever.
-            store.save_transaction(
-                Transaction(
-                    tx_id=tx_id,
-                    user_id=user_id,
-                    repo_name=canned.get("repo_name", "fixture/repo"),
-                    repo_url=canned.get("repo_url", "https://github.com/fixture/repo"),
-                    status=TransactionStatus(canned.get("status", "PENDING_APPROVAL")),
-                    metadata=canned.get("metadata"),
-                    asset_versions=[],
-                    created_at=store.now_iso(),
-                )
-            )
-            # Update with assets if present
-            if canned.get("assets"):
-                from models import AssetSource, AssetVersion, GeneratedAssets
-                assets = GeneratedAssets(**canned["assets"])
-                version = AssetVersion(
-                    assets=assets,
-                    source=AssetSource.GENERATED,
-                    created_at=store.now_iso(),
-                    style_rules_applied=[],
-                )
-                store.update_transaction(
-                    tx_id,
-                    asset_versions=[version.model_dump(mode="json")],
-                    status=canned.get("status", "PENDING_APPROVAL"),
-                )
-            return
-        logger.warning("FIXTURE_MODE=1 but no fixture found at %s", fixture_path)
+        return await _run_fixture(tx_id, user_id)
 
     runner = Runner(
         node=node,
@@ -254,6 +224,118 @@ async def run_workflow(
             GRAPH_NODES[current_node_idx],
             RunEventState.COMPLETED,
             finished_at=store.now_iso(),
+        )
+
+
+async def _run_fixture(tx_id: str, user_id: str) -> None:
+    """Walk the seven nodes with no model call, and write the same event log.
+
+    A fixture run must give the client the same thing to read as a real run. The
+    code here wrote only the final row until 2026-08-22, so the event log stayed
+    empty. Three things followed from that, and each one stopped a person from
+    testing the product without paying for a model call:
+
+    * The seven rows on the run screen never moved. `GET /events` gave `[]`.
+    * The row went from RUNNING to PENDING_APPROVAL in a few milliseconds, so
+      cancel had no time to be legal and always answered 409.
+    * A resume had nothing to show, because a resume is a new run of Phase 1 and
+      a new run wrote no events either.
+
+    The delay between nodes comes from `config.FIXTURE_NODE_DELAY`. The cancel
+    flag is read after each node, at the same point as the real loop, so cancel
+    and resume behave the same way in both modes.
+    """
+    fixture_path = Path(__file__).parent / "tests" / "fixtures" / "canned_transaction.json"
+    if not fixture_path.exists():
+        logger.warning("FIXTURE_MODE=1 but no fixture found at %s", fixture_path)
+        return
+    canned = json.loads(fixture_path.read_text(encoding="utf-8"))
+
+    for node_name in GRAPH_NODES:
+        started_at = store.now_iso()
+        store.append_run_event(
+            tx_id, node_name, RunEventState.STARTED, started_at=started_at
+        )
+
+        if config.FIXTURE_NODE_DELAY > 0:
+            await asyncio.sleep(config.FIXTURE_NODE_DELAY)
+
+        # Read the flag after the work of the node, and not before it. A cancel
+        # arrives while a node runs, so the node that stops is the node that was
+        # at work, and the log must name that one.
+        if store.cancel_requested(tx_id):
+            logger.info("Cancellation requested for %s, stopping the fixture run", tx_id)
+            store.append_run_event(
+                tx_id,
+                node_name,
+                RunEventState.CANCELLED,
+                started_at=started_at,
+                finished_at=store.now_iso(),
+                error="Cooperative cancellation requested by user",
+            )
+            store.update_transaction(
+                tx_id,
+                status=TransactionStatus.CANCELLED.value,
+                error_message="Cancelled by user",
+                completed_at=store.now_iso(),
+            )
+            return
+
+        store.append_run_event(
+            tx_id,
+            node_name,
+            RunEventState.COMPLETED,
+            started_at=started_at,
+            finished_at=store.now_iso(),
+        )
+
+    _save_fixture_row(tx_id, user_id, canned)
+
+
+def _save_fixture_row(tx_id: str, user_id: str, canned: dict) -> None:
+    """Write the canned result under the id that the trigger gave the client.
+
+    The row must keep the tx_id of the caller. The client polls the row under
+    that id, so a write under the id inside the fixture file left the row of the
+    client at RUNNING for ever.
+
+    The row also keeps the repository and the start time of the real row. The
+    fixture file names another repository, and a screen that shows a repository
+    that nobody asked for reads as a defect and not as a fixture.
+    """
+    existing = store.get_transaction(tx_id)
+    status = canned.get("status", TransactionStatus.PENDING_APPROVAL.value)
+
+    store.save_transaction(
+        Transaction(
+            tx_id=tx_id,
+            user_id=user_id,
+            repo_name=(
+                existing.repo_name if existing else canned.get("repo_name", "fixture/repo")
+            ),
+            repo_url=(
+                existing.repo_url
+                if existing
+                else canned.get("repo_url", "https://github.com/fixture/repo")
+            ),
+            status=TransactionStatus(status),
+            metadata=canned.get("metadata"),
+            asset_versions=[],
+            created_at=existing.created_at if existing else store.now_iso(),
+        )
+    )
+
+    if canned.get("assets"):
+        version = AssetVersion(
+            assets=GeneratedAssets(**canned["assets"]),
+            source=AssetSource.GENERATED,
+            created_at=store.now_iso(),
+            style_rules_applied=[],
+        )
+        store.update_transaction(
+            tx_id,
+            asset_versions=[version.model_dump(mode="json")],
+            status=status,
         )
 
 

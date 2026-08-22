@@ -1,0 +1,80 @@
+# What must stay out of the upload to Cloud Build.
+#
+# `gcloud run deploy --source .` sends this folder to Cloud Build first, and
+# Cloud Build then makes the image. This file controls the upload. The
+# `.dockerignore` file controls a different step: what the `COPY` lines of the
+# Dockerfile put into a layer of the image.
+#
+# The two files are almost the same, and they differ in one important way.
+# `.dockerignore` holds `Dockerfile`, because the image does not need a copy of
+# its own recipe. This file must NOT hold `Dockerfile`, because Cloud Build
+# reads the Dockerfile to make the image. A `Dockerfile` line here stops the
+# deploy.
+#
+# This folder is not a Git repository. Without this file `gcloud` uploads every
+# file, and that includes `.venv/` and `web/node_modules/`. Both hold many
+# thousands of files for the wrong platform, so the upload is large and slow and
+# it gives the build nothing.
+#
+# The syntax is the syntax of `.gitignore`.
+
+# Secrets. A file that goes into a layer of an image stays in that layer.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+gcp-credentials*.json
+
+# The virtual environment of the development machine. The image makes its own
+# with `uv sync`, and this folder holds binary files for the wrong platform.
+.venv/
+venv/
+
+# The interface. The first stage of the Dockerfile runs `npm ci` and
+# `npm run build`, so it makes both of these folders itself.
+web/node_modules/
+web/dist/
+
+# Git history.
+.git/
+.gitignore
+
+# Python build files and cache folders.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# The tests and the documents. The service does not read them at run time.
+#
+# `README.md` stays. `pyproject.toml` names it in the `readme` field, and `uv`
+# reads that field, so a build with no README can fail there.
+tests/
+docs/
+projectsync_full_spec.md
+
+# Notes of the agent tools. The service does not read them.
+.claude/
+.adk/
+.agents/
+
+# Editors, the operating system, and local run files.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.firestore-emulator/
+scratch/
+
+# Note for a person who edits this file: the `memory/` folder at the top level
+# is a Python package that the service imports at run time. It is not a note
+# folder. Do not add it here.
