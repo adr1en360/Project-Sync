@@ -1,0 +1,230 @@
+/*
+  The interface tokens: the colours, the type scale, the spacing grid, the
+  shape scale, and the motion curves.
+
+  THIS FILE IS MADE BY A PROGRAM. Do not edit it by hand.
+  Run `uv run python tools/gen_palette.py --write` to make it again.
+  `tests/test_design_tokens.py` compares this file with the output of that
+  program, so a hand edit makes the test suite fail.
+
+  There are three groups of colour. The neutrals are a true grey paper and a
+  true grey ink. The signal colours are the ordinary ones, so a person reads
+  the meaning without a legend (pass 150, fail 27, hold 75 degrees). The accent carries the
+  brand colour, and it is the only group that moves.
+
+  An accent step reads `--h` for its hue. `--h` is a number with a
+  `@property` rule, and only that rule lets the browser move a custom
+  property smoothly. A preset writes `--h` and nothing else.
+
+  The chroma of the accent is a number and it does not move. The edge of the
+  sRGB gamut curves, so a straight line between two chromas that are both
+  inside it can pass outside it. The number here is the smallest chroma of
+  the whole arc from 258 to 336 degrees, so it is safe at every hue that a
+  sweep passes through.
+
+  Each colour has its chroma fitted into the gamut at a fixed lightness, so
+  the browser never has to map a colour that the program did not measure.
+  Each pair of a text colour and its surface is measured with the WCAG
+  formula, at every half degree of the arc. Text is at 4.5:1 or more, and a
+  graphic that carries meaning is at 3.0:1 or more. The program writes
+  nothing if one pair at one hue is below its limit, so this file cannot hold
+  a pair that does not pass.
+*/
+
+/*
+  The hue of the accent. A custom property with no `@property` rule is a
+  string to the browser, and a string cannot be interpolated. This rule makes
+  the hue animatable.
+*/
+@property --h {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 258;
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* The accent hue. Preset azure, light mode. */
+  --h: 258;
+
+  /* ---- The colours, light mode ---- */
+  --paper:         oklch(0.988 0.0020 260);
+  --paper-raised:  oklch(0.996 0.0010 260);
+  --paper-sunken:  oklch(0.960 0.0030 260);
+  --paper-edge:    oklch(0.905 0.0040 260);
+  --ink:           oklch(0.250 0.0050 260);
+  --ink-quiet:     oklch(0.470 0.0050 260);
+  --ink-faint:     oklch(0.620 0.0050 260);
+  --slab:          oklch(0.210 0.0060 260);
+  --ink-inverse:   oklch(0.980 0.0020 260);
+  --accent:        oklch(0.500 0.1500 var(--h));
+  --accent-strong: oklch(0.420 0.1556 var(--h));
+  --accent-wash:   oklch(0.950 0.0238 var(--h));
+  --accent-ink:    oklch(0.390 0.1300 var(--h));
+  --on-accent:     oklch(0.985 0.0040 260);
+  --pass:          oklch(0.500 0.1377 150);
+  --pass-strong:   oklch(0.420 0.1157 150);
+  --pass-wash:     oklch(0.950 0.0450 150);
+  --pass-ink:      oklch(0.390 0.1075 150);
+  --on-pass:       oklch(0.985 0.0040 260);
+  --fail:          oklch(0.500 0.1500 27);
+  --fail-strong:   oklch(0.420 0.1600 27);
+  --fail-wash:     oklch(0.950 0.0251 27);
+  --fail-ink:      oklch(0.390 0.1300 27);
+  --on-fail:       oklch(0.985 0.0040 260);
+  --hold:          oklch(0.500 0.1055 75);
+  --hold-strong:   oklch(0.420 0.0887 75);
+  --hold-wash:     oklch(0.950 0.0408 75);
+  --hold-ink:      oklch(0.390 0.0824 75);
+  --on-hold:       oklch(0.985 0.0040 260);
+
+  /* ---- The three type families. The build carries the font files. ---- */
+  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* ---- The type scale. The body step is 15px at the browser default. ---- */
+  --step--1: 0.8125rem;
+  --step-0:  0.9375rem;
+  --step-1:  1.125rem;
+  --step-2:  1.5rem;
+  --step-3:  2rem;
+  --step-4:  2.75rem;
+  --step-5:  3.75rem;
+
+  /* ---- The line height and the tracking ---- */
+  --lh-tight: 1.1;
+  --lh-snug:  1.35;
+  --lh-body:  1.6;
+  --track-display: -0.02em;
+  --track-tight:   -0.01em;
+  --track-caps:     0.05em;
+
+  /* ---- The spacing grid. Every step is a multiple of 4px. ---- */
+  --sp-1:   4px;
+  --sp-2:   8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ---- The shape scale. A card takes md or lg, a button takes sm. ---- */
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:  12px;
+  --r-pill: 9999px;
+  --rule:   1px;
+
+  /* ---- Motion ---- */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 600ms;
+  --dur-hue:  700ms;
+
+  /* ---- The smallest side of a target that a finger must hit ---- */
+  --target-min: 44px;
+}
+
+/*
+  The other accent presets, light mode. A preset writes one number. The
+  signal colours and the neutrals do not move.
+*/
+/* violet: violet */
+:root[data-hue="violet"] { --h: 300; }
+/* rose: rose */
+:root[data-hue="rose"] { --h: 333; }
+
+/*
+  Dark mode.
+
+  The wish of the machine comes first, and the choice of the person comes
+  after it. So a person who selects light mode gets light mode on a machine
+  that asks for dark mode, and the reverse.
+
+  Dark mode has its own lightness values, and its own hue for each preset. A
+  hue that is correct on paper turns cold on a dark surface. `slab` is the
+  lightest surface here, and it is the darkest surface in light mode. The
+  names keep their meaning: `slab` is always the surface that inverts a row.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Preset azure, dark mode. */
+    --h: 262;
+
+    --paper:         oklch(0.175 0.0060 260);
+    --paper-raised:  oklch(0.215 0.0070 260);
+    --paper-sunken:  oklch(0.145 0.0050 260);
+    --paper-edge:    oklch(0.315 0.0080 260);
+    --ink:           oklch(0.945 0.0040 260);
+    --ink-quiet:     oklch(0.760 0.0060 260);
+    --ink-faint:     oklch(0.615 0.0080 260);
+    --slab:          oklch(0.965 0.0030 260);
+    --ink-inverse:   oklch(0.200 0.0060 260);
+    --accent:        oklch(0.680 0.1400 var(--h));
+    --accent-strong: oklch(0.760 0.1222 var(--h));
+    --accent-wash:   oklch(0.270 0.0550 var(--h));
+    --accent-ink:    oklch(0.825 0.0869 var(--h));
+    --on-accent:     oklch(0.180 0.0060 260);
+    --pass:          oklch(0.680 0.1400 150);
+    --pass-strong:   oklch(0.760 0.1300 150);
+    --pass-wash:     oklch(0.270 0.0550 150);
+    --pass-ink:      oklch(0.825 0.1100 150);
+    --on-pass:       oklch(0.180 0.0060 260);
+    --fail:          oklch(0.680 0.1400 27);
+    --fail-strong:   oklch(0.760 0.1300 27);
+    --fail-wash:     oklch(0.270 0.0550 27);
+    --fail-ink:      oklch(0.825 0.0979 27);
+    --on-fail:       oklch(0.180 0.0060 260);
+    --hold:          oklch(0.680 0.1400 75);
+    --hold-strong:   oklch(0.760 0.1300 75);
+    --hold-wash:     oklch(0.270 0.0550 75);
+    --hold-ink:      oklch(0.825 0.1100 75);
+    --on-hold:       oklch(0.180 0.0060 260);
+  }
+  :root:not([data-theme="light"])[data-hue="violet"] { --h: 303; }
+  :root:not([data-theme="light"])[data-hue="rose"] { --h: 336; }
+}
+
+/* The person selected dark mode. */
+:root[data-theme="dark"] {
+  --h: 262;
+
+  --paper:         oklch(0.175 0.0060 260);
+  --paper-raised:  oklch(0.215 0.0070 260);
+  --paper-sunken:  oklch(0.145 0.0050 260);
+  --paper-edge:    oklch(0.315 0.0080 260);
+  --ink:           oklch(0.945 0.0040 260);
+  --ink-quiet:     oklch(0.760 0.0060 260);
+  --ink-faint:     oklch(0.615 0.0080 260);
+  --slab:          oklch(0.965 0.0030 260);
+  --ink-inverse:   oklch(0.200 0.0060 260);
+  --accent:        oklch(0.680 0.1400 var(--h));
+  --accent-strong: oklch(0.760 0.1222 var(--h));
+  --accent-wash:   oklch(0.270 0.0550 var(--h));
+  --accent-ink:    oklch(0.825 0.0869 var(--h));
+  --on-accent:     oklch(0.180 0.0060 260);
+  --pass:          oklch(0.680 0.1400 150);
+  --pass-strong:   oklch(0.760 0.1300 150);
+  --pass-wash:     oklch(0.270 0.0550 150);
+  --pass-ink:      oklch(0.825 0.1100 150);
+  --on-pass:       oklch(0.180 0.0060 260);
+  --fail:          oklch(0.680 0.1400 27);
+  --fail-strong:   oklch(0.760 0.1300 27);
+  --fail-wash:     oklch(0.270 0.0550 27);
+  --fail-ink:      oklch(0.825 0.0979 27);
+  --on-fail:       oklch(0.180 0.0060 260);
+  --hold:          oklch(0.680 0.1400 75);
+  --hold-strong:   oklch(0.760 0.1300 75);
+  --hold-wash:     oklch(0.270 0.0550 75);
+  --hold-ink:      oklch(0.825 0.1100 75);
+  --on-hold:       oklch(0.180 0.0060 260);
+}
+:root[data-theme="dark"][data-hue="violet"] { --h: 303; }
+:root[data-theme="dark"][data-hue="rose"] { --h: 336; }

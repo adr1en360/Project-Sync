@@ -1,0 +1,388 @@
+/* The primitives.
+ *
+ * Each class here is one component in `src/ui`. A screen uses these classes
+ * and does not write its own colours, so a change of token moves the whole
+ * interface at one time.
+ */
+
+/* The focus ring. It is on the accent, it is two pixels, and it stands away
+ * from the control, so it is visible on a light surface and on a dark one. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ---- The button ---- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--target-min);
+  padding: 0 var(--sp-5);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-sm);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--step-0);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--ink-faint);
+}
+
+/* The press. The button goes a small amount smaller, so the finger gets an
+ * answer before the network does. */
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled,
+.btn[aria-busy="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: transparent;
+}
+
+/* A quiet button carries an action that a person does not need to find. */
+.btn-quiet {
+  min-height: auto;
+  padding: var(--sp-2) var(--sp-3);
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-quiet);
+}
+
+.btn-quiet:hover:not(:disabled) {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+.btn-danger {
+  border-color: transparent;
+  background: var(--fail);
+  color: var(--on-fail);
+}
+
+/* ---- The card ---- */
+
+.card {
+  padding: var(--sp-6);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  background: var(--paper-raised);
+}
+
+/* There is no shadow anywhere in this interface. A card that answers the
+ * pointer moves its border and nothing else. */
+.card-live:hover {
+  border-color: var(--ink-faint);
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.card-title {
+  font-family: var(--font-serif);
+  font-size: var(--step-2);
+  letter-spacing: var(--track-tight);
+}
+
+.card-note {
+  color: var(--ink-quiet);
+  font-size: var(--step--1);
+}
+
+/* ---- The tag ---- */
+
+/* The one pill shape of the interface. A state takes a tag, and a tag always
+ * carries a word. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border: var(--rule) solid currentcolor;
+  border-radius: var(--r-pill);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The tone of a tag. The border carries the ratio against the wash, so the
+ * two surfaces do not have to. */
+.tag-pass {
+  background: var(--pass-wash);
+  color: var(--pass-ink);
+}
+
+.tag-fail {
+  background: var(--fail-wash);
+  color: var(--fail-ink);
+}
+
+.tag-hold {
+  background: var(--hold-wash);
+  color: var(--hold-ink);
+}
+
+.tag-accent {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.tag-quiet {
+  background: var(--paper-sunken);
+  color: var(--ink-quiet);
+}
+
+/* ---- The mark ---- */
+
+/* The mark of a state. It comes with a word every time, so the mark alone
+ * never carries the meaning. */
+.mark {
+  display: inline-block;
+  width: 1em;
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.mark-pass {
+  color: var(--pass);
+}
+
+.mark-fail {
+  color: var(--fail);
+}
+
+.mark-hold {
+  color: var(--hold);
+}
+
+.mark-wait {
+  color: var(--ink-faint);
+}
+
+/* A node at work breathes. `motion.css` holds the keyframes. */
+.mark-work {
+  color: var(--accent);
+  animation: pulse 1.6s var(--ease-in-out) infinite alternate;
+}
+
+/* ---- The field ---- */
+
+.field {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.field-label {
+  font-size: var(--step--1);
+  font-weight: 500;
+  color: var(--ink-quiet);
+}
+
+.field-input {
+  min-height: var(--target-min);
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--step-0);
+}
+
+.field-input:hover {
+  border-color: var(--ink-faint);
+}
+
+.field-mono {
+  font-family: var(--font-mono);
+}
+
+.field-help {
+  color: var(--ink-faint);
+  font-size: var(--step--1);
+}
+
+.field-error {
+  color: var(--fail-ink);
+  font-size: var(--step--1);
+}
+
+/* ---- The key ---- */
+
+kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  padding: 2px var(--sp-2);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* ---- The empty state ---- */
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-3);
+  padding: var(--sp-10) var(--sp-6);
+  border: var(--rule) dashed var(--paper-edge);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: var(--step-2);
+  letter-spacing: var(--track-tight);
+}
+
+.empty-body {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--ink-quiet);
+}
+
+/* ---- The skeleton ---- */
+
+/* A skeleton has the shape of the card that comes after it, so the page does
+ * not jump when the data arrives. There is no spinner anywhere. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--paper-raised),
+    transparent
+  );
+  animation: shimmer 1.4s var(--ease-in-out) infinite;
+}
+
+/* ---- The stamp ---- */
+
+/* The verdict. It arrives one time and it is the loudest object on the page. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border: 2px solid currentcolor;
+  border-radius: var(--r-md);
+  font-family: var(--font-serif);
+  font-size: var(--step-2);
+  animation: stamp-in var(--dur-base) var(--ease-out) both;
+}
+
+/* ---- The switch ---- */
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--target-min);
+  padding: 0 var(--sp-3);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-quiet);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.switch:hover {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+.switch[aria-pressed="true"] {
+  background: var(--slab);
+  color: var(--ink-inverse);
+  border-color: transparent;
+}
+
+/* The lamp of the switch. It is a second channel beside the word, so the
+ * state does not depend on the colour. */
+.switch-lamp {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: var(--rule) solid currentcolor;
+}
+
+.switch[aria-pressed="true"] .switch-lamp {
+  background: currentcolor;
+}
+
+/* ---- Small helpers ---- */
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.quiet {
+  color: var(--ink-quiet);
+}
+
+.faint {
+  color: var(--ink-faint);
+}
+
+/* Text for a screen reader only. It is in the page and it is not on the
+ * screen. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

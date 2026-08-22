@@ -1,0 +1,49 @@
+/* The base only.
+ *
+ * `styles/tokens.css` holds the colours, the type scale and the motion curves,
+ * and a program makes that file. This file is the reset and the page defaults
+ * that read those tokens. The shell and the layout come in stage F3.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* A heading is set in the serif. The tracking is negative, because the face is
+ * large on the page and the default space then looks wide. */
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-display);
+}
+
+/* A transaction id, a repository path and a node name are all machine text, so
+ * they take the mono face. */
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.9375em;
+}

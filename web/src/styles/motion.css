@@ -1,0 +1,161 @@
+/* The motion, in one place.
+ *
+ * Each animation of the interface is here. The numbers in the comments are the
+ * numbers of the animation inventory in the build plan, so a person can find
+ * the reason for each one.
+ *
+ * Only `transform`, `opacity`, `--h` and `grid-template-rows` move. No
+ * animation touches a property that makes the browser measure the page again.
+ */
+
+/* #1 The hue transition.
+ *
+ * `--h` has a `@property` rule in `tokens.css`, and that rule is what lets the
+ * browser move the number. The accent family reads `--h`, so one transition
+ * re-tints the accent everywhere. The greys and the signal colours hold. */
+:root {
+  transition: --h var(--dur-hue) var(--ease-in-out);
+}
+
+/* #2 The theme cross-fade.
+ *
+ * A change of mode moves every surface at the same time. A cross-fade hides
+ * the step. The browser makes the two images of the page, and this rule only
+ * sets how long the fade takes. A browser with no support for the View
+ * Transitions API gets the colour transitions below instead. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: var(--ease-in-out);
+}
+
+/* The colour transition for a browser with no View Transitions API. The
+ * properties here do not make the browser measure the page again. */
+body,
+.card,
+.masthead,
+.rail {
+  transition:
+    background-color var(--dur-base) var(--ease-in-out),
+    border-color var(--dur-base) var(--ease-in-out),
+    color var(--dur-base) var(--ease-in-out);
+}
+
+/* #3 The card entry stagger. A card comes up and in. The delay makes the cards
+ * arrive one after the other, so the eye follows the order of the page. */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stagger > * {
+  animation: card-in var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--index, 0) * 80ms);
+}
+
+/* #7 The tab change. The new pane comes up a small distance. There is no
+ * sideways movement, because a sideways slide says "back" and "next" and the
+ * tabs are not a sequence. */
+@keyframes pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pane {
+  animation: pane-in var(--dur-base) var(--ease-out) both;
+}
+
+/* #15 The internals reveal. The rows of the grid go from no height to the
+ * height of the content. `visibility` waits for the end of the collapse, so
+ * the keyboard cannot reach a control that a person cannot see. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+
+.reveal > .reveal-body {
+  overflow: hidden;
+  visibility: hidden;
+  transition: visibility 0s linear var(--dur-base);
+}
+
+.reveal[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.reveal[data-open="true"] > .reveal-body {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+/* #5 The progress pulse. A node at work breathes. This is the one animation
+ * that repeats. Stage F4 puts it on the mark of a node. */
+@keyframes pulse {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* #10 The skeleton sweep. A light band crosses a shape that has the size of
+ * the card that comes after it. */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* #6 The stamp landing. The verdict arrives one time, a small amount too
+ * large, and settles. Stage F5 puts it on the verdict. */
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06) rotate(-1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A person who asks for less movement gets none.
+ *
+ * The state of the interface does not need movement to be legible, because
+ * every state carries a mark and a word. So this block can be absolute. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The hue changes at one step and does not sweep. */
+  :root {
+    transition: none;
+  }
+
+  .reveal > .reveal-body {
+    transition: none;
+  }
+}

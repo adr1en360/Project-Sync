@@ -1,0 +1,250 @@
+/* The frame of the application: the masthead, the tabs and the canvas.
+ *
+ * The screens sit inside `.canvas`. A screen that needs a side column takes
+ * `.layout` and puts the column in `.rail`.
+ */
+
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+/* ---- The masthead ---- */
+
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--paper);
+  border-bottom: var(--rule) solid var(--paper-edge);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-family: var(--font-serif);
+  font-size: var(--step-1);
+  letter-spacing: var(--track-display);
+}
+
+/* The mark of the product. A square with the accent inside it, so the brand
+ * carries the live hue and the preset is visible at once. */
+.brand-mark {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.brand-quiet {
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: var(--step--1);
+  letter-spacing: 0;
+}
+
+/* ---- The tabs ---- */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* The line between the steps of a run and the reference screens. The steps
+ * are a sequence and the other three are not. */
+.nav-divider {
+  flex: 0 0 auto;
+  width: var(--rule);
+  height: 18px;
+  margin: 0 var(--sp-3);
+  background: var(--paper-edge);
+}
+
+.tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-quiet);
+  font: inherit;
+  font-size: var(--step-0);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.tab:hover {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+.tab[aria-current="page"] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* The number of a step. The reference screens have no number, because they
+ * are not a step of the run. */
+.tab-index {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}
+
+.tab[aria-current="page"] .tab-index {
+  color: var(--accent-ink);
+}
+
+/* ---- The controls of the masthead ---- */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* The three presets of the accent hue. Each one is a small square of its own
+ * colour, so the choice shows the result. */
+.hue-set {
+  display: flex;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-pill);
+}
+
+.hue-dot {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: var(--rule) solid transparent;
+  border-radius: 50%;
+  background: oklch(0.55 0.15 var(--dot-h));
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.hue-dot:hover {
+  transform: scale(1.12);
+}
+
+.hue-dot[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+/* ---- The canvas ---- */
+
+.canvas {
+  width: 100%;
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: var(--sp-10) var(--sp-6) var(--sp-16);
+}
+
+.screen-head {
+  margin-bottom: var(--sp-8);
+}
+
+.screen-head h1 {
+  font-size: var(--step-4);
+}
+
+.screen-lede {
+  max-width: 46ch;
+  margin: var(--sp-3) 0 0;
+  color: var(--ink-quiet);
+  font-size: var(--step-1);
+  line-height: var(--lh-snug);
+}
+
+/* The layout with a side column. The column holds the rules on the review
+ * desk and the filters in the library. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: var(--sp-8);
+  align-items: start;
+}
+
+.rail {
+  position: sticky;
+  top: calc(var(--sp-16) + var(--sp-2));
+  padding: var(--sp-6);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  background: var(--paper-raised);
+}
+
+/* The bento grid. A card can take two columns with `.wide`. */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--sp-5);
+}
+
+.bento .wide {
+  grid-column: span 2;
+}
+
+/* ---- The narrow screens ---- */
+
+/* The side column goes under the main column. It is one column of content and
+ * not a drawer, so nothing is out of reach. */
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    position: static;
+  }
+}
+
+/* The masthead becomes two rows. The tabs then have the whole width, and they
+ * scroll sideways if they still do not fit. */
+@media (max-width: 860px) {
+  .masthead {
+    grid-template-columns: 1fr auto;
+    row-gap: var(--sp-3);
+  }
+
+  .nav {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .canvas {
+    padding: var(--sp-8) var(--sp-4) var(--sp-12);
+  }
+
+  .screen-head h1 {
+    font-size: var(--step-3);
+  }
+
+  .bento .wide {
+    grid-column: span 1;
+  }
+}
