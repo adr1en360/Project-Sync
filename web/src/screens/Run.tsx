@@ -1,5 +1,7 @@
+import { useShowMore } from "../hooks/useShowMore";
 import { Card } from "../ui/Card";
 import { Mark } from "../ui/Mark";
+import { Switch } from "../ui/Switch";
 import { Tag } from "../ui/Tag";
 import { ScreenHead } from "./ScreenHead";
 
@@ -11,15 +13,11 @@ import { ScreenHead } from "./ScreenHead";
  * `GET /transactions/{id}/events`, and it brings the cancel control and the
  * resume control with it.
  *
- * This screen is where the internals switch earns its place. Off, each row is
- * one short sentence. On, each row also shows the name of the node that does
- * the work, and the rail names the graph. Stage F4 adds the time of each node
- * to the same reveal.
+ * The screen holds its own "Show more" control. Off, each row is one short
+ * sentence. On, each row also shows the name of the node that does the work,
+ * and the rail names the graph. Stage F4 adds the time of each node to the
+ * same reveal.
  */
-
-type Props = {
-  internals: boolean;
-};
 
 type State = "pass" | "work" | "wait";
 
@@ -39,7 +37,11 @@ const WORD: Record<State, string> = {
   wait: "Waiting",
 };
 
-export function Run({ internals }: Props) {
+export function Run() {
+  const { more, toggleMore } = useShowMore();
+  const open = more ? "true" : "false";
+  const shut = more ? undefined : true;
+
   return (
     <>
       <ScreenHead
@@ -47,11 +49,20 @@ export function Run({ internals }: Props) {
         lede="Seven steps, in order. The run stops at the end and waits for you. Nothing leaves the service until you approve it."
       />
 
-      <div className="layout">
-        <Card
-          title="The steps"
-          note={internals ? "The name of each node is on" : "An example, until stage F4"}
+      {/* The control of this screen. It sits here and not in the masthead,
+          because it changes this screen and no other. */}
+      <div className="screen-tools">
+        <Switch
+          pressed={more}
+          onToggle={toggleMore}
+          title="Show the name of each node of the graph and the time it took"
         >
+          Show more
+        </Switch>
+      </div>
+
+      <div className="layout">
+        <Card title="The steps" note="An example, until stage F4">
           <ol
             style={{
               listStyle: "none",
@@ -77,12 +88,8 @@ export function Run({ internals }: Props) {
                 <div style={{ minWidth: 0 }}>
                   <span>{step.label}</span>
                   {/* The name of the node. The reveal keeps it out of the page
-                      when the switch is off, so the row is one sentence. */}
-                  <div
-                    className="reveal"
-                    data-open={internals ? "true" : "false"}
-                    aria-hidden={internals ? undefined : true}
-                  >
+                      when the control is off, so the row is one sentence. */}
+                  <div className="reveal" data-open={open} aria-hidden={shut}>
                     <div className="reveal-body">
                       <span
                         className="mono faint"
@@ -124,11 +131,7 @@ export function Run({ internals }: Props) {
             </dd>
           </dl>
 
-          <div
-            className="reveal"
-            data-open={internals ? "true" : "false"}
-            aria-hidden={internals ? undefined : true}
-          >
+          <div className="reveal" data-open={open} aria-hidden={shut}>
             <div className="reveal-body">
               <dl
                 style={{

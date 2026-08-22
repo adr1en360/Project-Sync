@@ -6,7 +6,7 @@ import { ScreenHead } from "./ScreenHead";
 /**
  * The gallery of finished work.
  *
- * Stage F6 builds the cards, the selection and the print deck. The skeletons
+ * Stage F6 builds the cards, the keep-or-skip deck and the image. The skeletons
  * here show the shape that the cards will take.
  */
 
@@ -15,7 +15,7 @@ export function Portfolio() {
     <>
       <ScreenHead
         title="Portfolio"
-        lede="One card for each project you approved. Select the ones for a role and print them as a deck."
+        lede="One card for each project you approved. Keep the ones that fit a role, and the deck becomes one image you can send."
       />
 
       <div className="bento stagger">
@@ -34,7 +34,7 @@ export function Portfolio() {
       <div style={{ marginTop: "var(--sp-8)" }}>
         <EmptyState title="Nothing to show yet">
           A card arrives here when you approve a run. Stage F6 makes the cards
-          real and adds the print deck.
+          real and adds the deck and the image.
         </EmptyState>
       </div>
     </>

@@ -5,19 +5,17 @@ import { ScreenHead } from "./ScreenHead";
 /**
  * The bullet bank and the history.
  *
- * Stage F7 builds both views. The per-node timings of the history appear only
- * when the internals switch is on.
+ * Stage F7 builds both views, and it decides there how the time of each node
+ * appears on a row of the history. The run screen holds the only "Show more"
+ * control today, because a control must not show on a screen it does nothing
+ * for.
  *
  * The two cards of the main column sit in one grid, so the space between them
  * comes from the gap of that grid. An earlier version put the second card
  * outside the layout, where it had no space above it and it ran under the rail.
  */
 
-type Props = {
-  internals: boolean;
-};
-
-export function Library({ internals }: Props) {
+export function Library() {
   return (
     <>
       <ScreenHead
@@ -48,11 +46,6 @@ export function Library({ internals }: Props) {
           <p className="quiet" style={{ margin: "var(--sp-3) 0 0", fontSize: "var(--step--1)" }}>
             Every run, with its state and its repository.
           </p>
-          {internals && (
-            <p className="mono faint" style={{ margin: "var(--sp-3) 0 0", fontSize: "var(--step--1)" }}>
-              internals on: the time of each node will appear on every row
-            </p>
-          )}
         </aside>
       </div>
     </>
