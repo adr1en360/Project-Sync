@@ -27,11 +27,11 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 - **Deterministic steps stay deterministic.** Three of the six nodes are plain
   Python: the repository scan, the rule lookup, and the Firestore write. No model
   is asked to do exact work.
-- **A review desk, not a dashboard.** The interface at `/` is a paper dossier: the
-  six graph nodes as a ledger, the four drafts as editable folios, and the verdict
-  as a rubber stamp. Your edits travel with the approval. It is hand-written HTML,
-  CSS, and JavaScript with no build step, so one container serves the API and the
-  interface together.
+- **A review desk, not a dashboard.** The interface at `/` shows the seven graph
+  nodes as a ledger, the four drafts as editable folios, and the verdict as a
+  stamp. Your edits travel with the approval. Vite builds it into static files
+  that FastAPI sends, so one container serves the API and the interface together
+  and no Node runs in the image.
 - **One private portfolio repository.** Both the documentation sheet and the
   portfolio card commit to `PORTFOLIO_DATA_REPO`. The scanned repository is never
   written to.
@@ -92,8 +92,9 @@ Start the API:
 uv run uvicorn main:app --reload --port 8080
 ```
 
-Open <http://localhost:8080> for the review desk. Paste a repository URL there and
-the rest of this section happens in the browser. The commands below are the same
+The interface takes one build first: `cd web`, then `npm ci`, then `npm run build`.
+Open <http://localhost:8080> for it. Paste a repository URL there and the rest of
+this section happens in the browser. The commands below are the same
 flow over `curl`, for a demo or a script.
 
 Confirm it is up. The reply tells you which settings are still missing:
@@ -165,7 +166,7 @@ curl -X POST localhost:8080/api/v1/regenerate-asset \
 | `GET` `POST` | `/api/v1/rules` | Lists rules, or adds one by hand. |
 | `POST` | `/api/v1/rules/{id}` | Sets a rule to `ACTIVE`, `INACTIVE`, or `PROPOSED`. |
 | `GET` | `/healthz` | Liveness, the pinned model, and any missing settings. |
-| `GET` | `/` | The review desk. Static files are under `/static`. |
+| `GET` | `/` | The interface. The built files are under `/assets`. |
 
 Interactive docs are at `/docs` once the server is running.
 

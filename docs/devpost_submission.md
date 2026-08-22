@@ -86,9 +86,9 @@ both memories. The transaction rows *are* the episodic memory. The style rules a
 semantic memory. No Pub/Sub, because the only trigger is a person pasting a URL and there
 is nothing to decouple.
 
-The interface is plain HTML, CSS, and JavaScript with no build step: 16 numbered CSS files
-and 18 JS modules, served out of `static/` by the same FastAPI app. One container holds the
-API and the UI, so the deploy is one Cloud Run service and there is no Node in the image.
+The interface is React and TypeScript, and Vite builds it into static files that the same
+FastAPI app sends. One container holds the API and the UI, so the deploy is one Cloud Run
+service and there is no Node in the image, because the build runs before the image is made.
 Phase 1 takes roughly 30 to 90 seconds, so the client polls a status endpoint rather than
 holding a stream open.
 

@@ -85,8 +85,9 @@ both kinds of memory: the rows are the record of what happened, and the rules ar
 learned about how I write. There is no message queue, because the only thing that ever starts
 a run is a person pasting a URL, and there is nothing to decouple from that.
 
-The interface is hand-written HTML, CSS, and JavaScript with no build step, served by the same
-app that runs the agents. One thing to deploy, and no Node in the image. A run takes roughly
+The interface is React, and the build turns it into plain files that the same app sends, so the
+app that runs the agents also serves the page. One thing to deploy, and no Node in the image,
+because the build happens before the image is made. A run takes roughly
 30 to 90 seconds, so the page asks for the status every few seconds rather than holding a
 connection open the whole time.
 
