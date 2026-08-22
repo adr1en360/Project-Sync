@@ -7,6 +7,10 @@ import { ScreenHead } from "./ScreenHead";
  *
  * Stage F7 builds both views. The per-node timings of the history appear only
  * when the internals switch is on.
+ *
+ * The two cards of the main column sit in one grid, so the space between them
+ * comes from the gap of that grid. An earlier version put the second card
+ * outside the layout, where it had no space above it and it ran under the rail.
  */
 
 type Props = {
@@ -27,6 +31,14 @@ export function Library({ internals }: Props) {
             A bullet arrives here the first time you approve a run. Stage F7
             brings the bank, the filters and the inline edit.
           </EmptyState>
+
+          <Card title="Social Studio" note="Stage F8">
+            <p className="quiet" style={{ margin: 0 }}>
+              The posts of a run are edited on the review desk. Studio is where
+              you change the platform, the tone and the language, and write a new
+              draft.
+            </p>
+          </Card>
         </div>
 
         <aside className="rail">
@@ -43,13 +55,6 @@ export function Library({ internals }: Props) {
           )}
         </aside>
       </div>
-
-      <Card title="Social Studio" note="Stage F8" className="wide">
-        <p className="quiet" style={{ margin: 0 }}>
-          The posts of a run are edited on the review desk. Studio is where you
-          change the platform, the tone and the language, and write a new draft.
-        </p>
-      </Card>
     </>
   );
 }

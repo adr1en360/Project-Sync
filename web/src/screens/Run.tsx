@@ -7,31 +7,39 @@ import { ScreenHead } from "./ScreenHead";
  * Step 2. The graph at work.
  *
  * The seven rows are the seven nodes of the Phase 1 graph. Stage F3 shows the
- * rows and the marks. Stage F4 drives them from
+ * rows, the marks and the name of each node. Stage F4 drives them from
  * `GET /transactions/{id}/events`, and it brings the cancel control and the
  * resume control with it.
  *
- * The name of the node under each row appears only when the internals switch
- * is on, and stage F4 adds that line with `labels.ts`.
+ * This screen is where the internals switch earns its place. Off, each row is
+ * one short sentence. On, each row also shows the name of the node that does
+ * the work, and the rail names the graph. Stage F4 adds the time of each node
+ * to the same reveal.
  */
 
-const STEPS: readonly { label: string; state: "pass" | "work" | "wait" }[] = [
-  { label: "Read the repository", state: "pass" },
-  { label: "Understand the project", state: "pass" },
-  { label: "Attach your voice rules", state: "work" },
-  { label: "Write the four drafts", state: "wait" },
-  { label: "Choose what to check", state: "wait" },
-  { label: "Check it is safe to show", state: "wait" },
-  { label: "Save it and stop for you", state: "wait" },
+type Props = {
+  internals: boolean;
+};
+
+type State = "pass" | "work" | "wait";
+
+const STEPS: readonly { label: string; node: string; state: State }[] = [
+  { label: "Read the repository", node: "scan_github_repository", state: "pass" },
+  { label: "Understand the project", node: "extraction_agent", state: "pass" },
+  { label: "Attach your voice rules", node: "attach_style_rules", state: "work" },
+  { label: "Write the four drafts", node: "asset_generator_agent", state: "wait" },
+  { label: "Choose what to check", node: "select_evaluator_input", state: "wait" },
+  { label: "Check it is safe to show", node: "path_evaluator_agent", state: "wait" },
+  { label: "Save it and stop for you", node: "persist_transaction", state: "wait" },
 ];
 
-const WORD: Record<"pass" | "work" | "wait", string> = {
+const WORD: Record<State, string> = {
   pass: "Done",
   work: "At work",
   wait: "Waiting",
 };
 
-export function Run() {
+export function Run({ internals }: Props) {
   return (
     <>
       <ScreenHead
@@ -40,7 +48,10 @@ export function Run() {
       />
 
       <div className="layout">
-        <Card title="The steps" note="An example, until stage F4">
+        <Card
+          title="The steps"
+          note={internals ? "The name of each node is on" : "An example, until stage F4"}
+        >
           <ol
             style={{
               listStyle: "none",
@@ -52,18 +63,36 @@ export function Run() {
           >
             {STEPS.map((step) => (
               <li
-                key={step.label}
+                key={step.node}
                 style={{
                   display: "grid",
                   gridTemplateColumns: "auto 1fr auto",
-                  alignItems: "center",
+                  alignItems: "start",
                   gap: "var(--sp-3)",
                   padding: "var(--sp-3) 0",
                   borderTop: "var(--rule) solid var(--paper-edge)",
                 }}
               >
                 <Mark state={step.state} />
-                <span>{step.label}</span>
+                <div style={{ minWidth: 0 }}>
+                  <span>{step.label}</span>
+                  {/* The name of the node. The reveal keeps it out of the page
+                      when the switch is off, so the row is one sentence. */}
+                  <div
+                    className="reveal"
+                    data-open={internals ? "true" : "false"}
+                    aria-hidden={internals ? undefined : true}
+                  >
+                    <div className="reveal-body">
+                      <span
+                        className="mono faint"
+                        style={{ display: "block", fontSize: "var(--step--1)" }}
+                      >
+                        {step.node}
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <span className="faint" style={{ fontSize: "var(--step--1)" }}>
                   {WORD[step.state]}
                 </span>
@@ -94,6 +123,33 @@ export function Run() {
               not started
             </dd>
           </dl>
+
+          <div
+            className="reveal"
+            data-open={internals ? "true" : "false"}
+            aria-hidden={internals ? undefined : true}
+          >
+            <div className="reveal-body">
+              <dl
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr",
+                  gap: "var(--sp-2) var(--sp-4)",
+                  margin: "var(--sp-4) 0 0",
+                  fontSize: "var(--step--1)",
+                }}
+              >
+                <dt className="quiet">Graph</dt>
+                <dd className="mono faint" style={{ margin: 0 }}>
+                  projectsync_phase1
+                </dd>
+                <dt className="quiet">Nodes</dt>
+                <dd className="mono faint" style={{ margin: 0 }}>
+                  {STEPS.length}
+                </dd>
+              </dl>
+            </div>
+          </div>
         </aside>
       </div>
     </>
