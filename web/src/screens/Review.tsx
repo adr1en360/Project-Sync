@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type { ApprovalResult, PathRecommendation, StyleRule } from "../api/types";
+import type { ApprovalResult, PathRecommendation } from "../api/types";
 import { useReview } from "../hooks/useReview";
 import { useRules } from "../hooks/useRules";
 import { useTransaction } from "../hooks/useTransaction";
+import { RuleRow } from "../library/RuleRow";
 import {
   PUBLISH_PATH,
   PUBLISH_PATH_NOTE,
   PUBLISH_PATH_TONE,
-  RULE_STATE,
   STATUS,
   STATUS_TONE,
 } from "../labels";
@@ -125,44 +125,6 @@ function Receipt({ result }: { result: ApprovalResult }) {
         </>
       )}
     </div>
-  );
-}
-
-/** One rule of the voice, with the two controls that change it. */
-function RuleRow({
-  rule,
-  used,
-  busy,
-  onToggle,
-  onRemove,
-}: {
-  rule: StyleRule;
-  used: boolean;
-  busy: boolean;
-  onToggle: () => void;
-  onRemove: () => void;
-}) {
-  const on = rule.state === "ACTIVE";
-
-  return (
-    <li className="rule-row">
-      <p className="rule-text">{rule.text}</p>
-      <p className="rule-foot">
-        <Tag tone={on ? "pass" : "quiet"}>{RULE_STATE[rule.state]}</Tag>
-        {used && <Tag tone="accent">Used in this run</Tag>}
-        <span className="faint">
-          {rule.source === "CURATOR" ? "Found by the curator" : "Written by you"}
-        </span>
-      </p>
-      <div className="row-controls">
-        <Button tone="quiet" busy={busy} onClick={onToggle}>
-          {on ? `Turn off` : `Turn on`}
-        </Button>
-        <Button tone="quiet" busy={busy} onClick={onRemove}>
-          Remove
-        </Button>
-      </div>
-    </li>
   );
 }
 
@@ -365,8 +327,9 @@ export function Review({ txId }: Props) {
         <aside className="rail">
           <h2 className="card-title">Your voice</h2>
           <p className="quiet">
-            A rule changes every run after it. The rules are read new on each run, so a
-            change here takes effect the next time and not on this one.
+            A switch is the state. A rule changes every run after it, and the rules
+            are read new on each run, so a change here takes effect the next time
+            and not on this one.
           </p>
 
           {rules.error !== null && (

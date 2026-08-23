@@ -227,14 +227,14 @@ it("shows the rules of the person and marks the ones this run used", async () =>
 
   expect(await screen.findByText("Write in the first person.")).toBeInTheDocument();
   expect(screen.getByText("Used in this run")).toBeInTheDocument();
-  expect(screen.getByText("Off")).toBeInTheDocument();
+  expect(screen.getByRole("switch", { name: /This rule is off/ })).toBeInTheDocument();
 });
 
 it("turns one rule on", async () => {
   const person = userEvent.setup();
   desk("PENDING_APPROVAL", {}, [RULE]);
 
-  await person.click(await screen.findByRole("button", { name: "Turn on" }));
+  await person.click(await screen.findByRole("switch", { name: /Press to turn it on/ }));
 
   await waitFor(() => expect(sentTo("/rules/rule-1")).not.toBeNull());
   expect(sentTo("/rules/rule-1")).toMatchObject({ state: "ACTIVE" });

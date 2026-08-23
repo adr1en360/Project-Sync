@@ -87,7 +87,7 @@ beforeEach(() => {
   // The review desk reads the rules of the person, so an answer that holds one
   // object for every address would give the list of rules a health report. The
   // test said the wrong thing about the service, so the test is what changes.
-  stubRoutes({ "/rules": [], "/healthz": OK });
+  stubRoutes({ "/rules": [], "/transactions": [], "/healthz": OK });
 });
 
 afterEach(() => {

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { TransactionStatus } from "../api/types";
+import { seconds } from "../format";
 import { useShowMore } from "../hooks/useShowMore";
 import { useTransaction } from "../hooks/useTransaction";
 import { GRAPH_NAME, NODE_ORDER, STATUS, STATUS_TONE } from "../labels";
@@ -38,11 +39,6 @@ type Props = {
   /** Open the review desk. Called when the run stops and waits for a person. */
   onDone: (txId: string) => void;
 };
-
-/** Show a time that a person can read. Under a second still reads as a time. */
-function seconds(ms: number): string {
-  return `${(ms / 1000).toFixed(1)}s`;
-}
 
 export function Run({ txId, announce, onDone }: Props) {
   const { more, toggleMore } = useShowMore();

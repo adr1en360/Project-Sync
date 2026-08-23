@@ -13,14 +13,13 @@ import { Library } from "./screens/Library";
 import { Portfolio } from "./screens/Portfolio";
 import { Review } from "./screens/Review";
 import { Run } from "./screens/Run";
-import { Voice } from "./screens/Voice";
 import { TABS, type TabId } from "./nav";
 import { Menu, type MenuItem } from "./ui/Menu";
 import { Tag } from "./ui/Tag";
 import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
 
 /**
- * The shell: the masthead, the six tabs, the two controls, and the canvas that
+ * The shell: the masthead, the five tabs, the two controls, and the canvas that
  * holds one screen.
  *
  * The masthead holds only what acts on every screen, which is the theme and the
@@ -45,7 +44,7 @@ const MODE_WORD: Record<Mode, string> = {
 /**
  * The icon of each mode.
  *
- * The control is an icon and no word, because the masthead holds six tabs, and
+ * The control is an icon and no word, because the masthead holds the tabs, and
  * the word was the widest thing in it. The mode is still in the name of the
  * button and in the tooltip, so nothing is lost to a screen reader or to a slow
  * pointer.
@@ -98,37 +97,50 @@ export default function App() {
   }, []);
 
   /**
-   * Move to the run screen with the id that the service gave.
+   * Open one of the three steps with the id of a run.
    *
-   * The three steps carry the person, so a repository that the service accepts
-   * opens the next step by itself. The move is said out loud, because a person
-   * did not ask for it. A tab press after the move wins, because it writes the
-   * hash last, and an automatic move never fights a deliberate one.
+   * Every move between the steps goes through here, so the id in the address, the
+   * id that the shell remembers, and the sentence that is said out loud cannot
+   * disagree. A sentence is given only for a move that a person did not ask for.
+   * A person who pressed a control saw what they pressed, and a screen reader
+   * must not read out a change that the person made.
+   *
+   * A tab press after the move wins, because it writes the hash last, and an
+   * automatic move never fights a deliberate one.
    */
-  const startRun = useCallback(
-    (txId: string) => {
+  const openFrom = useCallback(
+    (where: "run" | "review", txId: string, said?: string) => {
       setOpenTx(txId);
-      setNote("The service accepted the repository. The run screen is open.");
-      go("run", txId);
+      setNote(said ?? "");
+      go(where, txId);
     },
     [go],
   );
 
   /**
-   * Move to the review desk, with the id of the run that waits.
-   *
+   * The three steps carry the person, so a repository that the service accepts
+   * opens the next step by itself, and the move is said out loud.
+   */
+  const startRun = useCallback(
+    (txId: string) => {
+      openFrom("run", txId, "The service accepted the repository. The run screen is open.");
+    },
+    [openFrom],
+  );
+
+  /**
    * The run screen decides the moment and this decides where, because only the
-   * run screen knows that the state changed while the person watched. The id
-   * goes in the address, so the review desk knows which run it opens and a link
-   * to it works.
+   * run screen knows that the state changed while the person watched.
    */
   const openReview = useCallback(
     (txId: string) => {
-      setOpenTx(txId);
-      setNote("The run is finished and it waits for you. The review desk is open.");
-      go("review", txId);
+      openFrom(
+        "review",
+        txId,
+        "The run is finished and it waits for you. The review desk is open.",
+      );
     },
-    [go],
+    [openFrom],
   );
 
   /**
@@ -143,8 +155,17 @@ export default function App() {
     run: () => <Run txId={txOnScreen} announce={announce} onDone={openReview} />,
     review: () => <Review txId={txOnScreen} />,
     portfolio: () => <Portfolio />,
-    library: () => <Library />,
-    voice: () => <Voice />,
+    // The screen of a tab is made only for the tab in the address, so the second
+    // part of the hash here is the view of the library and nothing else.
+    library: () => (
+      <Library
+        segment={param}
+        onSegment={(name) => {
+          go("library", name);
+        }}
+        onGo={openFrom}
+      />
+    ),
   };
 
   return (

@@ -22,6 +22,7 @@ import './index.css'
 import './styles/shell.css'
 import './styles/ui.css'
 import './styles/motion.css'
+import './styles/print.css'
 
 import App from './App.tsx'
 
