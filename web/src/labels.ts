@@ -12,7 +12,7 @@
  * the "Show more" control on.
  */
 
-import type { PublishPath, RuleState, TransactionStatus } from "./api/types";
+import type { BulletTag, PublishPath, RuleState, TransactionStatus } from "./api/types";
 import type { TagTone } from "./ui/Tag";
 
 /**
@@ -113,3 +113,28 @@ export const RULE_STATE: Record<RuleState, string> = {
 
 /** The name of the graph. It shows under the "Show more" control. */
 export const GRAPH_NAME = "projectsync_phase1";
+
+/**
+ * The name of each tag of a bullet, in words a person uses.
+ *
+ * The service holds the tags in capitals with a low line between the words, and
+ * that form must not reach the screen. The record is over the type, so a new tag
+ * in `models.py` fails the build until somebody writes its name here.
+ */
+export const BULLET_TAG: Record<BulletTag, string> = {
+  IMPACT: "Impact",
+  LEADERSHIP: "Leadership",
+  TECHNICAL: "Technical",
+  COLLABORATION: "Teamwork",
+  PROBLEM_SOLVING: "Problem solving",
+  ARCHITECTURE: "Architecture",
+  PERFORMANCE: "Performance",
+  SECURITY: "Security",
+  TESTING: "Testing",
+  DEVOPS: "Operations",
+  FRONTEND: "Front end",
+  BACKEND: "Back end",
+  DATA: "Data",
+  MOBILE: "Mobile",
+  CLOUD: "Cloud",
+};

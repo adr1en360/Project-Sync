@@ -54,3 +54,20 @@ export function CaretIcon() {
     </svg>
   );
 }
+/** A cross, for a control that takes one row away. */
+export function CloseIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <path d="M3.2 3.2l7.6 7.6M10.8 3.2l-7.6 7.6" />
+    </svg>
+  );
+}
+
+/** A plus, for a control that makes one more of something. */
+export function PlusIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <path d="M7 2.4v9.2M2.4 7h9.2" />
+    </svg>
+  );
+}

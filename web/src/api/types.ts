@@ -217,3 +217,63 @@ export type SyncStarted = {
   transaction_id: string;
   status: TransactionStatus;
 };
+
+/**
+ * The tags that a bullet can take.
+ *
+ * The list is `BulletTag` in `models.py`. The service refuses a tag that is not
+ * in the list, so the two must hold the same names. `labels.ts` holds a record
+ * over this type, and the compiler then refuses a tag that has no sentence.
+ */
+export const BULLET_TAGS = [
+  "IMPACT",
+  "LEADERSHIP",
+  "TECHNICAL",
+  "COLLABORATION",
+  "PROBLEM_SOLVING",
+  "ARCHITECTURE",
+  "PERFORMANCE",
+  "SECURITY",
+  "TESTING",
+  "DEVOPS",
+  "FRONTEND",
+  "BACKEND",
+  "DATA",
+  "MOBILE",
+  "CLOUD",
+] as const;
+
+export type BulletTag = (typeof BULLET_TAGS)[number];
+
+/**
+ * One bullet in the bank.
+ *
+ * A bullet arrives one of two ways. The approval of a run writes the bullets of
+ * that run, and `source_tx_id` then names the run. A person can also write a
+ * bullet, and `source_tx_id` is then null.
+ *
+ * `is_manual_edit` is true when a person wrote the bullet or changed it. The
+ * flag tells a person which lines are their own words.
+ */
+export type ResumeBullet = {
+  bullet_id: string;
+  user_id: string;
+  text: string;
+  project: string;
+  source_tx_id: string | null;
+  tags: BulletTag[];
+  created_at: string;
+  is_manual_edit: boolean;
+};
+
+/**
+ * The answer of `POST /bullets/seed-from-transaction/{tx_id}`.
+ *
+ * `seeded` is 0 when the bank already holds the bullets of that run, and the
+ * service says why in `message`. So a second press is safe.
+ */
+export type SeedResult = {
+  seeded: number;
+  project?: string;
+  message?: string;
+};

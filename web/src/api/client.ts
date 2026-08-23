@@ -13,10 +13,13 @@
 
 import type {
   ApprovalResult,
+  BulletTag,
   GeneratedAssets,
+  ResumeBullet,
   RuleState,
   RuleStateChange,
   RunEvent,
+  SeedResult,
   StyleRule,
   SyncStarted,
   Transaction,
@@ -88,6 +91,20 @@ export function triggerSync(repoUrl: string, userId = "default"): Promise<SyncSt
     method: "POST",
     body: JSON.stringify({ repo_url: repoUrl, user_id: userId }),
   });
+}
+
+/**
+ * Read the history of one person, newest first.
+ *
+ * The service takes one status for each request, and the gallery needs two of
+ * them, so this call asks for no status and the caller keeps what it wants. The
+ * limit is the count of rows and not the count of cards, because a row that
+ * nobody approved holds no card for the gallery.
+ */
+export function listTransactions(userId = "default", limit = 60): Promise<Transaction[]> {
+  return request<Transaction[]>(
+    `${API}/transactions?user_id=${encodeURIComponent(userId)}&limit=${String(limit)}`,
+  );
 }
 
 /** Read one transaction row. */
@@ -162,6 +179,73 @@ export function rejectRun(txId: string): Promise<ApprovalResult> {
       edited_assets: null,
     }),
   });
+}
+
+/**
+ * Read the bullet bank of one person, newest first.
+ *
+ * The call takes no filter. `store.list_bullets` reads every bullet of the
+ * person before it filters, so a filter on the service costs the same as a
+ * filter in the client and it adds one request for each press. So the screen
+ * asks one time and filters what it holds. See `hooks/useBullets.ts`.
+ */
+export function listBullets(userId = "default", limit = 200): Promise<ResumeBullet[]> {
+  return request<ResumeBullet[]>(
+    `${API}/bullets?user_id=${encodeURIComponent(userId)}&limit=${String(limit)}`,
+  );
+}
+
+/** Write one bullet by hand. The service marks it as the work of a person. */
+export function createBullet(
+  text: string,
+  project: string,
+  tags: readonly BulletTag[] = [],
+  userId = "default",
+): Promise<ResumeBullet> {
+  return request<ResumeBullet>(`${API}/bullets`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, text, project, tags }),
+  });
+}
+
+/**
+ * Change one bullet.
+ *
+ * Send only the parts that change. The service marks the bullet as the work of a
+ * person for any change, so a line that a person corrected is never taken for a
+ * line that a model wrote.
+ */
+export function updateBullet(
+  bulletId: string,
+  change: { text?: string; tags?: readonly BulletTag[]; project?: string },
+): Promise<ResumeBullet> {
+  return request<ResumeBullet>(`${API}/bullets/${encodeURIComponent(bulletId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(change),
+  });
+}
+
+/** Remove one bullet from the bank. */
+export function deleteBullet(bulletId: string): Promise<{ status: string; bullet_id: string }> {
+  return request<{ status: string; bullet_id: string }>(
+    `${API}/bullets/${encodeURIComponent(bulletId)}`,
+    { method: "DELETE" },
+  );
+}
+
+/**
+ * Put the bullets of one run into the bank.
+ *
+ * The approval of a run does this by itself, but only when both commits land. A
+ * run that committed one of the two writes no bullet, so this call is the way to
+ * get them after a retry. The service refuses a run that is not committed, and it
+ * writes nothing the second time, so the control is safe to press again.
+ */
+export function seedBulletsFrom(txId: string): Promise<SeedResult> {
+  return request<SeedResult>(
+    `${API}/bullets/seed-from-transaction/${encodeURIComponent(txId)}`,
+    { method: "POST" },
+  );
 }
 
 /** Read the rules of one person. A rule that they deleted is not in the list. */
