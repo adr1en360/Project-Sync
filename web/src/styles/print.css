@@ -1,0 +1,70 @@
+/* The paper.
+ *
+ * A deck goes out as a picture first. This file is the second way out, for a
+ * person who wants a PDF: the browser prints the pictures that `portfolio/draw.ts`
+ * already made, one on each page.
+ *
+ * The rules hide the whole page and then show the deck again. That is shorter and
+ * safer than a list of every part to hide, because a part added later is hidden
+ * by default instead of printed by accident.
+ *
+ * `:has` holds the whole block. Without it a person who prints any other screen
+ * would get one empty page.
+ */
+
+/* The deck is off the screen until the paper asks for it. */
+.print-deck {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
+  body:has(.print-deck) * {
+    visibility: hidden;
+  }
+
+  body:has(.print-deck) .print-deck,
+  body:has(.print-deck) .print-deck * {
+    visibility: visible;
+  }
+
+  /* The overlay is fixed on the screen, and some browsers repeat a fixed box on
+   * every page of the paper. It holds no place on paper, so it takes none. */
+  body:has(.print-deck) .sheet {
+    position: static;
+    display: block;
+    padding: 0;
+    background: none;
+  }
+
+  body:has(.print-deck) .print-deck {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    width: 100%;
+  }
+
+  /* One card on each page. The last one adds no empty page after it. */
+  .print-page {
+    display: block;
+    width: 100%;
+    height: auto;
+    break-inside: avoid;
+    break-after: page;
+  }
+
+  .print-page:last-child {
+    break-after: auto;
+  }
+
+  /* The face is the fallback, for a browser that cannot draw the picture. It
+   * needs the ink of the light mode, because the paper is white. */
+  .print-deck .face {
+    border-color: #d8d8d4;
+  }
+}
