@@ -239,6 +239,13 @@
   border-color: var(--ink-faint);
 }
 
+/* A select draws its own arrow, and the browser puts that arrow inside the right
+ * padding. The padding above is the same on both sides, so the text of the choice
+ * ran into the arrow. This gives the arrow a column of its own. */
+select.field-input {
+  padding-right: var(--sp-8);
+}
+
 .field-mono {
   font-family: var(--font-mono);
 }
@@ -622,6 +629,12 @@ kbd {
   margin-top: var(--sp-3);
 }
 
+/* A list of text rows.
+ *
+ * The name came from the voice rules, which were the first list of this shape.
+ * The library uses the same five classes for a bullet and for a run, because the
+ * object on the screen is the same one: a paragraph, a line of facts under it,
+ * and a row of controls. A second set of names would be the same rules twice. */
 .rule-list {
   display: grid;
   gap: 0;
@@ -664,4 +677,530 @@ kbd {
   margin-top: var(--sp-5);
   padding-top: var(--sp-5);
   border-top: var(--rule) solid var(--paper-edge);
+}
+
+/* ---- The portfolio ---- */
+
+/* The cards of the gallery are wider than the default bento cell. A card holds a
+ * name, a sentence, the stack and three points, and 15rem breaks the sentence
+ * into four words on each line. */
+.bento.cards {
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+}
+
+/* The face of one card.
+ *
+ * The gallery, the deck and the paper all draw this. It is the shape of the
+ * picture that `portfolio/draw.ts` makes, so a person recognises the picture as
+ * the thing they chose. */
+.face {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  background: var(--paper-raised);
+}
+
+/* The accent edge. It is out of the flow, so a change of its width moves no
+ * text. */
+.face-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--accent);
+  transition: width var(--dur-fast) var(--ease-out);
+}
+
+.face-body {
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+  padding: var(--sp-6);
+  padding-left: calc(var(--sp-6) + 3px);
+}
+
+.face-repo {
+  margin: 0;
+  color: var(--ink-quiet);
+  font-size: var(--step--1);
+}
+
+.face-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--step-3);
+  font-weight: 400;
+  letter-spacing: var(--track-tight);
+  line-height: var(--lh-tight);
+}
+
+.face-lede {
+  margin: 0;
+  color: var(--ink-quiet);
+  font-size: var(--step-0);
+  line-height: var(--lh-snug);
+}
+
+.face-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: var(--sp-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.face-stack li {
+  padding: 3px var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--paper-sunken);
+  color: var(--ink-quiet);
+  font-size: var(--step--1);
+}
+
+.face-points {
+  display: grid;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A small accent square and not a bullet character. The list is content and the
+ * mark is decoration, so the mark is drawn and not written. */
+.face-points li {
+  position: relative;
+  padding-left: var(--sp-5);
+  font-size: var(--step-0);
+  line-height: var(--lh-snug);
+}
+
+.face-points li::before {
+  content: "";
+  position: absolute;
+  top: 0.55em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+}
+
+.face-foot {
+  margin: var(--sp-3) 0 0;
+  padding-top: var(--sp-3);
+  border-top: var(--rule) solid var(--paper-edge);
+  color: var(--ink-faint);
+  font-size: var(--step--1);
+  overflow-wrap: anywhere;
+}
+
+/* A card that the person chose.
+ *
+ * Three channels answer the press and none of them is colour by itself: the edge
+ * of the card takes the accent, the accent bar grows, and the word in the button
+ * changes. The lift is in `motion.css`. */
+.pick[data-on="true"] .face {
+  border-color: var(--accent);
+}
+
+.pick[data-on="true"] .face-bar {
+  width: 7px;
+}
+
+.pick-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: var(--rule) solid var(--paper-edge);
+}
+
+/* The waiting card has the shape of the card that follows it. */
+.face-wait {
+  display: grid;
+  gap: var(--sp-3);
+  align-content: start;
+}
+
+/* ---- The tools of the gallery ---- */
+
+/* The gallery has more controls than one row can hold at one width, so this row
+ * wraps and the filter keeps the left. */
+.screen-tools.tools-wrap {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--sp-4);
+}
+
+.tools-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* The count beside the controls. It holds no margin, so it stays on the middle
+ * line of the row with the control and the button. */
+.tools-note {
+  margin: 0;
+  font-size: var(--step--1);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.chip {
+  padding: 5px var(--sp-3);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-quiet);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.chip:hover {
+  border-color: var(--ink-faint);
+  color: var(--ink);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.sort {
+  display: inline-flex;
+}
+
+/* ---- The deck ---- */
+
+/* The overlay of the deck.
+ *
+ * The scrim is one fixed colour and not a token. Every neutral token swaps its
+ * lightness between the two modes, and a scrim must stay dark in both, or the
+ * light mode gets a white veil that hides nothing. */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+  background: oklch(0.19 0.006 260 / 0.62);
+}
+
+.sheet-box {
+  display: grid;
+  gap: var(--sp-5);
+  width: min(38rem, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: var(--sp-6);
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.sheet-note {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--step--1);
+}
+
+/* The card of the deck answers the pointer. There is no transition on the
+ * transform, because the transform follows the finger and a transition would
+ * make it late. */
+.sheet-card {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  will-change: transform;
+}
+
+.sheet-card:active {
+  cursor: grabbing;
+}
+
+.sheet-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.sheet-hint {
+  margin: 0;
+  font-size: var(--step--1);
+}
+
+.sheet-done {
+  display: grid;
+  gap: var(--sp-5);
+}
+
+.deck-strip {
+  display: grid;
+  gap: var(--sp-4);
+  max-height: 22rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---- The library ---- */
+
+/* The control that changes the view inside one screen.
+ *
+ * It must not look like a tab of the shell, because it does a smaller thing. So
+ * it is a sunken track with the open view raised out of it. The raise is a change
+ * of surface and not a shadow, which the look forbids. */
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-md);
+  background: var(--paper-sunken);
+}
+
+.seg-btn {
+  display: inline-flex;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: var(--sp-2) var(--sp-4);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink-quiet);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.seg-btn:hover:not([aria-current="true"]) {
+  color: var(--ink);
+}
+
+.seg-btn[aria-current="true"] {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* The count after the name of a view. It is quiet, because the name is the
+ * control and the number is only a fact about it. */
+.seg-note {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+}
+
+/* The editor of one row, inside the reveal. The gap is the gap of a form and not
+ * of a list, because a form holds labels. */
+.row-editor {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-4) 0 var(--sp-2);
+}
+
+/* The steps of one run, inside the reveal of its row. */
+.row-steps {
+  padding-top: var(--sp-3);
+}
+
+/* A row of the history holds its steps, and a step of a run that is not open
+ * holds no left rule. The rule is the mark of progress on the run screen, where
+ * the rows move; here the run is finished and the mark is enough. */
+.row-steps .node-row::before {
+  display: none;
+}
+
+/* ---- The state as the control ---- */
+
+/* The switch of one row. The knob is on the left when the thing is off and on the
+ * right when it is on, so the state is a position and not a colour. The track is
+ * 34px, and the whole control sits in a 44px row, so the target answers WCAG
+ * 2.5.8 through the row and not through the track. */
+.toggle {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: var(--rule) solid var(--paper-edge);
+  border-radius: var(--r-pill);
+  background: var(--paper-sunken);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.toggle:hover {
+  border-color: var(--ink-faint);
+}
+
+.toggle[aria-checked="true"] {
+  border-color: transparent;
+  background: var(--accent);
+}
+
+/* `--ink-inverse` is the ink of a dark surface, so it is light in the light mode
+ * and dark in the dark mode. The accent fill goes the other way in the two
+ * modes, so this one name reads on the fill in both. */
+.toggle[aria-checked="true"]::after {
+  transform: translateX(14px);
+  background: var(--ink-inverse);
+}
+
+.toggle[aria-busy="true"] {
+  cursor: progress;
+}
+
+.toggle[aria-busy="true"]::after {
+  animation: pulse 1.2s var(--ease-in-out) infinite;
+}
+
+/* A row that leads with a switch. The base row stacks its parts; this one puts
+ * the switch in a column of its own so the text and the facts under it line up
+ * with each other and not with the control. */
+.rule-row-lead {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  min-height: var(--target-min);
+}
+
+.rule-body {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* A rule that is off says so a second time, by holding back its own text. The
+ * switch is the first channel and this is the second, and neither is a colour. */
+.rule-row-lead[data-on="false"] .rule-text {
+  color: var(--ink-quiet);
+}
+
+/* A rule that the curator found is the only row in the list that asks for a
+ * decision, so it carries an edge. It is a mark and not a pill. */
+.rule-row-lead[data-fresh="true"] {
+  padding-left: var(--sp-4);
+  border-left: 2px solid var(--accent);
+}
+
+/* The control that takes a row away. It is quiet until a pointer or the keyboard
+ * reaches the row, because the row is there to be read and not to be removed. */
+.row-kill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.rule-row:hover .row-kill,
+.rule-row:focus-within .row-kill {
+  opacity: 1;
+}
+
+.row-kill:hover {
+  background: var(--fail-wash, var(--paper-sunken));
+  color: var(--fail);
+}
+
+/* A pointer is not the only way in. The control shows itself whenever it holds
+ * the focus, whatever brought the focus there. */
+.row-kill:focus-visible {
+  opacity: 1;
+}
+
+/* ---- A group inside one list ---- */
+
+/* A heading inside a card, over one group of a list. The list of rules has three
+ * groups and they need no filter control, because the whole list is short and a
+ * heading with a count says what a chip would have said. */
+.list-group + .list-group {
+  margin-top: var(--sp-6);
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.list-count {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+  letter-spacing: 0;
+}
+
+.list-why {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--step--1);
+}
+
+.list-group .rule-list {
+  margin-top: var(--sp-3);
 }

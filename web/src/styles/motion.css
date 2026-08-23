@@ -228,3 +228,65 @@ body,
     transform: scaleX(1);
   }
 }
+
+/* #8 The choice of a card.
+ *
+ * The lift sits on the face inside the card and not on the card itself. The card
+ * is the element that the entry stagger and the reflow both animate, and an
+ * animation with a fill holds its own last frame over any rule written here. */
+.pick .face {
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.pick[data-on="true"] .face {
+  transform: translateY(-2px);
+}
+
+/* #9 The reflow of the gallery is in `hooks/useFlip.ts`.
+ *
+ * A filter puts every card in a new place at one step, and CSS cannot animate a
+ * change of place in a grid. So the hook measures each card, lets the browser lay
+ * the cards out again, and moves each card from its old box to its new one with
+ * `transform` alone. */
+
+/* The overlay of the deck. It takes the two keyframes that are already here: the
+ * scrim fades and the box comes up. A new keyframe would say the same thing with
+ * more lines. */
+.sheet {
+  animation: fade-in var(--dur-fast) var(--ease-out) both;
+}
+
+.sheet-box {
+  animation: card-in var(--dur-base) var(--ease-out) both;
+}
+
+/* The gallery is the most animated surface of the product.
+ *
+ * The shared stagger puts 80ms between cards, and that reads as a list that
+ * fills. A gallery of finished work is the one surface a person shows to somebody
+ * else, so its cards take longer, they come from further, and they settle instead
+ * of arriving. The scale is small on purpose: a card that grows a large amount
+ * reads as a thing that opened, and nothing opened.
+ *
+ * The three class names beat the one class name of the shared rule, so this rule
+ * needs no `!important`. */
+@keyframes card-settle {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bento.cards.stagger > * {
+  animation: card-settle var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--index, 0) * 110ms);
+}
