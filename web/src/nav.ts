@@ -1,9 +1,14 @@
 /**
- * The six screens, in the order of the tab bar.
+ * The five screens, in the order of the tab bar.
  *
- * A step of a run carries a number. The three reference screens carry no
- * number, because they are not a step of the run. The line between the two
- * groups comes from `divider`.
+ * A step of a run carries a number. The two reference screens carry no number,
+ * because they are not a step of the run. The line between the two groups comes
+ * from `divider`.
+ *
+ * The voice rules had a tab of their own. Everything that tab did was enable,
+ * edit and remove on one list, which is what the library already is, so the
+ * rules are a view of the library now. A tab is for a place a person goes, and
+ * not for every object the service holds.
  */
 
 export type TabId =
@@ -11,8 +16,7 @@ export type TabId =
   | "run"
   | "review"
   | "portfolio"
-  | "library"
-  | "voice";
+  | "library";
 
 export type Tab = {
   id: TabId;
@@ -29,7 +33,6 @@ export const TABS: readonly Tab[] = [
   { id: "review", label: "Review", step: 3 },
   { id: "portfolio", label: "Portfolio", divider: true },
   { id: "library", label: "Library" },
-  { id: "voice", label: "Voice" },
 ];
 
 export const DEFAULT_TAB: TabId = "intake";
