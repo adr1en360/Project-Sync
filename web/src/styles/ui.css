@@ -891,29 +891,36 @@ kbd {
 
 /* The overlay of the deck.
  *
- * The scrim is one fixed colour and not a token. Every neutral token swaps its
- * lightness between the two modes, and a scrim must stay dark in both, or the
- * light mode gets a white veil that hides nothing. */
+ * Scrim with subtle blur provides a clean focus mode for card curation. */
 .sheet {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: var(--sp-5);
-  background: oklch(0.19 0.006 260 / 0.62);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-3);
+  background: oklch(0.12 0.005 260 / 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sheet-box {
-  display: grid;
-  gap: var(--sp-5);
-  width: min(38rem, 100%);
-  max-height: 100%;
-  overflow: auto;
-  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  width: min(32rem, 100%);
+  max-height: min(86vh, 40rem);
+  padding: var(--sp-4);
+  gap: var(--sp-3);
   border: var(--rule) solid var(--paper-edge);
   border-radius: var(--r-lg);
   background: var(--paper);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--paper-edge);
+  overflow: hidden;
 }
 
 .sheet-head {
@@ -921,6 +928,7 @@ kbd {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-4);
+  flex-shrink: 0;
 }
 
 .sheet-note {
@@ -928,18 +936,79 @@ kbd {
   font-size: var(--step--1);
 }
 
-/* The card of the deck answers the pointer. There is no transition on the
- * transform, because the transform follows the finger and a transition would
- * make it late. */
+/* The card of the deck answers the pointer. touch-action: none prevents gesture conflicts. */
 .sheet-card {
   cursor: grab;
-  touch-action: pan-y;
+  touch-action: none;
   user-select: none;
   will-change: transform;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--r-md);
 }
 
 .sheet-card:active {
   cursor: grabbing;
+}
+
+.sheet-card .face {
+  margin: 0;
+  min-height: 100%;
+}
+
+.sheet-card .face-body {
+  padding: var(--sp-3);
+  padding-left: calc(var(--sp-3) + 3px);
+  gap: var(--sp-2);
+}
+
+.sheet-card .face-repo {
+  font-size: var(--step--2);
+}
+
+.sheet-card .face-title {
+  font-size: var(--step-1);
+  line-height: var(--lh-tight);
+}
+
+.sheet-card .face-lede {
+  font-size: var(--step--1);
+  line-height: var(--lh-snug);
+}
+
+.sheet-card .face-stack {
+  gap: 4px;
+}
+
+.sheet-card .face-stack li {
+  padding: 1px 6px;
+  font-size: 0.725rem;
+  border-radius: var(--r-sm);
+}
+
+.sheet-card .face-points {
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.sheet-card .face-points li {
+  font-size: var(--step--1);
+  line-height: 1.35;
+  padding-left: var(--sp-4);
+}
+
+.sheet-card .face-points li::before {
+  top: 0.45em;
+  width: 5px;
+  height: 5px;
+}
+
+.sheet-card .face-foot {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-2);
+  font-size: var(--step--2);
 }
 
 .sheet-foot {
@@ -947,7 +1016,10 @@ kbd {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-4);
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: var(--rule) solid var(--paper-edge);
+  flex-shrink: 0;
 }
 
 .sheet-hint {
@@ -956,8 +1028,10 @@ kbd {
 }
 
 .sheet-done {
-  display: grid;
-  gap: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  overflow-y: auto;
 }
 
 .deck-strip {

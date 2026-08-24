@@ -150,7 +150,17 @@
 }
 
 .screen-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
   margin-bottom: var(--sp-8);
+}
+
+.screen-head-text {
+  flex: 1 1 30rem;
+  max-width: 52ch;
 }
 
 .screen-head h1 {
@@ -158,11 +168,22 @@
 }
 
 .screen-lede {
-  max-width: 46ch;
   margin: var(--sp-3) 0 0;
   color: var(--ink-quiet);
   font-size: var(--step-1);
   line-height: var(--lh-snug);
+}
+
+.screen-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  align-self: flex-start;
+}
+
+.filter-bar {
+  margin-bottom: var(--sp-6);
 }
 
 /* The layout with a side column. The column holds the rules on the review

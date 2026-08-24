@@ -55,3 +55,89 @@ export function when(iso: string | null): string {
   }
   return `${String(day)} ${month} ${String(moment.getFullYear())}, ${pad(moment.getHours())}:${pad(moment.getMinutes())}`;
 }
+
+/**
+ * Show only the day of a moment.
+ *
+ * A list of bullets carries one date for each row, and the hour that a bullet was
+ * written tells a person nothing that they use. The year is given only when it is
+ * not the year now, so a bank of this year holds no repeated number.
+ */
+export function day(iso: string | null): string {
+  if (iso === null || iso === "") {
+    return "";
+  }
+  const moment = new Date(iso);
+  const date = moment.getDate();
+  const month = MONTH[moment.getMonth()];
+  if (Number.isNaN(date) || month === undefined) {
+    return iso;
+  }
+  const year = moment.getFullYear();
+  return year === new Date().getFullYear()
+    ? `${String(date)} ${month}`
+    : `${String(date)} ${month} ${String(year)}`;
+}
+
+/**
+ * Format a raw error string or object into a human-readable headline and optional detail.
+ */
+export function humanizeError(raw: string): { message: string; technical?: string } {
+  const text = raw.trim();
+
+  // Pattern: "GitHub gave <status> for <path>: {JSON}"
+  const ghMatch = text.match(/^GitHub gave (\d+) for ([^:]+):\s*(\{.*?\})$/s);
+  if (ghMatch) {
+    const status = ghMatch[1];
+    const path = ghMatch[2].trim();
+    const jsonStr = ghMatch[3];
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const apiMsg = parsed.message ?? "Not Found";
+      if (status === "404") {
+        return {
+          message: `GitHub repository not found (${status})`,
+          technical: `Could not access ${path}. Check that the repository exists and your GITHUB_TOKEN has access if it is private.`,
+        };
+      }
+      if (status === "401") {
+        return {
+          message: `GitHub authentication failed (401: ${apiMsg})`,
+          technical: "Your GITHUB_TOKEN appears to be invalid or expired. Check your .env settings.",
+        };
+      }
+      if (status === "403") {
+        return {
+          message: `GitHub permission denied (403: ${apiMsg})`,
+          technical: `Access to ${path} was blocked. Check your rate limits or GITHUB_TOKEN scopes.`,
+        };
+      }
+      return {
+        message: `GitHub API error (${status}: ${apiMsg})`,
+        technical: `Path: ${path}`,
+      };
+    } catch {
+      // Fallback
+    }
+  }
+
+  // Check if string contains JSON blob at the end
+  const jsonEndMatch = text.match(/^(.*?):\s*(\{.*?\})$/s);
+  if (jsonEndMatch) {
+    const prefix = jsonEndMatch[1].trim();
+    const jsonStr = jsonEndMatch[2];
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.message) {
+        return {
+          message: `${prefix}: ${parsed.message}`,
+          technical: jsonStr,
+        };
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  return { message: text };
+}

@@ -9,14 +9,18 @@ import type { ReactNode } from "react";
 type Props = {
   title: string;
   lede: ReactNode;
+  actions?: ReactNode;
   children?: ReactNode;
 };
 
-export function ScreenHead({ title, lede, children }: Props) {
+export function ScreenHead({ title, lede, actions, children }: Props) {
   return (
     <header className="screen-head">
-      <h1>{title}</h1>
-      <p className="screen-lede">{lede}</p>
+      <div className="screen-head-text">
+        <h1>{title}</h1>
+        <p className="screen-lede">{lede}</p>
+      </div>
+      {actions !== undefined && <div className="screen-head-actions">{actions}</div>}
       {children}
     </header>
   );

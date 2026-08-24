@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
-import { CaretIcon } from "./icons";
+import { CaretIcon, CheckIcon } from "./icons";
 
 /**
  * A menu that holds one choice.
@@ -156,8 +156,8 @@ export function Menu({ trigger, ariaLabel, title, items, current, onPick }: Prop
               )}
               <span>{item.label}</span>
               {item.id === current && (
-                <span className="menu-mark mono" aria-hidden="true">
-                  ✓
+                <span className="menu-mark" aria-hidden="true">
+                  <CheckIcon />
                 </span>
               )}
             </button>

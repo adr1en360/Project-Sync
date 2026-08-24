@@ -71,3 +71,52 @@ export function PlusIcon() {
     </svg>
   );
 }
+
+/** Two sheets, for a control that copies text to the clipboard. */
+export function CopyIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <rect x="4.8" y="4.8" width="7.4" height="7.4" rx="1.3" />
+      <path d="M9.8 3.2V2.6a1.2 1.2 0 0 0-1.2-1.2H2.6a1.2 1.2 0 0 0-1.2 1.2v6a1.2 1.2 0 0 0 1.2 1.2h.6" />
+    </svg>
+  );
+}
+
+/** A pen, for a control that opens an inline editor. */
+export function PenIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <path d="M9.4 2.1l2.5 2.5-6.7 6.7-3 .5.5-3z" />
+      <path d="M8.2 3.3l2.5 2.5" />
+    </svg>
+  );
+}
+
+/** A checkmark, for a successful state or active selection. */
+export function CheckIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <path d="M2.6 7.3l3 3 5.8-6.6" />
+    </svg>
+  );
+}
+
+/** A circle that turns, for a control that refreshes data. */
+export function RefreshIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <path d="M2.2 7a4.8 4.8 0 1 1 1.9 3.8" />
+      <path d="M2.2 3.4v3.8h3.8" />
+    </svg>
+  );
+}
+
+/** A trash bin, for deleting an entry. */
+export function TrashIcon() {
+  return (
+    <svg {...BOX} width="14" height="14" viewBox="0 0 14 14">
+      <path d="M2.5 4h9M5.5 4V2.5a.8.8 0 0 1 .8-.8h1.4a.8.8 0 0 1 .8.8V4M10.5 4v7.5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V4" />
+    </svg>
+  );
+}
+
