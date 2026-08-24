@@ -1,0 +1,231 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" style="background:#0b0f19; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="primary-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="agent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+    <linearGradient id="gcp-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Filters for Glow / Shadows -->
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <filter id="node-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+
+    <!-- Arrow Marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#60a5fa" />
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#c084fc" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399" />
+    </marker>
+  </defs>
+
+  <!-- Background Grid -->
+  <g opacity="0.04">
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="1"/>
+    </pattern>
+    <rect width="100%" height="100%" fill="url(#grid)" />
+  </g>
+
+  <!-- Title & Header -->
+  <text x="50" y="55" fill="#f8fafc" font-size="28" font-weight="700" letter-spacing="-0.5">ProjectSync — System Architecture</text>
+  <text x="50" y="82" fill="#94a3b8" font-size="14">Autonomous Taskmaster AI Agent • Google ADK 2.0 • Gemini 3.7 Flash • Google Cloud Run &amp; Firestore</text>
+
+  <!-- ==================== LEFT: PHASE 1 MULTI-AGENT PIPELINE ==================== -->
+  <rect x="50" y="115" width="420" height="740" rx="16" fill="#131b2e" stroke="#1e293b" stroke-width="1.5" filter="url(#card-shadow)" />
+  <rect x="50" y="115" width="420" height="46" rx="16" fill="#1e293b" />
+  <rect x="50" y="145" width="420" height="16" fill="#1e293b" />
+  <text x="75" y="144" fill="#38bdf8" font-size="14" font-weight="700" letter-spacing="0.5">PHASE 1: 7-NODE ADK 2.0 GRAPH WORKFLOW</text>
+
+  <!-- Node 1: scan_github_repository -->
+  <g transform="translate(75, 175)">
+    <rect width="370" height="60" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="30" r="12" fill="#0284c7"/>
+    <text x="20" y="34" fill="#ffffff" font-size="11" font-weight="700">1</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">scan_github_repository</text>
+    <text x="46" y="45" fill="#64748b" font-size="11">[Code Node] GitHub REST API • AST Filter (400KB cap)</text>
+    <rect x="295" y="12" width="65" height="18" rx="4" fill="#0369a1" opacity="0.4"/>
+    <text x="303" y="25" fill="#38bdf8" font-size="9" font-weight="700">CODE NODE</text>
+  </g>
+  <line x1="260" y1="235" x2="260" y2="255" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Node 2: extraction_agent -->
+  <g transform="translate(75, 255)">
+    <rect width="370" height="60" rx="8" fill="#1e293b" stroke="#7c3aed" stroke-width="1.5" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="30" r="12" fill="#7c3aed"/>
+    <text x="20" y="34" fill="#ffffff" font-size="11" font-weight="700">2</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">extraction_agent</text>
+    <text x="46" y="45" fill="#c084fc" font-size="11">Gemini 3.7 Flash (T: 0.2) • ExtractedMetadata</text>
+    <rect x="285" y="12" width="75" height="18" rx="4" fill="#6d28d9" opacity="0.4"/>
+    <text x="292" y="25" fill="#c084fc" font-size="9" font-weight="700">GEMINI AGENT</text>
+  </g>
+  <line x1="260" y1="315" x2="260" y2="335" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Node 3: attach_style_rules -->
+  <g transform="translate(75, 335)">
+    <rect width="370" height="60" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="30" r="12" fill="#0284c7"/>
+    <text x="20" y="34" fill="#ffffff" font-size="11" font-weight="700">3</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">attach_style_rules</text>
+    <text x="46" y="45" fill="#64748b" font-size="11">[Code Node] Loads ACTIVE semantic voice rules from Firestore</text>
+    <rect x="295" y="12" width="65" height="18" rx="4" fill="#0369a1" opacity="0.4"/>
+    <text x="303" y="25" fill="#38bdf8" font-size="9" font-weight="700">CODE NODE</text>
+  </g>
+  <line x1="260" y1="395" x2="260" y2="415" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Node 4: asset_generator_agent -->
+  <g transform="translate(75, 415)">
+    <rect width="370" height="74" rx="8" fill="#1e293b" stroke="#7c3aed" stroke-width="1.5" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="37" r="12" fill="#7c3aed"/>
+    <text x="20" y="41" fill="#ffffff" font-size="11" font-weight="700">4</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">asset_generator_agent</text>
+    <text x="46" y="45" fill="#c084fc" font-size="11">Gemini 3.7 Flash (T: 0.7) • GeneratedAssets</text>
+    <text x="46" y="62" fill="#94a3b8" font-size="10">Outputs: Doc Sheet, Portfolio Card, Bullets, Social Post</text>
+    <rect x="285" y="12" width="75" height="18" rx="4" fill="#6d28d9" opacity="0.4"/>
+    <text x="292" y="25" fill="#c084fc" font-size="9" font-weight="700">GEMINI AGENT</text>
+  </g>
+  <line x1="260" y1="489" x2="260" y2="509" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Node 5: select_evaluator_input -->
+  <g transform="translate(75, 509)">
+    <rect width="370" height="60" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="30" r="12" fill="#0284c7"/>
+    <text x="20" y="34" fill="#ffffff" font-size="11" font-weight="700">5</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">select_evaluator_input</text>
+    <text x="46" y="45" fill="#64748b" font-size="11">[Code Node] Routes code facts to evaluator (not drafts)</text>
+    <rect x="295" y="12" width="65" height="18" rx="4" fill="#0369a1" opacity="0.4"/>
+    <text x="303" y="25" fill="#38bdf8" font-size="9" font-weight="700">CODE NODE</text>
+  </g>
+  <line x1="260" y1="569" x2="260" y2="589" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Node 6: path_evaluator_agent -->
+  <g transform="translate(75, 589)">
+    <rect width="370" height="60" rx="8" fill="#1e293b" stroke="#7c3aed" stroke-width="1.5" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="30" r="12" fill="#7c3aed"/>
+    <text x="20" y="34" fill="#ffffff" font-size="11" font-weight="700">6</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">path_evaluator_agent</text>
+    <text x="46" y="45" fill="#c084fc" font-size="11">Gemini 3.7 Flash (T: 0.0) • FULL_PUBLISH vs PRIVATE_ONLY</text>
+    <rect x="285" y="12" width="75" height="18" rx="4" fill="#6d28d9" opacity="0.4"/>
+    <text x="292" y="25" fill="#c084fc" font-size="9" font-weight="700">GEMINI AGENT</text>
+  </g>
+  <line x1="260" y1="649" x2="260" y2="669" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Node 7: persist_transaction -->
+  <g transform="translate(75, 669)">
+    <rect width="370" height="64" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5" filter="url(#node-shadow)"/>
+    <circle cx="24" cy="32" r="12" fill="#059669"/>
+    <text x="20" y="36" fill="#ffffff" font-size="11" font-weight="700">7</text>
+    <text x="46" y="27" fill="#f1f5f9" font-size="13" font-weight="600">persist_transaction</text>
+    <text x="46" y="45" fill="#34d399" font-size="11">Writes state PENDING_APPROVAL to Firestore</text>
+    <rect x="275" y="12" width="85" height="18" rx="4" fill="#065f46" opacity="0.6"/>
+    <text x="282" y="25" fill="#34d399" font-size="9" font-weight="700">FIRESTORE SAVE</text>
+  </g>
+
+  <g transform="translate(170, 755)">
+    <rect width="180" height="28" rx="14" fill="#f59e0b" opacity="0.15" stroke="#f59e0b" stroke-width="1"/>
+    <text x="22" y="18" fill="#fbbf24" font-size="11" font-weight="600">PAUSES FOR HUMAN REVIEW</text>
+  </g>
+
+
+  <!-- ==================== RIGHT: PHASE 2 & GOOGLE CLOUD ECOSYSTEM ==================== -->
+
+  <!-- Top Right: Phase 2 Human Review Desk -->
+  <rect x="520" y="115" width="630" height="355" rx="16" fill="#131b2e" stroke="#1e293b" stroke-width="1.5" filter="url(#card-shadow)" />
+  <rect x="520" y="115" width="630" height="46" rx="16" fill="#1e293b" />
+  <rect x="520" y="145" width="630" height="16" fill="#1e293b" />
+  <text x="545" y="144" fill="#10b981" font-size="14" font-weight="700" letter-spacing="0.5">PHASE 2: HUMAN-IN-THE-LOOP REVIEW &amp; MEMORY EVOLUTION</text>
+
+  <!-- Review Desk UI Box -->
+  <g transform="translate(545, 175)">
+    <rect width="280" height="110" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="16" y="26" fill="#60a5fa" font-size="13" font-weight="700">React 19 Review Desk</text>
+    <text x="16" y="46" fill="#cbd5e1" font-size="11">• Edit 4 drafts in real-time</text>
+    <text x="16" y="64" fill="#cbd5e1" font-size="11">• Regenerate single asset tabs</text>
+    <text x="16" y="82" fill="#cbd5e1" font-size="11">• Toggle active voice style rules</text>
+    <text x="16" y="100" fill="#cbd5e1" font-size="11">• Action: Approve or Reject</text>
+  </g>
+
+  <!-- GitHub Commit Flow -->
+  <g transform="translate(850, 175)">
+    <rect width="275" height="110" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+    <text x="16" y="26" fill="#34d399" font-size="13" font-weight="700">GitHub Private Portfolio Commit</text>
+    <text x="16" y="46" fill="#94a3b8" font-size="11">Target: PORTFOLIO_DATA_REPO</text>
+    <text x="16" y="66" fill="#f1f5f9" font-size="11">📄 docs/synced/&lt;project&gt;.md</text>
+    <text x="16" y="86" fill="#f1f5f9" font-size="11">📦 cards/&lt;project&gt;.json</text>
+    <text x="16" y="102" fill="#34d399" font-size="10">Captures commit SHA on approval</text>
+  </g>
+  <line x1="825" y1="230" x2="850" y2="230" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+  <!-- Curator Agent: Voice Memory -->
+  <g transform="translate(545, 305)">
+    <rect width="580" height="75" rx="8" fill="#1e293b" stroke="#7c3aed" stroke-width="1.5"/>
+    <circle cx="26" cy="38" r="12" fill="#7c3aed"/>
+    <text x="22" y="42" fill="#ffffff" font-size="11" font-weight="700">✦</text>
+    <text x="48" y="28" fill="#f1f5f9" font-size="13" font-weight="600">curator_agent — Style Rule Distillation</text>
+    <text x="48" y="48" fill="#c084fc" font-size="11">Analyzes diffs between AI drafts and Human edits • Extracts voice &amp; tone principles</text>
+    <text x="48" y="66" fill="#94a3b8" font-size="10">Proposes new rules to Firestore: PROPOSED ➔ User toggles to ACTIVE</text>
+  </g>
+
+  <!-- Connect Phase 1 to Phase 2 -->
+  <path d="M 445 700 H 480 V 230 H 545" fill="none" stroke="#60a5fa" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)"/>
+
+
+  <!-- Bottom Right: Google Cloud Platform Infrastructure -->
+  <rect x="520" y="490" width="630" height="365" rx="16" fill="#131b2e" stroke="#1e293b" stroke-width="1.5" filter="url(#card-shadow)" />
+  <rect x="520" y="490" width="630" height="46" rx="16" fill="#1e293b" />
+  <rect x="520" y="520" width="630" height="16" fill="#1e293b" />
+  <text x="545" y="519" fill="#38bdf8" font-size="14" font-weight="700" letter-spacing="0.5">GOOGLE CLOUD PLATFORM ARCHITECTURE</text>
+
+  <!-- GCP Component 1: Cloud Run -->
+  <g transform="translate(545, 550)">
+    <rect width="280" height="135" rx="8" fill="#1e293b" stroke="#0284c7" stroke-width="1.5"/>
+    <text x="16" y="26" fill="#38bdf8" font-size="13" font-weight="700">Google Cloud Run</text>
+    <text x="16" y="46" fill="#cbd5e1" font-size="11">• Multi-stage Docker container</text>
+    <text x="16" y="64" fill="#cbd5e1" font-size="11">• FastAPI async backend</text>
+    <text x="16" y="82" fill="#cbd5e1" font-size="11">• Serves React 19 SPA static build</text>
+    <text x="16" y="100" fill="#cbd5e1" font-size="11">• --no-cpu-throttling background tasks</text>
+    <text x="16" y="118" fill="#94a3b8" font-size="10">Region: us-central1 (1Gi RAM, 300s timeout)</text>
+  </g>
+
+  <!-- GCP Component 2: Firestore -->
+  <g transform="translate(850, 550)">
+    <rect width="275" height="135" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="16" y="26" fill="#fbbf24" font-size="13" font-weight="700">Google Cloud Firestore</text>
+    <text x="16" y="46" fill="#cbd5e1" font-size="11">Dual-Memory Database (nam5):</text>
+    <text x="16" y="66" fill="#f1f5f9" font-size="11">📚 projectsync_transactions</text>
+    <text x="28" y="82" fill="#94a3b8" font-size="10">(Episodic run state &amp; event history)</text>
+    <text x="16" y="102" fill="#f1f5f9" font-size="11">🧠 style_rules</text>
+    <text x="28" y="118" fill="#94a3b8" font-size="10">(Semantic memory: proposed/active)</text>
+  </g>
+
+  <!-- GCP Component 3: Google GenAI SDK & Vertex AI -->
+  <g transform="translate(545, 700)">
+    <rect width="580" height="135" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
+    <text x="16" y="26" fill="#c084fc" font-size="13" font-weight="700">Google GenAI SDK (google-genai) &amp; ADK 2.0</text>
+    <text x="16" y="48" fill="#f1f5f9" font-size="11">Gemini 3.7 Flash Model Execution:</text>
+    <text x="16" y="68" fill="#cbd5e1" font-size="11">• Strict Pydantic Schema Validation (output_schema)</text>
+    <text x="16" y="86" fill="#cbd5e1" font-size="11">• Zero-cost AST caching &amp; deterministic pipeline fallback</text>
+    <text x="16" y="104" fill="#cbd5e1" font-size="11">• Vertex AI / Google AI Studio dual backend support</text>
+    <text x="16" y="122" fill="#a78bfa" font-size="10">Pass-or-Fail Gate: Asserts Gemini 3.5+ model floor at startup</text>
+  </g>
+
+</svg>
