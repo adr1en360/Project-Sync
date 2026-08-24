@@ -1,17 +1,5 @@
 # ProjectSync — Devpost submission copy
 
-Draft for the Taskmaster track, All Things Agentic Hackathon. Paste each section into
-the matching Devpost field. Written 2026-08-21.
-
-## Tagline
-
-> Turn shipped code into career assets in one click
-
-This is the tagline in the Devpost form, and it is the sentence in the masthead of the
-interface. The two were different until 2026-08-22, when the interface said something
-else. Keep them the same. The tagline belongs in this file so a change happens in one
-place.
-
 ## Inspiration
 
 I build a lot of projects. Hackathon entries, side tools, things I start on a weekend
@@ -65,7 +53,7 @@ turn it back on later.
 
 ## How we built it
 
-Phase 1 is an ADK 2.0 graph `Workflow` with seven nodes. Four are plain Python and three
+Phase 1 is an ADK 2.0 graph `Workflow` with six nodes. Three are plain Python and three
 are LLM agents:
 
 ```
@@ -74,12 +62,11 @@ START
   -> extraction_agent         agent   structured metadata, output_schema
   -> attach_style_rules       code    reads ACTIVE rules from Firestore
   -> asset_generator_agent    agent   all four assets in one pass
-  -> select_evaluator_input   code    gives the evaluator the repository facts, not the drafts
   -> path_evaluator_agent     agent   publish-readiness verdict
   -> persist_transaction      code    writes PENDING_APPROVAL to Firestore
 ```
 
-The four-code-to-three-agent ratio is deliberate. Filtering a repository is exact work and
+The three-code-to-three-agent ratio is deliberate. Filtering a repository is exact work and
 a model does it worse, so the scan is code: it drops ignored directories and binary
 extensions, caps a single file at 100 KB and the whole payload at 400 KB, and keeps at most
 40 files. That filter runs before the request, not after, because a large repo will
@@ -96,9 +83,9 @@ both memories. The transaction rows *are* the episodic memory. The style rules a
 semantic memory. No Pub/Sub, because the only trigger is a person pasting a URL and there
 is nothing to decouple.
 
-The interface is React and TypeScript, and Vite builds it into static files that the same
-FastAPI app sends. One container holds the API and the UI, so the deploy is one Cloud Run
-service and there is no Node in the image, because the build runs before the image is made.
+The interface is plain HTML, CSS, and JavaScript with no build step: 16 numbered CSS files
+and 18 JS modules, served out of `static/` by the same FastAPI app. One container holds the
+API and the UI, so the deploy is one Cloud Run service and there is no Node in the image.
 Phase 1 takes roughly 30 to 90 seconds, so the client polls a status endpoint rather than
 holding a stream open.
 
