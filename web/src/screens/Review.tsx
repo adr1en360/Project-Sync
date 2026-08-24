@@ -14,6 +14,7 @@ import {
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
+import { ErrorCallout } from "../ui/ErrorCallout";
 import { Field } from "../ui/Field";
 import { Skeleton } from "../ui/Skeleton";
 import { Stamp } from "../ui/Stamp";
@@ -173,16 +174,17 @@ export function Review({ txId }: Props) {
             </Card>
           ) : tx === null ? (
             <Card title="That run is not here">
-              <p className="field-error" role="alert">
-                {runError ?? "The service holds no run with that number."}
-              </p>
+              <ErrorCallout error={runError ?? "The service holds no run with that number."} />
             </Card>
           ) : draft === null ? (
             <Card title="This run wrote no drafts" note={STATUS[tx.status]}>
-              <p className="quiet">
-                {tx.error_message ??
-                  "The run stopped before the drafts were written, so there is nothing to approve. Run it again from the run screen."}
-              </p>
+              {tx.error_message ? (
+                <ErrorCallout error={tx.error_message} />
+              ) : (
+                <p className="quiet">
+                  The run stopped before the drafts were written, so there is nothing to approve. Run it again from the run screen.
+                </p>
+              )}
             </Card>
           ) : (
             <>
@@ -271,9 +273,7 @@ export function Review({ txId }: Props) {
                 {review.result !== null && <Receipt result={review.result} />}
 
                 {review.error !== null && (
-                  <p className="field-error" role="alert">
-                    {review.error}
-                  </p>
+                  <ErrorCallout error={review.error} style={{ marginTop: "var(--sp-3)" }} />
                 )}
 
                 {review.edited && (
@@ -286,7 +286,7 @@ export function Review({ txId }: Props) {
                 {review.canDecide && (
                   <div className="row-controls">
                     <Button tone="primary" busy={review.busy} onClick={review.approve}>
-                      Approve and publish
+                      {review.busy ? "Publishing to GitHub..." : "Approve and publish"}
                     </Button>
                     <Button tone="danger" busy={review.busy} onClick={review.reject}>
                       Reject
@@ -302,12 +302,11 @@ export function Review({ txId }: Props) {
                 {review.canRetry && (
                   <>
                     <p className="quiet">
-                      One of the two commits landed and the other did not. A retry writes
-                      both again, so the one that landed does not change.
+                      One commit succeeded and the other failed. Retrying will re-attempt writing both commits without altering existing work.
                     </p>
                     <div className="row-controls">
                       <Button tone="primary" busy={review.busy} onClick={review.approve}>
-                        Try the commits again
+                        {review.busy ? "Writing commits to GitHub..." : "Try the commits again"}
                       </Button>
                     </div>
                   </>
@@ -333,9 +332,7 @@ export function Review({ txId }: Props) {
           </p>
 
           {rules.error !== null && (
-            <p className="field-error" role="alert">
-              {rules.error}
-            </p>
+            <ErrorCallout error={rules.error} style={{ margin: "var(--sp-3) 0" }} />
           )}
 
           {rules.loading ? (

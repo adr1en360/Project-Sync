@@ -45,7 +45,11 @@ export function CardFace({ card, repoName, foot }: Props) {
           </ul>
         )}
 
-        <p className="face-foot mono">{shortRepo(card.repo_url)}</p>
+        <p className="face-foot mono">
+          {card.repo_url && !card.repo_url.includes("example/project")
+            ? shortRepo(card.repo_url)
+            : repoName}
+        </p>
         {foot}
       </div>
     </div>

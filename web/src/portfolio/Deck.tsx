@@ -79,10 +79,14 @@ export function Deck({ items, onClose }: Props) {
 
   // The focus goes into the overlay, and it returns to the control that opened
   // it. A person who closes a dialog must not lose their place on the page.
+  // Also lock background body scrolling while modal is open.
   useEffect(() => {
     const opener = document.activeElement;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     host.current?.focus();
     return () => {
+      document.body.style.overflow = prevOverflow;
       if (opener instanceof HTMLElement) {
         opener.focus();
       }

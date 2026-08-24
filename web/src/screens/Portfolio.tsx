@@ -8,20 +8,17 @@ import { CardFace } from "../portfolio/CardFace";
 import { Deck } from "../portfolio/Deck";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
+import { ErrorCallout } from "../ui/ErrorCallout";
 import { Skeleton } from "../ui/Skeleton";
 import { Tag } from "../ui/Tag";
 import { ScreenHead } from "./ScreenHead";
 
 /**
- * The gallery of finished work.
+ * Step 3: Portfolio Card Gallery.
  *
- * There are two ways to choose, and they are not the same control twice. A person
- * who knows the three cards they want selects them here. A person who does not
- * selects nothing, and the deck then walks every card that the filter left, one
- * at a time.
- *
- * The filter and the sort move every card at once, so `useFlip` carries each card
- * from where it was to where it goes.
+ * Displays visual project highlight cards generated from approved repository runs.
+ * Supports interactive 3D card flipping, tag filtering, custom card deck compilation,
+ * and high-resolution PNG image export.
  */
 
 export function Portfolio() {
@@ -37,13 +34,60 @@ export function Portfolio() {
   return (
     <>
       <ScreenHead
-        title="Portfolio"
-        lede="One card for each project you approved. Keep the ones that fit a role, and the deck becomes one picture you can send."
+        title="Project Portfolio"
+        lede="Visual highlight cards for your approved projects. Select cards to compile a custom deck and export high-resolution presentation images."
+        actions={
+          !gallery.loading ? (
+            <>
+              {gallery.shown.length > 0 && (
+                <>
+                  <label className="sort">
+                    <span className="sr-only">Card sort order</span>
+                    <select
+                      className="field-input"
+                      value={gallery.sort}
+                      onChange={(event) => {
+                        gallery.setSort(event.target.value as Sort);
+                      }}
+                    >
+                      {SORTS.map((order) => (
+                        <option key={order} value={order}>
+                          {SORT_LABEL[order]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <span className="quiet tools-note">
+                    {count === 0
+                      ? `The deck takes all ${gallery.shown.length}`
+                      : `The deck takes the ${count} you chose`}
+                  </span>
+
+                  {count > 0 && (
+                    <Button tone="quiet" onClick={gallery.clear}>
+                      Clear the choice
+                    </Button>
+                  )}
+                </>
+              )}
+              <Button
+                tone="primary"
+                onClick={() => {
+                  setDeck(true);
+                }}
+                disabled={gallery.shown.length === 0}
+              >
+                Build a deck
+              </Button>
+            </>
+          ) : undefined
+        }
       />
 
-      <div className="screen-tools tools-wrap">
-        {gallery.techs.length > 0 && (
-          <div className="chip-row" role="group" aria-label="Filter by what it is built with">
+      {gallery.techs.length > 0 && (
+        <div className="filter-bar">
+          <div className="chip-row" role="group" aria-label="Filter by technology">
             <button
               type="button"
               className="chip"
@@ -68,57 +112,11 @@ export function Portfolio() {
               </button>
             ))}
           </div>
-        )}
-
-        <div className="tools-right">
-          {gallery.shown.length > 0 && (
-            <>
-              <label className="sort">
-                <span className="sr-only">Order of the cards</span>
-                <select
-                  className="field-input"
-                  value={gallery.sort}
-                  onChange={(event) => {
-                    gallery.setSort(event.target.value as Sort);
-                  }}
-                >
-                  {SORTS.map((order) => (
-                    <option key={order} value={order}>
-                      {SORT_LABEL[order]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <span className="quiet tools-note">
-                {count === 0
-                  ? `The deck takes all ${gallery.shown.length}`
-                  : `The deck takes the ${count} you chose`}
-              </span>
-            </>
-          )}
-
-          {count > 0 && (
-            <Button tone="quiet" onClick={gallery.clear}>
-              Clear the choice
-            </Button>
-          )}
-          <Button
-            tone="primary"
-            onClick={() => {
-              setDeck(true);
-            }}
-            disabled={gallery.shown.length === 0}
-          >
-            Build a deck
-          </Button>
         </div>
-      </div>
+      )}
 
       {gallery.error !== null && (
-        <p className="field-error" role="alert">
-          {gallery.error}
-        </p>
+        <ErrorCallout error={gallery.error} style={{ margin: "var(--sp-4) 0" }} />
       )}
 
       {gallery.loading ? (
@@ -139,8 +137,7 @@ export function Portfolio() {
         </div>
       ) : gallery.items.length === 0 ? (
         <EmptyState title="No card yet">
-          A card arrives here when you approve a run on the review desk. Nothing
-          that only waits for you is here, because the gate is the point.
+          A card arrives here when you approve a run on the review desk.
         </EmptyState>
       ) : gallery.shown.length === 0 ? (
         <EmptyState
@@ -155,7 +152,7 @@ export function Portfolio() {
             </Button>
           }
         >
-          No card in the gallery uses that one.
+          No portfolio card uses the selected technology.
         </EmptyState>
       ) : (
         <div className="bento cards stagger" ref={host}>

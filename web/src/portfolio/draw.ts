@@ -265,7 +265,11 @@ export function drawCard(
   ctx.fillRect(left, foot - 44, width, 1);
   ctx.font = `400 22px ${MONO}`;
   ctx.fillStyle = ink.quiet;
-  ctx.fillText(shortRepo(card.repo_url), left, foot);
+  const repoFoot =
+    card.repo_url && !card.repo_url.includes("example/project")
+      ? shortRepo(card.repo_url)
+      : item.repoName;
+  ctx.fillText(repoFoot, left, foot);
   ctx.textAlign = "right";
   ctx.fillText("ProjectSync", right, foot);
 

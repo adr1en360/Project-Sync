@@ -6,6 +6,7 @@ import { useTransaction } from "../hooks/useTransaction";
 import { GRAPH_NAME, NODE_ORDER, STATUS, STATUS_TONE } from "../labels";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { ErrorCallout } from "../ui/ErrorCallout";
 import { Mark } from "../ui/Mark";
 import { Skeleton } from "../ui/Skeleton";
 import { Switch } from "../ui/Switch";
@@ -13,30 +14,18 @@ import { Tag } from "../ui/Tag";
 import { ScreenHead } from "./ScreenHead";
 
 /**
- * Step 2. The graph at work.
+ * Step 2: Live Pipeline Execution.
  *
- * The seven rows are the seven nodes of the Phase 1 graph, and they come from
- * `GET /transactions/{id}/events`. The order is the order of the graph, so the
- * rows stand still and the marks move.
- *
- * The two controls of a run are here, and each one shows only in the state that
- * the service accepts for it. `useTransaction` holds that rule.
- *
- * With no id in the address the screen still lists the seven steps, all of them
- * waiting. The steps are what the product does, so they are worth reading before
- * a run exists.
- *
- * The screen holds its own "Show more" control. Off, each row is one short
- * sentence. On, each row also shows the name of the node and the time it took,
- * and the rail names the graph and counts the events.
+ * Tracks the real-time execution of the 7 LangGraph nodes via `GET /transactions/{id}/events`.
+ * Automatically transitions to the Review desk upon reaching `PENDING_APPROVAL`.
  */
 
 type Props = {
-  /** The transaction id from the address, or null when no run is open. */
+  /** The transaction ID from the route, or null when no active run is selected. */
   txId: string | null;
-  /** Say something that a person did not ask to happen. */
+  /** Accessibility announcement for automatic state transitions. */
   announce: (text: string) => void;
-  /** Open the review desk. Called when the run stops and waits for a person. */
+  /** Callback triggered when the run successfully finishes and awaits human review. */
   onDone: (txId: string) => void;
 };
 
@@ -48,19 +37,8 @@ export function Run({ txId, announce, onDone }: Props) {
     useTransaction(txId);
 
   const status = tx?.status ?? null;
-
-  /**
-   * The state that this screen showed before the state it shows now.
-   *
-   * The move to the review desk needs the change and not the state. A person who
-   * comes back to this screen after a run finished must stay on it, so the move
-   * fires only at the moment the run leaves RUNNING while they watch.
-   */
   const before = useRef<TransactionStatus | null>(null);
 
-  // The end of a run is a change that a person did not ask for at that moment,
-  // so it is said out loud. A run that stops and waits also opens the next step,
-  // because the three steps carry the person and need no tab press.
   useEffect(() => {
     const last = before.current;
     before.current = status;
@@ -76,17 +54,15 @@ export function Run({ txId, announce, onDone }: Props) {
   return (
     <>
       <ScreenHead
-        title="The run"
-        lede="Seven steps, in order. The run stops at the end and waits for you. Nothing leaves the service until you approve it."
+        title="Pipeline Execution"
+        lede="Seven automated pipeline steps extract, synthesize, and evaluate your repository. The workflow pauses for human approval before committing."
       />
 
-      {/* The control of this screen. It sits here and not in the masthead,
-          because it changes this screen and no other. */}
       <div className="screen-tools">
         <Switch
           pressed={more}
           onToggle={toggleMore}
-          title="Show the name of each node of the graph and the time it took"
+          title="Toggle technical node names and execution durations"
         >
           Show more
         </Switch>
@@ -94,19 +70,15 @@ export function Run({ txId, announce, onDone }: Props) {
 
       <div className="layout">
         <Card
-          title="The steps"
+          title="Pipeline Steps"
           note={
             loading
-              ? "Reading"
+              ? "Loading..."
               : txId === null
-                ? "No run yet"
+                ? "Awaiting repository"
                 : `${done} of ${NODE_ORDER.length} done`
           }
         >
-          {/* While the first read is out, the rows are a skeleton of themselves.
-              The fold of an empty log gives seven waiting rows, so without this
-              a person who opens a run that already finished reads a run that has
-              not started, for as long as the service takes to answer. */}
           {loading ? (
             <ol className="node-list" aria-busy="true">
               {NODE_ORDER.map((node) => (
@@ -121,13 +93,9 @@ export function Run({ txId, announce, onDone }: Props) {
             <ol className="node-list">
               {rows.map((row) => (
                 <li key={row.node} className="node-row" data-state={row.state}>
-                  {/* The key is the state, so React puts a new element here when
-                      the state changes and the mark can fade in. */}
                   <Mark key={row.state} state={row.state} />
                   <div style={{ minWidth: 0 }}>
                     <span>{row.label}</span>
-                    {/* The name of the node. The reveal keeps it out of the page
-                        when the control is off, so the row is one sentence. */}
                     <div className="reveal" data-open={open} aria-hidden={shut}>
                       <div className="reveal-body">
                         <span
@@ -162,7 +130,7 @@ export function Run({ txId, announce, onDone }: Props) {
 
         <aside className="rail">
           <h2 className="card-title" style={{ fontSize: "var(--step-1)" }}>
-            This run
+            Run Summary
           </h2>
           <dl
             style={{
@@ -173,21 +141,21 @@ export function Run({ txId, announce, onDone }: Props) {
               fontSize: "var(--step--1)",
             }}
           >
-            <dt className="quiet">State</dt>
+            <dt className="quiet">Status</dt>
             <dd style={{ margin: 0 }}>
               {status === null ? (
-                <span className="faint">{loading ? "Reading" : "No run yet"}</span>
+                <span className="faint">{loading ? "Loading..." : "Not started"}</span>
               ) : (
                 <Tag tone={STATUS_TONE[status]}>{STATUS[status]}</Tag>
               )}
             </dd>
             <dt className="quiet">Repository</dt>
             <dd className="mono" style={{ margin: 0, overflowWrap: "anywhere" }}>
-              {tx?.repo_name ?? "not started"}
+              {tx?.repo_name ?? "Not specified"}
             </dd>
             <dt className="quiet">Transaction</dt>
             <dd className="mono" style={{ margin: 0, overflowWrap: "anywhere" }}>
-              {txId ?? "not started"}
+              {txId ?? "Not assigned"}
             </dd>
           </dl>
 
@@ -200,8 +168,6 @@ export function Run({ txId, announce, onDone }: Props) {
                 flexWrap: "wrap",
               }}
             >
-              {/* Each control shows only in a state that the service accepts,
-                  so neither one can be answered with 409. */}
               {canCancel && (
                 <Button tone="quiet" busy={busy} onClick={cancel}>
                   Stop the run
@@ -217,20 +183,16 @@ export function Run({ txId, announce, onDone }: Props) {
 
           {canResume && (
             <p className="quiet" style={{ fontSize: "var(--step--1)" }}>
-              A new run starts at the first step and keeps this transaction id.
+              Restarting will re-execute Phase 1 from the beginning under this transaction ID.
             </p>
           )}
 
           {tx?.error_message != null && tx.error_message !== "" && (
-            <p className="field-error" style={{ marginTop: "var(--sp-4)" }}>
-              {tx.error_message}
-            </p>
+            <ErrorCallout error={tx.error_message} style={{ marginTop: "var(--sp-4)" }} />
           )}
 
           {error !== null && (
-            <p className="field-error" role="alert" style={{ marginTop: "var(--sp-4)" }}>
-              {error}
-            </p>
+            <ErrorCallout error={error} style={{ marginTop: "var(--sp-4)" }} />
           )}
 
           <div className="reveal" data-open={open} aria-hidden={shut}>

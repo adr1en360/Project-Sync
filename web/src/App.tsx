@@ -15,6 +15,7 @@ import { Review } from "./screens/Review";
 import { Run } from "./screens/Run";
 import { TABS, type TabId } from "./nav";
 import { Menu, type MenuItem } from "./ui/Menu";
+import { ErrorCallout } from "./ui/ErrorCallout";
 import { Tag } from "./ui/Tag";
 import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
 
@@ -36,7 +37,7 @@ import { AutoIcon, MoonIcon, SunIcon } from "./ui/icons";
 const TAGLINE = "Turn shipped code into career assets in one click";
 
 const MODE_WORD: Record<Mode, string> = {
-  system: "Follow the machine",
+  system: "System",
   light: "Light",
   dark: "Dark",
 };
@@ -265,9 +266,10 @@ export default function App() {
         {/* Only a failure of the service is shown. A person cannot act on the
             model or on the configuration, so neither is reported. */}
         {healthError !== null && (
-          <p className="field-error" role="alert" style={{ marginTop: "var(--sp-10)" }}>
-            The service did not answer. {healthError}
-          </p>
+          <ErrorCallout
+            error={`The service did not answer. ${healthError}`}
+            style={{ marginTop: "var(--sp-10)" }}
+          />
         )}
       </main>
     </div>

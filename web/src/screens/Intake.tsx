@@ -7,19 +7,14 @@ import { Kbd } from "../ui/Kbd";
 import { ScreenHead } from "./ScreenHead";
 
 /**
- * Step 1. The repository.
+ * Step 1: Repository Intake.
  *
- * The form sends `POST /api/v1/trigger-sync`, and the service answers at once
- * with the id of the transaction. The graph then runs behind the request, so
- * this screen hands the id to the shell and the shell opens the run screen.
- *
- * The field sends the text as the person wrote it. The service accepts every
- * form, from `owner/name` to a deep URL, and it holds the one judgement of what
- * a repository name is. A second judgement here could only disagree with it.
+ * Initiates a repository sync via `POST /api/v1/trigger-sync` and immediately
+ * navigates to the Run screen to monitor real-time execution.
  */
 
 type Props = {
-  /** Called with the id of the transaction when the service accepts the form. */
+  /** Callback with the new transaction ID once the server accepts the intake request. */
   onStarted: (txId: string) => void;
 };
 
@@ -32,7 +27,7 @@ export function Intake({ onStarted }: Props) {
     event.preventDefault();
     const repo = value.trim();
     if (repo === "") {
-      setError("Give the owner and the name of a repository.");
+      setError("Please enter a repository owner and name (e.g. facebook/react).");
       return;
     }
 
@@ -60,18 +55,16 @@ export function Intake({ onStarted }: Props) {
   return (
     <>
       <ScreenHead
-        title="Start from a finished repository"
-        lede="Give the owner and the name of a repository that is ready to show. ProjectSync reads it, writes four drafts, and stops for you to approve them."
+        title="Sync a GitHub Repository"
+        lede="Enter a repository to extract technical achievements, generate four career assets, and review them before publishing."
       />
 
       <div className="bento stagger">
         <Card
-          title="The repository"
+          title="Repository"
           className="wide"
           style={{ "--index": 0 } as CSSProperties}
         >
-          {/* A form, so Enter in the field starts the run and the browser gives
-              the keyboard path for nothing. */}
           <form onSubmit={submit} style={{ display: "grid", gap: "var(--sp-5)" }}>
             <Field
               label="Owner and name"
@@ -79,24 +72,31 @@ export function Intake({ onStarted }: Props) {
               mono
               autoComplete="off"
               spellCheck={false}
-              help="A public repository, or a private one that your token can read."
+              help="A public repository, or a private one accessible with your GITHUB_TOKEN."
               error={error ?? undefined}
               value={value}
               onChange={(event) => setValue(event.target.value)}
               onKeyDown={keyDown}
             />
-            <div style={{ display: "flex", gap: "var(--sp-3)", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "var(--sp-4)",
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
               <Button type="submit" tone="primary" busy={busy}>
-                {busy ? "Reading the repository" : "Read the repository"}
+                {busy ? "Syncing repository..." : "Sync Repository"}
               </Button>
               <span className="faint" style={{ fontSize: "var(--step--1)" }}>
-                The run stops before anything is published.
+                Pauses for human review before any commits are published.
               </span>
             </div>
           </form>
         </Card>
 
-        <Card title="What happens next" style={{ "--index": 1 } as CSSProperties}>
+        <Card title="How it works" style={{ "--index": 1 } as CSSProperties}>
           <ol
             className="quiet"
             style={{
@@ -106,17 +106,16 @@ export function Intake({ onStarted }: Props) {
               gap: "var(--sp-2)",
             }}
           >
-            <li>ProjectSync reads the repository and the code in it.</li>
-            <li>It writes a resume section, a portfolio card and two posts.</li>
-            <li>It checks that the drafts are safe to show.</li>
-            <li>It stops. Nothing is published until you approve it.</li>
+            <li>Clones and inspects project structure, commits, and dependencies.</li>
+            <li>Extracts key features, architecture, and engineering impact.</li>
+            <li>Generates a Portfolio card, Doc sheet, Resume bullets, and Social post.</li>
+            <li>Validates output against style rules and pauses for your approval.</li>
           </ol>
         </Card>
 
-        <Card title="Keyboard" style={{ "--index": 2 } as CSSProperties}>
+        <Card title="Keyboard Shortcuts" style={{ "--index": 2 } as CSSProperties}>
           <p className="quiet" style={{ margin: 0 }}>
-            Press <Kbd>Enter</Kbd> in the field to start. Press <Kbd>Esc</Kbd> to
-            clear it.
+            Press <Kbd>Enter</Kbd> to start scanning. Press <Kbd>Esc</Kbd> to clear input.
           </p>
         </Card>
       </div>

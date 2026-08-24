@@ -274,7 +274,7 @@ it("opens the run screen when the service accepts a repository", async () => {
   render(<App />);
 
   await person.type(screen.getByLabelText("Owner and name"), "owner/name");
-  await person.click(screen.getByRole("button", { name: "Read the repository" }));
+  await person.click(screen.getByRole("button", { name: "Sync Repository" }));
 
   // The move is automatic, so the address changes and the region says so.
   await waitFor(() => {
@@ -311,7 +311,7 @@ it("says what the service refused and stays on the intake screen", async () => {
   render(<App />);
 
   await person.type(screen.getByLabelText("Owner and name"), "not a repo");
-  await person.click(screen.getByRole("button", { name: "Read the repository" }));
+  await person.click(screen.getByRole("button", { name: "Sync Repository" }));
 
   expect(await screen.findByText("That is not a GitHub repository.")).toBeInTheDocument();
   expect(window.location.hash).not.toContain("run");
