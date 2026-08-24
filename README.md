@@ -10,6 +10,12 @@ write: every edit you make feeds a rule that changes the next draft.
 Built for the Taskmaster track of the All Things Agentic Hackathon on a
 six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 
+## Architecture
+
+<p align="center">
+  <img src="docs/architecture_diagram.svg" alt="ProjectSync Architecture Diagram" width="100%">
+</p>
+
 ## Features
 
 - **One trigger, four assets.** A single request produces a markdown doc sheet, a
@@ -238,6 +244,46 @@ Design documents live in [`docs/`](docs/). Start with
 [`docs/VERIFICATION_LEDGER.md`](docs/VERIFICATION_LEDGER.md) for every API claim
 with the source that confirms it. The product spec is
 [`projectsync_full_spec.md`](projectsync_full_spec.md).
+
+## Testing Instructions (For Judges)
+
+We have made evaluating ProjectSync as frictionless as possible. You can test the system either **offline with zero credentials** or **live with a Gemini API key**.
+
+### 1. Instant Offline Test Suite (Zero Keys / Zero Configuration)
+Run our comprehensive test suite verifying the 7-node ADK graph, Pydantic data schemas, evaluator guardrails, and API endpoints using deterministically mocked fixture data:
+
+```bash
+# Run backend pytest suite (66 tests)
+uv run pytest tests/ -q
+
+# Run frontend test suite (68 tests)
+cd web && npm test -- --run && cd ..
+```
+
+### 2. Local Review Desk & UI Walkthrough
+You can launch the full application locally:
+
+```bash
+# 1. Start the backend + static UI
+uv run uvicorn main:app --port 8080 --reload
+```
+Open **http://localhost:8080** in your browser. 
+- You can inspect `/healthz` to see the active model pinning (`gemini-3.5-flash`).
+- Interactive Swagger API documentation is available at `http://localhost:8080/docs`.
+
+### 3. Live Gemini Model & Memory Testing (Optional)
+If you have a Google AI Studio API key (`GOOGLE_API_KEY`):
+1. Copy `.env.example` to `.env` and set `GOOGLE_API_KEY=your_key`.
+2. Run our live memory adaptation test to verify that style rules genuinely alter model output:
+```bash
+RUN_LIVE_TESTS=1 uv run pytest tests/test_style_rules_change_output.py -v
+```
+
+### 4. Code & Architecture Inspection Points
+- **ADK 2.0 Graph Workflow**: [`workflow.py`](workflow.py) — 7-node DAG orchestration with typed Pydantic contracts.
+- **Model Floor Enforcement**: [`config.py`](config.py) — import-level assertion requiring Gemini 3.5+.
+- **Adaptive Memory Curator**: [`memory/curator.py`](memory/curator.py) — differential learning from human edits across repositories.
+- **Architecture Diagram**: [`docs/architecture_diagram.svg`](docs/architecture_diagram.svg).
 
 ## Status
 

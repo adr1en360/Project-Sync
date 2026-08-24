@@ -6,6 +6,14 @@ ProjectSync is an autonomous Taskmaster AI Agent built for the Google / Devpost 
 
 ---
 
+## 🏛️ Architecture Overview
+
+<p align="center">
+  <img src="architecture_diagram.svg" alt="ProjectSync Architecture Diagram" width="100%">
+</p>
+
+---
+
 ## 📚 Documentation Index
 
 1. **[How the Agent Works (`AGENT_WORKFLOW.md`)](AGENT_WORKFLOW.md)**:
@@ -32,8 +40,20 @@ ProjectSync is an autonomous Taskmaster AI Agent built for the Google / Devpost 
 
 ---
 
-## ⚡ Quickstart
+## 🧪 Testing Instructions (For Judges)
 
+### 1. Instant Offline Verification (No API Keys Needed)
+Run our comprehensive unit and integration test suites:
+
+```bash
+# Run backend test suite (66 offline tests)
+uv run pytest tests/ -q
+
+# Run frontend test suite (68 component & store tests)
+cd web && npm test -- --run && cd ..
+```
+
+### 2. Run the Local Web Application
 ```bash
 # 1. Install dependencies
 uv sync
@@ -41,6 +61,13 @@ uv sync
 # 2. Build the React web frontend
 cd web && npm run build && cd ..
 
-# 3. Run the development server
+# 3. Start the FastAPI server
 uv run uvicorn main:app --port 8080 --reload
+```
+Open [http://localhost:8080](http://localhost:8080) to interact with the Review Desk and visual agent pipeline.
+
+### 3. Live Model & Adaptive Memory Test (Optional)
+With a `GOOGLE_API_KEY` configured in `.env`:
+```bash
+RUN_LIVE_TESTS=1 uv run pytest tests/test_style_rules_change_output.py -v
 ```

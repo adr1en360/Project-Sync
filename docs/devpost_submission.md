@@ -193,3 +193,25 @@ Longer term the interesting direction is more memory, not more outputs. Right no
 curator looks for patterns in edits across projects. It could also learn which projects are
 worth writing up at all, which is a harder and more useful question than how to word the
 post.
+
+## Testing Instructions for Judges
+
+Judges can verify ProjectSync locally in seconds:
+
+1. **Instant Offline Tests (No credentials required)**:
+   ```bash
+   uv sync
+   uv run pytest tests/ -q               # 66 backend tests pass
+   cd web && npm test -- --run && cd ..   # 68 frontend tests pass
+   ```
+2. **Local UI & Live Pipeline**:
+   ```bash
+   uv run uvicorn main:app --port 8080 --reload
+   ```
+   Open `http://localhost:8080` to explore the Review Desk, inspect the 7-node graph ledger, test asset generation, and review the adaptive style memory rules.
+3. **Live Gemini 3.5 Model Memory Validation (Optional)**:
+   Set `GOOGLE_API_KEY` in `.env` and run:
+   ```bash
+   RUN_LIVE_TESTS=1 uv run pytest tests/test_style_rules_change_output.py -v
+   ```
+
