@@ -18,7 +18,8 @@ import httpx
 from google.adk import Context
 
 import config
-from models import RepoScan, ScannedFile
+import store
+from models import RepoScan, RunEventState, ScannedFile
 
 GITHUB_API = "https://api.github.com"
 
@@ -245,6 +246,15 @@ def scan_github_repository(
       ScanError: The repository is not readable after one retry.
     """
     repo_name = parse_repo_url(repo_url)
+    tx_id = ctx.state.get("tx_id")
+    started_at = store.now_iso()
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "scan_github_repository",
+            RunEventState.STARTED,
+            started_at=started_at,
+        )
 
     # A later node needs the name of the repository, and the output of an agent
     # node does not carry it forward. The framework writes each change to the
@@ -315,6 +325,15 @@ def scan_github_repository(
         )
 
     lowered_paths = [p.lower() for p in all_paths]
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "scan_github_repository",
+            RunEventState.COMPLETED,
+            started_at=started_at,
+            finished_at=store.now_iso(),
+        )
+
     return RepoScan(
         repo_url=repo_url,
         repo_name=repo_name,

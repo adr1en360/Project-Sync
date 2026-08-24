@@ -23,7 +23,7 @@ import logging
 from google.adk import Context
 
 import store
-from models import AssetGenInput, ExtractedMetadata
+from models import AssetGenInput, ExtractedMetadata, RunEventState
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,16 @@ def attach_style_rules(ctx: Context, node_input: ExtractedMetadata) -> AssetGenI
       An `AssetGenInput` with the metadata, the text of each rule, and the
       identifier of each rule.
     """
+    tx_id = ctx.state.get("tx_id")
+    started_at = store.now_iso()
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "attach_style_rules",
+            RunEventState.STARTED,
+            started_at=started_at,
+        )
+
     user_id = ctx.state.get("user_id", "default")
 
     try:
@@ -61,6 +71,15 @@ def attach_style_rules(ctx: Context, node_input: ExtractedMetadata) -> AssetGenI
     # The transaction row keeps the identifiers. A person can then see which
     # rules made one draft. This list is the audit trail of the memory system.
     ctx.state["style_rule_ids"] = [rule.rule_id for rule in rules]
+
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "attach_style_rules",
+            RunEventState.COMPLETED,
+            started_at=started_at,
+            finished_at=store.now_iso(),
+        )
 
     return AssetGenInput(
         metadata=node_input,

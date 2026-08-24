@@ -21,6 +21,7 @@ from models import (
     ExtractedMetadata,
     GeneratedAssets,
     PathRecommendation,
+    RunEventState,
     Transaction,
     TransactionStatus,
 )
@@ -43,6 +44,14 @@ def persist_transaction(ctx: Context, node_input: PathRecommendation) -> Transac
       The `Transaction` that this function wrote.
     """
     tx_id = ctx.state.get("tx_id") or store.new_id()
+    started_at = store.now_iso()
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "persist_transaction",
+            RunEventState.STARTED,
+            started_at=started_at,
+        )
 
     metadata_raw = ctx.state.get("extracted_metadata")
     assets_raw = ctx.state.get("generated_assets")
@@ -86,6 +95,16 @@ def persist_transaction(ctx: Context, node_input: PathRecommendation) -> Transac
         tx_id,
         len(transaction.style_rules_applied),
     )
+
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "persist_transaction",
+            RunEventState.COMPLETED,
+            started_at=started_at,
+            finished_at=store.now_iso(),
+        )
+
     return transaction
 
 

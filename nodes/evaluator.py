@@ -20,7 +20,8 @@ from google.adk.workflow import RetryConfig
 from google.genai import types as genai_types
 
 import config
-from models import ExtractedMetadata, GeneratedAssets, PathRecommendation
+import store
+from models import ExtractedMetadata, GeneratedAssets, PathRecommendation, RunEventState
 
 logger = logging.getLogger(__name__)
 
@@ -93,12 +94,36 @@ def select_evaluator_input(ctx: Context, node_input: GeneratedAssets) -> Extract
       The `ExtractedMetadata` for the evaluator to judge. An empty metadata goes
       back if the state has none, so a missing part does not stop the run.
     """
+    tx_id = ctx.state.get("tx_id")
+    started_at = store.now_iso()
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "select_evaluator_input",
+            RunEventState.STARTED,
+            started_at=started_at,
+        )
+
     raw = ctx.state.get("extracted_metadata")
+    result: ExtractedMetadata
     if isinstance(raw, ExtractedMetadata):
-        return raw
-    if raw is not None:
+        result = raw
+    elif raw is not None:
         try:
-            return ExtractedMetadata.model_validate(raw)
+            result = ExtractedMetadata.model_validate(raw)
         except Exception as error:  # noqa: BLE001 - keep the run, and log the problem.
             logger.warning("The evaluator input does not fit ExtractedMetadata: %s", error)
-    return ExtractedMetadata(project_name="", tagline="", problem_solved="")
+            result = ExtractedMetadata(project_name="", tagline="", problem_solved="")
+    else:
+        result = ExtractedMetadata(project_name="", tagline="", problem_solved="")
+
+    if tx_id:
+        store.append_run_event(
+            tx_id,
+            "select_evaluator_input",
+            RunEventState.COMPLETED,
+            started_at=started_at,
+            finished_at=store.now_iso(),
+        )
+
+    return result
