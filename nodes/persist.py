@@ -53,6 +53,8 @@ def persist_transaction(ctx: Context, node_input: PathRecommendation) -> Transac
     # REGENERATED version later. If the generator gave no assets, the list stays
     # empty, because a missing part must not stop the write of the row.
     assets_model = _as_model(assets_raw, GeneratedAssets)
+    if assets_model is not None and not assets_model.portfolio_card.repo_url:
+        assets_model.portfolio_card.repo_url = ctx.state.get("repo_url", "")
     asset_versions: list[AssetVersion] = []
     if assets_model is not None:
         asset_versions.append(
