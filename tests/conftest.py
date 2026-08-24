@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 # `config.py` calls `load_dotenv()`, which does not write over a variable that is
 # already set. So these values win over a `.env` file, and a test gives the same
 # result on every machine.
-os.environ.setdefault("MODEL_ID", "gemini-3.7-flash")
+os.environ.setdefault("MODEL_ID", "gemini-3.5-flash")
 os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "False")
 os.environ.setdefault("GOOGLE_CLOUD_PROJECT", "test-project")
 os.environ.setdefault("GITHUB_TOKEN", "test-token-not-real")

@@ -89,7 +89,7 @@ API and the UI, so the deploy is one Cloud Run service and there is no Node in t
 Phase 1 takes roughly 30 to 90 seconds, so the client polls a status endpoint rather than
 holding a stream open.
 
-The model is pinned to `gemini-3.7-flash` and asserted at import. If someone sets a model
+The model is pinned to `gemini-3.5-flash` and asserted at import. If someone sets a model
 below the mandated Gemini 3.5 floor, the application refuses to start.
 
 ## Challenges we ran into

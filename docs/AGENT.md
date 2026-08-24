@@ -3,7 +3,7 @@
 ## Identity
 Solo builder (`adrienoke`), full-stack AI developer, Nigeria. Track: **Taskmaster** (locked).
 **One line:** turns a finished GitHub repository into career-ready assets in one click, and gets better at the user's voice over time.
-Stack: `gemini-3.7-flash` | ADK 2.0 graph `Workflow` (`google-adk` 2.7.0) | Cloud Run + Firestore | Python 3.12 | `uv` | React 19 + Vite
+Stack: `gemini-3.5-flash` | ADK 2.0 graph `Workflow` (`google-adk` 2.7.0) | Cloud Run + Firestore | Python 3.12 | `uv` | React 19 + Vite
 
 ## Documentation Map
 
@@ -16,7 +16,7 @@ Stack: `gemini-3.7-flash` | ADK 2.0 graph `Workflow` (`google-adk` 2.7.0) | Clou
 | [devpost_submission.md](devpost_submission.md) | Official hackathon submission text and media links |
 
 ## Hard Rules
-- Model is `gemini-3.7-flash`. Never below Gemini 3.5 — that is a mandatory **pass/fail** submission gate.
+- Model is `gemini-3.5-flash`. Never below Gemini 3.5 — that is a mandatory **pass/fail** submission gate.
 - Exactly 2 GCP services: Cloud Run + Firestore.
 - Style rules reach the model **inside the node's input JSON**, not through a template field.
 - `Edge(from_node=START, ...)` takes the **imported `START` object**, never the string `"START"`.

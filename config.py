@@ -17,7 +17,7 @@ load_dotenv()
 # Model
 # --------------------------------------------------------------------------
 
-MODEL: str = os.environ.get("MODEL_ID", "gemini-3.7-flash")
+MODEL: str = os.environ.get("MODEL_ID", "gemini-3.5-flash")
 """The model for all three agent nodes."""
 
 # The hackathon rules give a floor of Gemini 3.5. Gemini 3 Flash is below the

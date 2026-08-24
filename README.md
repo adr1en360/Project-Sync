@@ -102,7 +102,7 @@ Confirm it is up. The reply tells you which settings are still missing:
 
 ```
 $ curl -s localhost:8080/healthz
-{"status":"ok","model":"gemini-3.7-flash","use_vertex_ai":false,"missing_config":["PORTFOLIO_DATA_REPO"]}
+{"status":"ok","model":"gemini-3.5-flash","use_vertex_ai":false,"missing_config":["PORTFOLIO_DATA_REPO"]}
 ```
 
 Now run the pipeline on a repository:
@@ -179,13 +179,13 @@ must be spelled exactly: `GOOGLE_GENAI_USE_VERTEXAI`, `GOOGLE_API_KEY`,
 `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_LOCATION`. A near miss such as
 `GEMINI_API_KEY` is ignored without an error.
 
-`MODEL_ID` defaults to `gemini-3.7-flash`. The application refuses to start on a
+`MODEL_ID` defaults to `gemini-3.5-flash`. The application refuses to start on a
 model below Gemini 3.5, because the hackathon floor is a pass-or-fail gate.
 
 ## Development
 
 ```bash
-uv run pytest tests/ -q          # offline tests
+uv run pytest tests/ -q          # offline tests (66 pass, 1 skipped)
 uv run ruff check .              # lint
 ```
 
@@ -195,6 +195,36 @@ rule that bans an opening line, and fails if the line survives:
 
 ```bash
 RUN_LIVE_TESTS=1 uv run pytest tests/test_style_rules_change_output.py -v
+```
+
+### Reproducible Testing
+
+All offline tests run without any API keys or external services. The test suite
+uses a **fixture mode** (`FIXTURE_MODE=1`) that replaces model calls with canned
+responses, so the full graph executes and writes the same event log as a real run.
+
+```bash
+# 1. Install dependencies
+uv sync
+cd web && npm ci && npm run build && cd ..
+
+# 2. Run offline test suite (no API keys needed)
+uv run pytest tests/ -q
+# Expected: 66 passed, 1 skipped
+
+# 3. Run live model test (requires GOOGLE_API_KEY in .env)
+RUN_LIVE_TESTS=1 uv run pytest tests/test_style_rules_change_output.py -v
+
+# 4. Lint
+uv run ruff check .
+```
+
+Frontend tests (Vitest + React Testing Library):
+
+```bash
+cd web
+npm run test
+# 68 tests pass
 ```
 
 To build the container:
@@ -212,11 +242,11 @@ with the source that confirms it. The product spec is
 ## Status
 
 Phase 1 (the graph), Phase 2 (the commits and the rule curator), and the review
-desk are implemented. `uv run pytest tests/ -q` passes 36 offline tests, and every
-route answers over HTTP.
+desk are implemented. `uv run pytest tests/ -q` passes 66 offline tests, and every
+route answers over HTTP. Frontend builds to `web/dist` and is served by FastAPI.
 
 Not done yet: a real end-to-end run against Firestore and a live model, the Cloud
-Run deploy, and the demo recording. No `LICENSE` file — see below.
+Run deploy, and the demo recording. `LICENSE` file added (Apache-2.0).
 
 ## Contributing
 
@@ -232,6 +262,4 @@ Open an issue before a large change.
 
 ## License
 
-Not chosen yet, and there is no `LICENSE` file. Until one is added, ProjectSync's
-own publish gate marks this repository `PRIVATE_ONLY` — which is the check working
-as intended.
+Apache-2.0 — see [`LICENSE`](LICENSE).

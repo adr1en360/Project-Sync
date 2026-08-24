@@ -28,7 +28,7 @@ Configure the following environment variables in `.env` or in Cloud Run Secret M
 | `GOOGLE_GENAI_USE_VERTEXAI` | Enable Vertex AI Gemini backend | `True` |
 | `GOOGLE_CLOUD_PROJECT` | GCP Project ID | `projectsync-prod` |
 | `GOOGLE_CLOUD_LOCATION` | Region for Vertex AI calls | `us-central1` |
-| `MODEL_ID` | Pinned Gemini model | `gemini-3.7-flash` |
+| `MODEL_ID` | Pinned Gemini model | `gemini-3.5-flash` |
 | `GITHUB_TOKEN` | GitHub Personal Access Token (`repo` scope) | `ghp_...` |
 | `PORTFOLIO_DATA_REPO` | Target private repo for portfolio cards | `owner/portfolio-data` |
 | `FIRESTORE_TRANSACTIONS` | Collection name for runs | `projectsync_transactions` |
@@ -66,6 +66,6 @@ gcloud run deploy projectsync \
   --region us-central1 \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=True,MODEL_ID=gemini-3.7-flash,GOOGLE_CLOUD_LOCATION=us-central1 \
+  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=True,MODEL_ID=gemini-3.5-flash,GOOGLE_CLOUD_LOCATION=us-central1 \
   --set-secrets GITHUB_TOKEN=GITHUB_TOKEN:latest
 ```

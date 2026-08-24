@@ -1,6 +1,6 @@
 # ProjectSync — How the Agent Works
 
-ProjectSync is an autonomous **Taskmaster AI Agent** built with Google Agent Development Kit 2.0 (`google-adk` 2.7.0) and `gemini-3.7-flash`. It turns shipped code from a GitHub repository into career assets (documentation, resume bullets, portfolio card, and social post) and learns the user's voice over time.
+ProjectSync is an autonomous **Taskmaster AI Agent** built with Google Agent Development Kit 2.0 (`google-adk` 2.7.0) and `gemini-3.5-flash`. It turns shipped code from a GitHub repository into career assets (documentation, resume bullets, portfolio card, and social post) and learns the user's voice over time.
 
 ---
 
@@ -19,7 +19,7 @@ The Phase 1 pipeline executes deterministically through an ADK 2.0 `Workflow`:
 └────────────┬─────────────┘
              ▼
 ┌──────────────────────────┐
-│ extraction_agent         │  [LLM AGENT - gemini-3.7-flash, temp 0.2]
+│ extraction_agent         │  [LLM AGENT - gemini-3.5-flash, temp 0.2]
 │ in:  RepoScan            │  Extracts technical metadata: problem solved, tech stack,
 │ out: ExtractedMetadata   │  architecture, key features, and test/license signals.
 └────────────┬─────────────┘
@@ -31,7 +31,7 @@ The Phase 1 pipeline executes deterministically through an ADK 2.0 `Workflow`:
 └────────────┬─────────────┘
              ▼
 ┌──────────────────────────┐
-│ asset_generator_agent    │  [LLM AGENT - gemini-3.7-flash, temp 0.7]
+│ asset_generator_agent    │  [LLM AGENT - gemini-3.5-flash, temp 0.7]
 │ in:  AssetGenInput       │  Generates 4 assets matching Pydantic contract:
 │ out: GeneratedAssets     │  1. doc_sheet_md (KMS documentation)
 └────────────┬─────────────┘  2. resume_bullets (action-impact bullet points)
@@ -44,7 +44,7 @@ The Phase 1 pipeline executes deterministically through an ADK 2.0 `Workflow`:
 └────────────┬─────────────┘
              ▼
 ┌──────────────────────────┐
-│ path_evaluator_agent     │  [LLM AGENT - gemini-3.7-flash, temp 0.0]
+│ path_evaluator_agent     │  [LLM AGENT - gemini-3.5-flash, temp 0.0]
 │ in:  ExtractedMetadata   │  Evaluates publishability: FULL_PUBLISH vs PRIVATE_ONLY.
 │ out: PathRecommendation  │  Guards against exposing unlicenced/unsafe projects.
 └────────────┬─────────────┘
