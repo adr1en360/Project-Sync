@@ -43,6 +43,79 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
   portfolio card commit to `PORTFOLIO_DATA_REPO`. The scanned repository is never
   written to.
 
+## Repository Structure
+
+```
+├── docs/          # Architecture specs, workflow guides, diagrams, and deployment docs
+├── memory/        # Style curation engine and rule extraction from user edits
+├── nodes/         # Google ADK graph nodes (scanner, rules, extractor, generator, evaluator, persist)
+├── routes/        # FastAPI HTTP route handlers for pipeline triggers, reviews, rules, and exports
+├── static/        # Pre-built frontend static assets (HTML/CSS/JS) served directly by FastAPI
+├── sync/          # GitHub commit integration for syncing approved assets to portfolio repositories
+├── tests/         # Test suite including offline fixture tests, node tests, and live model tests
+├── tools/         # Utility scripts (design token and M3 palette generation)
+├── web/           # React + TypeScript single-page application (review desk UI)
+├── graph.py       # Google ADK workflow graph orchestration
+├── main.py        # FastAPI server entry point and lifespan configuration
+├── models.py      # Pydantic schemas for transactions, assets, rules, and evaluations
+├── store.py       # Firestore persistence and transaction storage layer
+├── config.py      # Environment configuration and settings validation
+└── adk_runtime.py # Google ADK execution runtime helpers
+```
+
+### Folder Breakdown
+
+- **[`docs/`](docs/)**: Project documentation, architecture diagrams, and development specifications.
+  - Architecture diagram assets ([`architecture_diagram.svg`](docs/architecture_diagram.svg), [`architecture_diagram.png`](docs/architecture_diagram.png)).
+  - Agent workflows and routing specifications ([`AGENT.md`](docs/AGENT.md), [`AGENT_WORKFLOW.md`](docs/AGENT_WORKFLOW.md)).
+  - API reference and endpoint specs ([`API_REFERENCE.md`](docs/API_REFERENCE.md)).
+  - Cloud Run and GCP deployment instructions ([`DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
+  - Hackathon project writeup ([`devpost_submission.md`](docs/devpost_submission.md)).
+
+- **[`memory/`](memory/)**: Adaptive learning and style curation logic.
+  - [`curator.py`](memory/curator.py): Compares user edits against original drafts and extracts proposed style rules so future asset generation adapts to the user's personal writing voice.
+
+- **[`nodes/`](nodes/)**: The six core Google ADK 2.0 graph workflow nodes.
+  - [`scanner.py`](nodes/scanner.py): Deterministic GitHub repository ingestion (fetches file trees, README, package manifests, and code samples).
+  - [`style_rules.py`](nodes/style_rules.py): Retrieves active user style rules from Firestore.
+  - [`extraction.py`](nodes/extraction.py): Gemini model call extracting structured project facts, architecture details, and tech stack information.
+  - [`generator.py`](nodes/generator.py): Gemini model call synthesizing all 4 assets (doc sheet, portfolio card, resume bullets, social post) adhering to active style rules.
+  - [`evaluator.py`](nodes/evaluator.py): Zero-temperature quality gate assessing repository completeness (`FULL_PUBLISH` vs. `PRIVATE_ONLY`).
+  - [`persist.py`](nodes/persist.py): Saves transaction state, graph outputs, and draft assets to Firestore with `PENDING_APPROVAL` status.
+
+- **[`routes/`](routes/)**: FastAPI REST API route handlers.
+  - [`phase1.py`](routes/phase1.py): Pipeline execution trigger (`POST /api/v1/trigger-sync`).
+  - [`phase2.py`](routes/phase2.py): User approval callback and commit dispatch (`POST /api/v1/approval-callback`).
+  - [`transactions.py`](routes/transactions.py): Transaction status and ledger retrieval (`GET /api/v1/transactions/{id}`).
+  - [`regenerate.py`](routes/regenerate.py): Re-running asset generation with updated active rules (`POST /api/v1/regenerate-asset`).
+  - [`rules.py`](routes/rules.py): Style rule CRUD operations and state toggles (`GET/POST /api/v1/rules`, `/rules/{id}`).
+  - [`bullets.py`](routes/bullets.py) & [`social.py`](routes/social.py): Resume bullet queries and social post export endpoints.
+
+- **[`static/`](static/)**: Production distribution files for the web interface.
+  - Compiled HTML, bundled JavaScript/CSS, and web fonts (Geist Sans, Geist Mono, Instrument Serif), allowing FastAPI to serve the complete frontend without requiring Node.js in the production runtime container.
+
+- **[`sync/`](sync/)**: Git and repository synchronization.
+  - [`github.py`](sync/github.py): Handles authenticated GitHub commits to write approved markdown documentation sheets and JSON portfolio cards to `PORTFOLIO_DATA_REPO`.
+
+- **[`tests/`](tests/)**: Automated test suite.
+  - [`test_nodes.py`](tests/test_nodes.py): Unit tests for individual ADK graph nodes.
+  - [`test_fixture_run.py`](tests/test_fixture_run.py): Full offline graph execution using canned responses (`fixtures/canned_transaction.json`).
+  - [`test_approval_commits.py`](tests/test_approval_commits.py): Tests Phase 2 approval flow and GitHub commit dispatching.
+  - [`test_style_rules_change_output.py`](tests/test_style_rules_change_output.py): Live model integration test verifying active style rules alter generation output.
+  - [`test_design_tokens.py`](tests/test_design_tokens.py): Verification of design system tokens.
+
+- **[`tools/`](tools/)**: Developer and build utilities.
+  - Palette and Material 3 design token generation scripts ([`gen_palette.py`](tools/gen_palette.py), [`gen_m3_palette.py`](tools/gen_m3_palette.py)).
+
+- **[`web/`](web/)**: Frontend single-page application built with React 19, TypeScript, and Vite.
+  - [`src/screens/`](web/src/screens/): Screen views — `Intake` (repo URL submission), `Run` (live node ledger), `Review` (4-asset editor & verdict stamp), `Portfolio` (interactive card deck), and `Library` (resume bullets & rules manager).
+  - [`src/ui/`](web/src/ui/): Atomic design UI components (`Button`, `Card`, `Stamp`, `Field`, `Menu`, `Tag`, `Switch`, etc.).
+  - [`src/portfolio/`](web/src/portfolio/): Portfolio card rendering, 3D flip interactions, and canvas card drawing.
+  - [`src/library/`](web/src/library/): Grouped resume bullet lists and style rule controls.
+  - [`src/hooks/`](web/src/hooks/): React custom hooks for transaction polling, review state, theme switching, and API interaction.
+  - [`src/styles/`](web/src/styles/): CSS design tokens, typography, motion keyframes, and layout styles.
+  - [`src/api/`](web/src/api/): Typed REST API client and interface definitions.
+
 ## Installation
 
 Requires [Python 3.12](https://www.python.org/downloads/) and
@@ -244,27 +317,6 @@ Design documents live in [`docs/`](docs/). Start with
 [`docs/VERIFICATION_LEDGER.md`](docs/VERIFICATION_LEDGER.md) for every API claim
 with the source that confirms it. The product spec is
 [`projectsync_full_spec.md`](projectsync_full_spec.md).
-
-## Status
-
-Phase 1 (the graph), Phase 2 (the commits and the rule curator), and the review
-desk are implemented. `uv run pytest tests/ -q` passes 66 offline tests, and every
-route answers over HTTP. Frontend builds to `web/dist` and is served by FastAPI.
-
-Not done yet: a real end-to-end run against Firestore and a live model, the Cloud
-Run deploy, and the demo recording. `LICENSE` file added (Apache-2.0).
-
-## Contributing
-
-Two rules for code in this repository:
-
-- All comments and docstrings use
-  [ASD-STE100](https://asd-ste100.org/) Simplified Technical English.
-- Any claim about the ADK API needs an entry in
-  [`docs/VERIFICATION_LEDGER.md`](docs/VERIFICATION_LEDGER.md) citing where it was
-  confirmed. Several published examples are wrong; the ledger exists because of it.
-
-Open an issue before a large change.
 
 ## License
 
