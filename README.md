@@ -8,7 +8,7 @@ approval, then commits the results to your repositories. It also learns how you
 write: every edit you make feeds a rule that changes the next draft.
 
 Built for the Taskmaster track of the All Things Agentic Hackathon on a
-six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
+seven-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 
 ## Architecture
 
@@ -48,7 +48,7 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 ```
 ├── docs/          # Architecture specs, workflow guides, diagrams, and deployment docs
 ├── memory/        # Style curation engine and rule extraction from user edits
-├── nodes/         # Google ADK graph nodes (scanner, rules, extractor, generator, evaluator, persist)
+├── nodes/         # The seven ADK graph nodes, in six modules (scanner, rules, extractor, generator, evaluator, persist)
 ├── routes/        # FastAPI HTTP route handlers for pipeline triggers, reviews, rules, and exports
 ├── static/        # Pre-built frontend static assets (HTML/CSS/JS) served directly by FastAPI
 ├── sync/          # GitHub commit integration for syncing approved assets to portfolio repositories
@@ -75,12 +75,12 @@ six-node [Google ADK 2.0](https://pypi.org/project/google-adk/) graph workflow.
 - **[`memory/`](memory/)**: Adaptive learning and style curation logic.
   - [`curator.py`](memory/curator.py): Compares user edits against original drafts and extracts proposed style rules so future asset generation adapts to the user's personal writing voice.
 
-- **[`nodes/`](nodes/)**: The six core Google ADK 2.0 graph workflow nodes.
+- **[`nodes/`](nodes/)**: The seven core Google ADK 2.0 graph workflow nodes, in six modules. `evaluator.py` holds two of them.
   - [`scanner.py`](nodes/scanner.py): Deterministic GitHub repository ingestion (fetches file trees, README, package manifests, and code samples).
   - [`style_rules.py`](nodes/style_rules.py): Retrieves active user style rules from Firestore.
   - [`extraction.py`](nodes/extraction.py): Gemini model call extracting structured project facts, architecture details, and tech stack information.
   - [`generator.py`](nodes/generator.py): Gemini model call synthesizing all 4 assets (doc sheet, portfolio card, resume bullets, social post) adhering to active style rules.
-  - [`evaluator.py`](nodes/evaluator.py): Zero-temperature quality gate assessing repository completeness (`FULL_PUBLISH` vs. `PRIVATE_ONLY`).
+  - [`evaluator.py`](nodes/evaluator.py): Two nodes. `select_evaluator_input` is plain Python and hands the evaluator the repository facts instead of the drafts the generator just wrote, so the gate judges the repository and not its own output. `path_evaluator_agent` is the zero-temperature quality gate assessing repository completeness (`FULL_PUBLISH` vs. `PRIVATE_ONLY`).
   - [`persist.py`](nodes/persist.py): Saves transaction state, graph outputs, and draft assets to Firestore with `PENDING_APPROVAL` status.
 
 - **[`routes/`](routes/)**: FastAPI REST API route handlers.
