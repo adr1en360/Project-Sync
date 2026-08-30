@@ -64,10 +64,11 @@ def build_path_evaluator_agent() -> Agent:
         instruction=INSTRUCTION,
         output_schema=PathRecommendation,
         retry_config=RetryConfig(max_attempts=2, initial_delay=2.0),
-        timeout=120.0,
-        # The temperature is 0.0 so that the result repeats. A judge must get the
-        # same answer from the same commit.
-        generate_content_config=genai_types.GenerateContentConfig(temperature=0.0),
+        timeout=180.0,
+        generate_content_config=genai_types.GenerateContentConfig(
+            temperature=0.0,
+            thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+        ),
     )
 
 

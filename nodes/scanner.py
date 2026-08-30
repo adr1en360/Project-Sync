@@ -39,6 +39,12 @@ IGNORE_DIRS = frozenset(
         "coverage",
         ".pytest_cache",
         "site-packages",
+        "static",
+        "public",
+        ".adk",
+        ".claude",
+        ".gemini",
+        ".ruff_cache",
     }
 )
 
@@ -64,6 +70,10 @@ IGNORE_EXTENSIONS = frozenset(
         ".dll",
         ".exe",
         ".lock",
+        ".css",
+        ".map",
+        ".min.js",
+        ".min.css",
     }
 )
 
@@ -82,16 +92,16 @@ MANIFEST_NAMES = frozenset(
     }
 )
 
-MAX_FILE_SIZE_BYTES = 100 * 1024
-"""The largest single file that the scan reads. The value is 100 KB."""
+MAX_FILE_SIZE_BYTES = 8 * 1024
+"""The largest single file that the scan reads. The value is 8 KB."""
 
-MAX_TOTAL_BYTES = 400 * 1024
-"""The budget for all of the files together. The value is 400 KB."""
+MAX_TOTAL_BYTES = 40 * 1024
+"""The budget for all of the files together. The value is 40 KB."""
 
-MAX_FILES = 40
+MAX_FILES = 12
 """The largest number of files that the scan sends to the model."""
 
-RECENT_COMMITS = 25
+RECENT_COMMITS = 10
 
 
 class ScanError(RuntimeError):
@@ -302,7 +312,10 @@ def scan_github_repository(
 
             if not (is_manifest or is_readme) and len(files) >= MAX_FILES:
                 continue
-            if payload_bytes >= MAX_TOTAL_BYTES:
+            # Check the size before fetching to avoid wasting GitHub API calls
+            # on blobs that would push us over budget anyway.
+            estimated_size = item.get("size", 0)
+            if payload_bytes + estimated_size > MAX_TOTAL_BYTES:
                 break
 
             blob = _get(client, f"/repos/{repo_name}/git/blobs/{item['sha']}")
@@ -310,7 +323,11 @@ def scan_github_repository(
             if text is None:
                 continue
 
-            payload_bytes += len(text.encode("utf-8"))
+            encoded_size = len(text.encode("utf-8"))
+            if payload_bytes + encoded_size > MAX_TOTAL_BYTES:
+                break
+
+            payload_bytes += encoded_size
             if is_readme and readme is None:
                 readme = text
             elif is_manifest:

@@ -56,6 +56,9 @@ def build_extraction_agent() -> Agent:
         # The specification asks for one retry with the same input. On the second
         # failure the transaction becomes FAILED_EXTRACTION.
         retry_config=RetryConfig(max_attempts=2, initial_delay=2.0),
-        timeout=120.0,
-        generate_content_config=genai_types.GenerateContentConfig(temperature=0.2),
+        timeout=300.0,
+        generate_content_config=genai_types.GenerateContentConfig(
+            temperature=0.2,
+            thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+        ),
     )

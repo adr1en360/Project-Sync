@@ -80,8 +80,10 @@ def build_rule_curator_agent() -> Agent:
         instruction=INSTRUCTION,
         output_schema=ProposedRules,
         timeout=90.0,
-        # A low temperature keeps the curator from the invention of a pattern.
-        generate_content_config=genai_types.GenerateContentConfig(temperature=0.1),
+        generate_content_config=genai_types.GenerateContentConfig(
+            temperature=0.1,
+            thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+        ),
     )
 
 

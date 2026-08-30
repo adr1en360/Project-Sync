@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
+from google.genai import types as genai_types
 
 import adk_runtime
 import config
@@ -89,6 +90,9 @@ No hashtags unless platform-appropriate. No markdown formatting."""
         name="social_generator",
         model=config.MODEL,
         instruction="You write social media posts for software projects.",
+        generate_content_config=genai_types.GenerateContentConfig(
+            thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+        ),
     )
     # One run loop lives in `adk_runtime`. This surface uses it too, so a
     # correction to the loop reaches every caller and no fifth copy drifts.

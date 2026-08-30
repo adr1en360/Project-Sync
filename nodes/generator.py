@@ -77,8 +77,8 @@ def build_asset_generator_agent() -> Agent:
         # transaction becomes FAILED_GENERATION.
         retry_config=RetryConfig(max_attempts=2, initial_delay=2.0),
         timeout=180.0,
-        # The assets must read well, so the temperature is higher than the
-        # temperature of the extraction node. It is not 0.0, because a draft with
-        # no variation reads like a form.
-        generate_content_config=genai_types.GenerateContentConfig(temperature=0.7),
+        generate_content_config=genai_types.GenerateContentConfig(
+            temperature=0.7,
+            thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+        ),
     )
