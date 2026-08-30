@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ApprovalResult, PathRecommendation } from "../api/types";
 import { useReview } from "../hooks/useReview";
 import { useRules } from "../hooks/useRules";
@@ -35,6 +35,37 @@ import { ScreenHead } from "./ScreenHead";
  * `routes/phase2.py` holds no gate on the status, so it would take a second
  * approval of a run that is already committed and write the two commits twice.
  */
+
+/**
+ * The five numbers of the pile. Every one of them is here, and no other file holds
+ * a length or a wait for this animation, so one place changes the whole feel.
+ *
+ * The total is `(cards - 1) * LAND_STEP + LAND_DUR + HOLD + ARRANGE_DUR`, which is
+ * near 1900ms for six cards. That is long for a page, and it is deliberate: this
+ * screen is the one a person watches, so the pile must be readable while it builds
+ * and not only after it stops.
+ */
+
+/**
+ * How far each card of the pile sits below the card before it, in pixels.
+ *
+ * The pile must build downward, so a card cannot land exactly on the card before
+ * it. A small step leaves the edge and the title of every card in the pile
+ * visible while the pile builds.
+ */
+const SHINGLE = 16;
+
+/** How long one card waits after the card before it started to arrive, in ms. */
+const LAND_STEP = 120;
+
+/** How long one card takes to arrive on the pile, in milliseconds. */
+const LAND_DUR = 340;
+
+/** How long the finished pile waits before it opens, in milliseconds. */
+const HOLD = 140;
+
+/** How long the pile takes to open into the column, in milliseconds. */
+const ARRANGE_DUR = 860;
 
 type Props = {
   /** The run that the address names, or null. */
@@ -151,6 +182,52 @@ export function Review({ txId }: Props) {
     });
   };
 
+  const stack = useRef<HTMLDivElement>(null);
+  const arranged = draft !== null;
+
+  /**
+   * Give the pile its numbers.
+   *
+   * A card must start at the top of the column and not at its own place, and only
+   * the browser knows how far that is, because the height of a card comes from the
+   * text inside it. So the distance is measured here and `motion.css` reads it.
+   *
+   * The measurement is safe while the animation runs, because `offsetTop` is a
+   * result of the layout and `transform` does not change the layout.
+   *
+   * The card that is last in the order arrives last, so it lands on the top of the
+   * pile. That is `Your decision`, and it is the card a person acts on.
+   */
+  useLayoutEffect(() => {
+    const host = stack.current;
+    if (host === null || !arranged) {
+      return;
+    }
+
+    const cards = Array.from(host.children).filter(
+      (node): node is HTMLElement => node instanceof HTMLElement,
+    );
+    if (cards.length === 0) {
+      return;
+    }
+
+    const head = cards[0].offsetTop;
+    cards.forEach((card, index) => {
+      const lift = card.offsetTop - head - index * SHINGLE;
+      card.style.setProperty("--lift", `${Math.max(0, Math.round(lift))}px`);
+      card.style.setProperty("--land", `${index * LAND_STEP}ms`);
+      card.style.zIndex = String(index + 1);
+    });
+
+    // Every card leaves the pile together, so the pile opens as one thing. The
+    // wait is the time the last card needs to finish its arrival, and a short hold
+    // after it, so the pile is whole for a moment before it moves.
+    const last = (cards.length - 1) * LAND_STEP + LAND_DUR;
+    host.style.setProperty("--arrange", `${last + HOLD}ms`);
+    host.style.setProperty("--land-dur", `${LAND_DUR}ms`);
+    host.style.setProperty("--arrange-dur", `${ARRANGE_DUR}ms`);
+  }, [arranged, txId]);
+
   return (
     <>
       <ScreenHead
@@ -159,7 +236,11 @@ export function Review({ txId }: Props) {
       />
 
       <div className="layout">
-        <div style={{ display: "grid", gap: "var(--sp-5)" }}>
+        <div
+          className="folio-stack"
+          ref={stack}
+          style={{ display: "grid", gap: "var(--sp-5)" }}
+        >
           {txId === null ? (
             <Card>
               <EmptyState title="No run is waiting">
@@ -319,6 +400,7 @@ export function Review({ txId }: Props) {
                   </p>
                 )}
               </Card>
+
             </>
           )}
         </div>

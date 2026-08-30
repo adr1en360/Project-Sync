@@ -169,7 +169,12 @@ body,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* The delay goes with the length. An animation that waits and holds its first
+       frame is movement to a person who asked for none: the screen shows the start
+       of the animation, and then the end of it arrives at one step. */
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 
@@ -195,8 +200,112 @@ body,
   }
 }
 
-.node-row .mark:not(.mark-work) {
+.node-row .mark:not(.mark-work):not(.mark-pass) {
   animation: fade-in var(--dur-fast) var(--ease-out) both;
+}
+
+/* #17 The flow through a node at work.
+   A person must see that the run moves. The row of a node at work carries a
+   short band of light on the left rail, and the band goes down the rail again
+   and again while the node works.
+
+   The band is the `::after` of the row, and the rule of the row is the
+   `::before`, so the two do not fight. The height of the band is a part of the
+   height of the row, and the band moves by a percent of its own height, so a row
+   of any height gives the same movement. Only `transform` and `opacity` move. */
+@keyframes rail-flow {
+  0% {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(260%);
+    opacity: 0;
+  }
+}
+
+.node-row[data-state="work"]::after,
+.node-row[data-state="pass"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 2px;
+  height: 38%;
+  top: 0;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--accent) 45%,
+    var(--accent) 55%,
+    transparent
+  );
+  /* The band is a moving light and not the edge of a card, so a glow here does
+     not break the flat rule of the cards. The glow is small on purpose. */
+  box-shadow: 0 0 6px var(--accent);
+  pointer-events: none;
+}
+
+.node-row[data-state="work"]::after {
+  animation: rail-flow 1.5s linear infinite;
+}
+
+/* #18 The hand-off between two steps.
+   The node finishes, and the band goes down the rail one time and leaves at the
+   bottom of the row. The next row starts at the same moment, so the eye follows
+   the light from the step that finished to the step that starts.
+
+   The animation starts because the attribute of the row changes to `pass`. The
+   rule is new for the element at that moment, so the animation plays one time
+   and does not repeat. */
+.node-row[data-state="pass"]::after {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--pass) 45%,
+    var(--pass) 55%,
+    transparent
+  );
+  box-shadow: 0 0 6px var(--pass);
+  animation: rail-flow 850ms var(--ease-out) both;
+}
+
+/* #19 The mark lands.
+   The mark of a step arrives, and it does not fade in only. It comes in small
+   and it goes past its size one time before it stops. React gives the mark a new
+   key for each state, so the element is new and the animation plays one time.
+
+   A node at work keeps the breath of #5. The breath waits for the landing to
+   end, so the two do not run together. */
+@keyframes mark-land {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.22);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.node-row .mark-pass {
+  animation: mark-land 380ms var(--ease-out) both;
+}
+
+.node-row .mark-work {
+  animation:
+    mark-land 380ms var(--ease-out) both,
+    pulse 1.6s var(--ease-in-out) 380ms infinite alternate;
 }
 
 /* #16 The step hand-off.
@@ -289,4 +398,72 @@ body,
 .bento.cards.stagger > * {
   animation: card-settle var(--dur-slow) var(--ease-out) both;
   animation-delay: calc(var(--index, 0) * 110ms);
+}
+
+/* #20 The pile of the review desk.
+   The cards do not appear in their places. They arrive one after the other on one
+   pile at the top of the column, the pile builds downward, and then the whole pile
+   opens into the column.
+
+   The card that is last in the order arrives last, so it lands on the top of the
+   pile. `Your decision` is that card, and the eye is on the control a person needs
+   before the page settles.
+
+   Two animations run on each card, and each one owns properties the other does not
+   touch, so they do not fight. `pile-land` owns `opacity` and `translate`, and it
+   is staggered, so the cards arrive one at a time. `pile-arrange` owns `transform`,
+   and every card holds the same delay, so the pile opens as one thing.
+
+   `translate` and `transform` are separate properties, and the browser applies
+   `translate` before `transform`. That is what lets one card carry two animations
+   that both move it. One `transform` for both would let the second animation win,
+   and the arrival would carry no movement at all.
+
+   `--lift` is the distance from the place of the card to the pile. A card holds a
+   different height from the card above it, so no rule here can know the distance.
+   `screens/Review.tsx` measures it and writes it on the element, with the lengths
+   beside it. The fallback values here mean a card with no measurement is in its
+   place and is still readable. */
+@keyframes pile-land {
+  from {
+    opacity: 0;
+    /* The card travels the last short distance onto the pile. Without this the
+       card only fades, and a fade with no movement reads as an appearance. */
+    translate: 0 -26px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* The pile opens. A card leaves the pile, it goes a small distance past its place,
+   and it comes back.
+
+   The distance past the place is a part of the distance travelled, so a card that
+   comes a long way settles visibly, and the first card, which does not travel at
+   all, does not move here either. A constant would rock that first card for no
+   reason. */
+@keyframes pile-arrange {
+  from {
+    transform: translateY(calc(-1 * var(--lift, 0px)));
+  }
+  78% {
+    transform: translateY(calc(var(--lift, 0px) * 0.055));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.folio-stack > * {
+  animation:
+    pile-land var(--land-dur, 340ms) var(--ease-out) var(--land, 0ms) both,
+    /* This curve is not `--ease-out`. `--ease-out` is `cubic-bezier(0.16, 1, 0.3,
+       1)`, which spends four fifths of the distance in the first quarter of the
+       time. Over a long travel a person reads that as one jump and then a wait. So
+       the pile takes a curve that leaves slowly and arrives slowly, and the settle
+       at the end comes from the keyframe above and not from the curve. */
+      pile-arrange var(--arrange-dur, 860ms) cubic-bezier(0.42, 0.03, 0.24, 1)
+      var(--arrange, 1080ms) both;
 }
